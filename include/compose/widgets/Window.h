@@ -20,11 +20,7 @@ namespace Compose
       return std::move(c);
     }
 
-    void setCSSText(const std::string &css) const;
     void setSize(int x, int y) const;
-
-    void attachLessStyleSheet(const std::string &lessPath) const;
-    void defineAndUseFont(const std::string &name);
 
    private:
     void setChild(const auto &widget) const

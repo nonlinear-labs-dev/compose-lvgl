@@ -8,11 +8,6 @@
 #include "nltools-2/Uuid.h"
 #include "nltools/Assert.h"
 
-namespace Gtk
-{
-  class Widget;
-}
-
 namespace Compose
 {
   template <typename tType> class Widget : public BaseWidget<tType>
@@ -195,10 +190,13 @@ namespace Compose
   };
 
   template <typename T>
-  concept IsWidget = requires { typename T::WidgetType; };
+  concept IsWidget = requires
+  {
+    typename T::WidgetType;
+  };
 
   template <typename ComposeWidget, typename tCB>
-    requires IsWidget<ComposeWidget>
+  requires IsWidget<ComposeWidget>
   void operator<<(ComposeWidget &&lhs, tCB &&cb)
   {
     using tComposeWidgetDecayed = std::remove_reference_t<ComposeWidget>;
