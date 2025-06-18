@@ -2,14 +2,11 @@
 #include "compose/modifiers/Color.h"
 #include "compose/modifiers/Rect.h"
 #include "compose/modifiers/RoundedCorner.h"
+#include "src/misc/lv_types.h"
 
 #include <tuple>
 #include <vector>
 
-namespace Cairo
-{
-  class Context;
-}
 namespace Compose
 {
   class DrawContext
@@ -35,12 +32,12 @@ namespace Compose
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
   };
 
-  class CairoDrawContext : public DrawContext
+  class LVGLDrawContext : public DrawContext
   {
    public:
-    // using tCtx = Cairo::RefPtr<Cairo::Context>;
+    using tBuffer = lv_draw_buf_t *;
 
-    // explicit CairoDrawContext(tCtx ctx);
+    explicit LVGLDrawContext(tBuffer ctx);
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void fillRect(Color color, Rect rect) override;
@@ -48,6 +45,6 @@ namespace Compose
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
 
    private:
-    // tCtx m_context;
+    tBuffer buffer;
   };
 };

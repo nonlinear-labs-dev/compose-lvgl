@@ -79,6 +79,11 @@ namespace Compose
       lv_obj_set_style_bg_opa(getHandle(), opacity, LV_PART_MAIN);
     }
 
+    void setModifier(FixedSize size) const
+    {
+      lv_obj_set_size(getHandle(), size.w, size.h);
+    }
+
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);
   };
 
