@@ -5,8 +5,8 @@
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Padding.h"
 #include "compose/modifiers/Hidden.h"
-#include "nltools-2/Uuid.h"
-#include "nltools/Assert.h"
+#include "compose/modifiers/OverflowBehaviour.h"
+#include "compose/modifiers/Scrollable.h"
 #include "src/core/lv_obj_private.h"
 
 namespace Compose
@@ -25,6 +25,13 @@ namespace Compose
     explicit Widget(WidgetType *w)
         : BaseWidget(w)
     {
+      static lv_style_t defaultStyle;
+      lv_style_init(&defaultStyle);
+      lv_style_set_radius(&defaultStyle, 0);
+      lv_style_set_border_width(&defaultStyle, 0);
+      lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
+
+      setModifier(Scrollable(Scrollable::FIXED));
     }
 
     int getWidth() const
@@ -47,6 +54,16 @@ namespace Compose
     virtual void clear()
     {
       lv_obj_clean(getHandle());
+    }
+
+    void setModifier(OverflowBehaviour r) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_OVERFLOW_VISIBLE, r.it == OverflowBehaviour::VISIBLE);
+    }
+
+    void setModifier(Scrollable r) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_SCROLLABLE, r.it == Scrollable::SCROLLABLE);
     }
 
     void setModifier(Expand e) const
