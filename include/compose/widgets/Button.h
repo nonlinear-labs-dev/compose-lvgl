@@ -1,34 +1,32 @@
 #pragma once
 #include "Widget.h"
 #include "handler/Clicks.h"
+#include "src/widgets/button/lv_button.h"
+
 #include <functional>
 #include <string>
 
 namespace Compose
 {
-  // class Button : public Widget<Gtk::Button>
-  // {
-  //  public:
-  //   using AutorunStringCB = std::function<std::string()>;
-  //   using Widget::setModifier;
-  //
-  //   template <typename... tArgs>
-  //   explicit Button(tArgs... args)
-  //       : Widget(Gtk::make_managed<Gtk::Button>())
-  //   {
-  //     (setModifier(args), ...);
-  //   }
-  //
-  //   explicit Button(WidgetType* handle);
-  //   void operator<<(AutorunStringCB&& cb) const;
-  //
-  //   void setModifier(Text t) const;
-  //   void setModifier(LabelCrop c) const;
-  //
-  //  private:
-  //   Gtk::Label* getLabel() const;
-  //   mutable sigc::connection m_onClickConnection;
-  // };
+  class Button : public Widget
+  {
+   public:
+    using Widget::setModifier;
+    using Widget::Widget;
+
+    template <typename... tArgs>
+    explicit Button(Widget& parent, tArgs... args)
+        : Widget(lv_button_create(parent.getHandle()))
+    {
+      (setModifier(args), ...);
+    }
+
+    void setModifier(const Text& t) const;
+    void setModifier(LabelCrop c) const;
+
+   private:
+    [[nodiscard]] lv_obj_t* getOrCreateLabel() const;
+  };
 }
 
-#define BUTTON(...) it.add(Compose::Button(__VA_ARGS__)) << [=](Compose::Button&& it)
+#define BUTTON(...) it.add(Compose::Button(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Button && it)

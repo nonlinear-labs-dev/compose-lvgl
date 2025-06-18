@@ -1,6 +1,9 @@
 #pragma once
+#include "src/misc/lv_event_private.h"
+
 #include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
+#include <memory>
 
 namespace Gtk
 {
@@ -9,47 +12,56 @@ namespace Gtk
 
 namespace Compose
 {
-  template <typename tHandle> struct LeftClick
+  template <typename tHandle> class LeftClick : public std::enable_shared_from_this<LeftClick<tHandle>>
   {
+   public:
     tHandle& widget;
+    std::function<void()> m_callback;
 
-    template <typename tCB> void operator<<(const tCB& cb)
+    explicit LeftClick(tHandle& widget)
+        : widget(widget)
     {
-      auto handle = widget.getHandle();
-      auto connection = handle->signal_clicked().connect(
-          [cb = std::move(cb)]()
-          {
-            Reactive::Deferrer ref;
-            cb();
-          });
-
-      widget.addConnection(connection);
     }
-  };
-
-  template <typename tHandle> struct RightClick
-  {
-    tHandle& widget;
 
     template <typename tCB> void operator<<(const tCB& cb)
     {
-      // auto handle = widget.getHandle();
-      // handle->add_events(Gdk::BUTTON_PRESS_MASK);
-      // auto connection = handle->signal_button_press_event().connect(
-      //     [cb](const GdkEventButton* event)
-      //     {
-      //       if(event->button == GDK_BUTTON_SECONDARY)
-      //       {
-      //         Reactive::Deferrer ref;
-      //         cb();
-      //         return true;
-      //       }
-      //       return false;
-      //     });
-      // widget.addConnection(connection);
+      m_callback = cb;
+      auto handle = widget.getHandle();
+      lv_obj_add_event_cb(
+          handle,
+          [](lv_event_t* e)
+          {
+            auto user_data = static_cast<LeftClick*>(lv_event_get_user_data(e));
+
+            if(lv_event_get_code(e) == LV_EVENT_CLICKED)
+            {
+              if(user_data->m_callback)
+              {
+                user_data->m_callback();
+              }
+            }
+          },
+          LV_EVENT_ALL, this);
+
+      struct SharedPtrWrapper
+      {
+        std::shared_ptr<LeftClick> handler_ptr;
+      };
+
+      auto* wrapper = new SharedPtrWrapper(LeftClick::shared_from_this());
+
+      lv_obj_add_event_cb(
+          handle,
+          [](lv_event_t* e)
+          {
+            if(lv_event_get_code(e) == LV_EVENT_DELETE)
+            {
+              delete static_cast<SharedPtrWrapper*>(lv_event_get_user_data(e));
+            }
+          },
+          LV_EVENT_DELETE, wrapper);
     }
   };
 }
 
-#define LEFT_CLICK() it.leftClickHandler << [=]
-#define RIGHT_CLICK() it.rightClickHandler << [=]
+#define LEFT_CLICK() *it.leftClickHandler << [=]
