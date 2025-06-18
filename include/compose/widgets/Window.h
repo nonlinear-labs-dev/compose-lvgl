@@ -13,7 +13,7 @@ namespace Compose
       Framebuffer
     };
 
-    explicit Window(Backend end);
+    explicit Window(Backend end, Size size);
     ~Window();
     void setFullScreen(bool f) const;
     void setSize(int x, int y) const;

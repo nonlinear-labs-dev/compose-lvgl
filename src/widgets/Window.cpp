@@ -12,13 +12,14 @@
 
 namespace Compose
 {
-  Window::Window(Backend endback)
+  Window::Window(Backend endback, Size size)
   {
     switch(endback)
     {
       case Backend::SDL:
         SDL_Init(SDL_INIT_EVERYTHING);
-        m_display = lv_sdl_window_create(100, 100);
+        m_display = lv_sdl_window_create(size.w, size.h);
+        // lv_sdl_window_set_resizeable(m_display, false);
         lv_sdl_mouse_create();
         lv_sdl_mousewheel_create();
         lv_sdl_keyboard_create();
@@ -43,11 +44,7 @@ namespace Compose
 
   Container &&Window::add(Container &&it) const
   {
-    auto scr = it.getHandle();
-    lv_obj_set_size(scr, 100, 100);
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
-    lv_screen_load(scr);
+    lv_screen_load(it.getHandle());
     return std::move(it);
   }
 }
