@@ -1,90 +1,115 @@
 #pragma once
-#include "nltools/logging/Log.h"
+#include "src/core/lv_obj.h"
+#include "src/misc/lv_types.h"
 
 #include <functional>
 #include <optional>
-#include <gtkmm/cssprovider.h>
+#include <format>
+#include <iostream>
+#include <unordered_map>
+#include <string>
+#include <memory>
+#include <utility>
 #include <reactive/Computations.h>
 #include <nltools-2/NotSyncedException.h>
 
-template <typename tType> class BaseWidget
+class BaseWidget
 {
+  using tType = lv_obj_t;
   static constexpr auto c_computationsKey = "Computations";
-  constexpr static auto c_connectionsKey = "Connections";
 
-  using tConnection = sigc::connection;
-  using tConnections = std::vector<tConnection>;
+  struct UserDataEntry
+  {
+    void* data;
+    std::function<void(void*)> cleanup;
+
+    UserDataEntry(void* d, std::function<void(void*)> c)
+        : data(d)
+        , cleanup(std::move(c))
+    {
+    }
+
+    ~UserDataEntry()
+    {
+      if(cleanup && data)
+      {
+        cleanup(data);
+      }
+    }
+  };
+
+  struct UserDataStorage
+  {
+    std::unordered_map<std::string, std::unique_ptr<UserDataEntry>> entries;
+
+    ~UserDataStorage()
+    {
+      entries.clear();
+    }
+  };
 
  public:
   virtual ~BaseWidget() = default;
   using WidgetType = tType;
-  using AutorunCB = std::function<void(WidgetType &&)>;
+  using AutorunCB = std::function<void(WidgetType&&)>;
 
-  explicit BaseWidget(WidgetType *w)
+  explicit BaseWidget(WidgetType* w)
       : m_widget(w)
   {
   }
 
-  void addConnection(tConnection &connection) const
+  template <typename T> T* getData(auto key) const
   {
-    auto &cons = ensureDataForKeyExistsOwning<tConnections>(c_connectionsKey);
-    cons.emplace_back(connection);
-  }
+    auto storage = getUserDataStorage();
+    if(!storage)
+      return nullptr;
 
-  template <typename T> T *getData(auto key) const
-  {
-    if(auto rawPtr = m_widget->get_data(key))
+    auto it = storage->entries.find(key);
+    if(it != storage->entries.end() && it->second)
     {
-      return static_cast<T *>(rawPtr);
+      return static_cast<T*>(it->second->data);
     }
     return nullptr;
   }
 
-  void clearConnections() const
+  template <typename T> T& ensureDataForKeyExistsOwning(auto key) const
   {
-    if(auto *cons = getConnections())
+    auto storage = ensureUserDataStorage();
+    auto it = storage->entries.find(key);
+
+    if(it == storage->entries.end() || !it->second)
     {
-      for(auto c : *cons)
-      {
-        c.disconnect();
-      }
-      cons->clear();
+      auto data = new T();
+      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { delete static_cast<T*>(p); });
+      storage->entries[key] = std::move(entry);
+      return *data;
     }
+
+    return *static_cast<T*>(it->second->data);
   }
 
-  [[nodiscard]] tConnections *getConnections() const
+  template <typename T> T& ensureDataForKeyExistsNonOwning(auto key, auto fac) const
   {
-    return getData<tConnections>(c_connectionsKey);
-  }
+    auto storage = ensureUserDataStorage();
+    auto it = storage->entries.find(key);
 
-  template <typename T> T &ensureDataForKeyExistsOwning(auto key) const
-  {
-    auto ret = static_cast<T *>(m_widget->get_data(key));
-    if(ret == nullptr)
+    if(it == storage->entries.end() || !it->second)
     {
-      ret = new T();
-      m_widget->set_data(key, ret, [](auto p) { delete static_cast<T *>(p); });
+      auto data = fac();
+      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { });
+      storage->entries[key] = std::move(entry);
+      return *static_cast<T*>(data);
     }
-    return *ret;
+
+    return *static_cast<T*>(it->second->data);
   }
 
-  template <typename T> T &ensureDataForKeyExistsNonOwning(auto key, auto fac) const
-  {
-    auto ret = static_cast<T *>(m_widget->get_data(key));
-    if(ret == nullptr)
-    {
-      ret = fac();
-      m_widget->set_data(key, ret, [](auto p) { });
-    }
-    return *ret;
-  }
-
-  [[nodiscard]] virtual WidgetType *getHandle() const
+  [[nodiscard]] virtual WidgetType* getHandle() const
   {
     return m_widget;
   }
 
-  template <typename tCB> void doAutorun(tCB &&cb) const
+  template <typename tCB> void doAutorun(tCB&& cb) const
   {
     getComputations().add(
         [cb = std::forward<tCB>(cb)]
@@ -93,25 +118,55 @@ template <typename tType> class BaseWidget
           {
             cb();
           }
-          catch(const NotSyncedException &)
+          catch(const NotSyncedException&)
           {
           }
-          catch(const std::exception &e)
+          catch(const std::exception& e)
           {
-            nltools::Log::warning("Computation::execute() failed:", e.what());
+            std::cerr << std::format("Computation::execute() failed: {}", e.what()) << std::endl;
           }
           catch(...)
           {
-            nltools::Log::warning("Computation::execute() failed.");
+            std::cerr << "Computation::execute() failed." << std::endl;
           }
         });
   }
 
  private:
-  [[nodiscard]] Reactive::Computations &getComputations() const
+  [[nodiscard]] Reactive::Computations& getComputations() const
   {
     return ensureDataForKeyExistsOwning<Reactive::Computations>(c_computationsKey);
   }
 
-  WidgetType *m_widget;
+  [[nodiscard]] UserDataStorage* getUserDataStorage() const
+  {
+    return static_cast<UserDataStorage*>(lv_obj_get_user_data(m_widget));
+  }
+
+  [[nodiscard]] UserDataStorage* ensureUserDataStorage() const
+  {
+    auto storage = getUserDataStorage();
+    if(!storage)
+    {
+      storage = new UserDataStorage();
+      lv_obj_set_user_data(m_widget, storage);
+
+      lv_obj_add_event_cb(
+          m_widget,
+          [](lv_event_t* e)
+          {
+            auto storage
+                = static_cast<UserDataStorage*>(lv_obj_get_user_data(static_cast<lv_obj_t*>(lv_event_get_target(e))));
+            if(storage)
+            {
+              delete storage;
+              lv_obj_set_user_data(static_cast<lv_obj_t*>(lv_event_get_target(e)), nullptr);
+            }
+          },
+          LV_EVENT_DELETE, nullptr);
+    }
+    return storage;
+  }
+
+  WidgetType* m_widget;
 };

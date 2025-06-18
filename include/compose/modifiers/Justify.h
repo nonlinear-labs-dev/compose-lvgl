@@ -1,9 +1,12 @@
 #pragma once
-#include <gtkmm/enums.h>
-#include <nltools/enums/EnumDecl.h>
 
-ENUM(Justification, int, LEFT = Gtk::Justification::JUSTIFY_LEFT, RIGHT = Gtk::Justification::JUSTIFY_RIGHT,
-     CENTER = Gtk::Justification::JUSTIFY_CENTER, FILL = Gtk::Justification::JUSTIFY_FILL);
+enum class Justification : int
+{
+  LEFT,
+  RIGHT,
+  CENTER,
+  FILL
+};
 
 namespace Compose
 {
@@ -27,4 +30,4 @@ namespace Compose
       return { Justification::FILL };
     }
   };
-} 
+}

@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <nltools/StringTools.h>
+#include <format>
 
 namespace Compose
 {
@@ -27,8 +27,7 @@ namespace Compose
 
     std::string cssRuleText() const
     {
-      return nltools::string::concat("padding: ", std::to_string(top), "px ", std::to_string(right), "px ",
-                                    std::to_string(bottom), "px ", std::to_string(left), "px;");
+      return std::format("padding: {}px {}px {}px {}px;", top, right, bottom, left);
     }
 
     int left;

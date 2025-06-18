@@ -1,7 +1,6 @@
 #pragma once
 #include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
-#include <gtkmm.h>
 
 namespace Gtk
 {
@@ -34,20 +33,20 @@ namespace Compose
 
     template <typename tCB> void operator<<(const tCB& cb)
     {
-      auto handle = widget.getHandle();
-      handle->add_events(Gdk::BUTTON_PRESS_MASK);
-      auto connection = handle->signal_button_press_event().connect(
-          [cb](const GdkEventButton* event)
-          {
-            if(event->button == GDK_BUTTON_SECONDARY)
-            {
-              Reactive::Deferrer ref;
-              cb();
-              return true;
-            }
-            return false;
-          });
-      widget.addConnection(connection);
+      // auto handle = widget.getHandle();
+      // handle->add_events(Gdk::BUTTON_PRESS_MASK);
+      // auto connection = handle->signal_button_press_event().connect(
+      //     [cb](const GdkEventButton* event)
+      //     {
+      //       if(event->button == GDK_BUTTON_SECONDARY)
+      //       {
+      //         Reactive::Deferrer ref;
+      //         cb();
+      //         return true;
+      //       }
+      //       return false;
+      //     });
+      // widget.addConnection(connection);
     }
   };
 }

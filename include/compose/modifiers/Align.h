@@ -1,9 +1,14 @@
 #pragma once
-#include <gtkmm/enums.h>
 #include <nltools/enums/EnumDecl.h>
 
-ENUM(Alignment, int, END = Gtk::Align::ALIGN_END, START = Gtk::Align::ALIGN_START, FILL = Gtk::Align::ALIGN_FILL,
-     CENTER = Gtk::Align::ALIGN_CENTER, BASELINE = Gtk::Align::ALIGN_BASELINE);
+enum class Alignment : int
+{
+  END,
+  START,
+  FILL,
+  CENTER,
+  BASELINE
+};
 
 namespace Compose
 {

@@ -1,6 +1,5 @@
 #pragma once
-#include <nltools/StringTools.h>
-#include <glibmm/ustring.h>
+#include <string>
 #include <concepts>
 
 template <typename T>
@@ -27,10 +26,10 @@ namespace Compose
 
     template <typename... tArgs>
     explicit Text(tArgs... args)
-        : text { nltools::string::concat(args...) }
+        : text { std::format(args...) }
     {
     }
 
-    Glib::ustring text;
+    std::string text;
   };
 } 

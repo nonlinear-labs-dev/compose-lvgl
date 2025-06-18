@@ -1,9 +1,10 @@
 #pragma once
-#include <gtkmm/enums.h>
-#include <nltools/enums/EnumDecl.h>
 
-ENUM(OrientationEnum, int, HORIZONTAL = Gtk::Orientation::ORIENTATION_HORIZONTAL,
-     VERTICAL = Gtk::Orientation::ORIENTATION_VERTICAL);
+enum class OrientationEnum : int
+{
+  HORIZONTAL,
+  VERTICAL
+};
 
 namespace Compose
 {

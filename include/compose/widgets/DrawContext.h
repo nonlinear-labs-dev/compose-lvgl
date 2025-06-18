@@ -3,10 +3,8 @@
 #include "compose/modifiers/Rect.h"
 #include "compose/modifiers/RoundedCorner.h"
 
-
 #include <tuple>
 #include <vector>
-#include <cairomm/refptr.h>
 
 namespace Cairo
 {
@@ -40,9 +38,9 @@ namespace Compose
   class CairoDrawContext : public DrawContext
   {
    public:
-    using tCtx = Cairo::RefPtr<Cairo::Context>;
+    // using tCtx = Cairo::RefPtr<Cairo::Context>;
 
-    explicit CairoDrawContext(tCtx ctx);
+    // explicit CairoDrawContext(tCtx ctx);
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void fillRect(Color color, Rect rect) override;
@@ -50,6 +48,6 @@ namespace Compose
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
 
    private:
-    tCtx m_context;
+    // tCtx m_context;
   };
 };

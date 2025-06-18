@@ -1,36 +1,29 @@
 #pragma once
-#include "Widget.h"
-#include <nltools/system/SingleFileMonitor.h>
+#include "container/Container.h"
+#include "src/misc/lv_types.h"
 
 namespace Compose
 {
-  class Container;
-  class Fixed;
-
-  class Window : public Widget<Gtk::Window>
+  class Window
   {
    public:
-    explicit Window();
-    ~Window() override;
-    void setFullScreen(bool f) const;
-
-    template <typename T> T &&add(T &&c) const
+    enum class Backend
     {
-      setChild(c);
-      return std::move(c);
-    }
+      SDL,
+      Framebuffer
+    };
 
+    explicit Window(Backend end);
+    ~Window();
+    void setFullScreen(bool f) const;
     void setSize(int x, int y) const;
 
+    Container&& add(Container&& it) const;
+
    private:
-    void setChild(const auto &widget) const
-    {
-      const auto window = getHandle();
-      window->remove();
-      const auto handlePtr = widget.getHandle();
-      window->add(*handlePtr);
-    }
+    lv_display_t* m_display { nullptr };
+    lv_indev_t* m_mouse { nullptr };
+    lv_indev_t* m_mouseWheel { nullptr };
+    lv_indev_t* m_keyboard { nullptr };
   };
 }
-
-#define LESS_STYLE(path) it.attachLessStyleSheet(path);

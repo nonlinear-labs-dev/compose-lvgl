@@ -1,13 +1,30 @@
 #pragma once
 #include "compose/widgets/Widget.h"
-#include <gtkmm.h>
 
 namespace Compose
 {
-  class Container : public Widget<Gtk::Box>
+  class Window;
+  class Container : public Widget
   {
    public:
     using Widget::setModifier;
+
+    template <typename... tArgs>
+    explicit Container(Window &it, tArgs... args)
+        : Widget(lv_obj_create(nullptr))
+    {
+      lv_screen_load(BaseWidget::getHandle());
+      (setModifier(args), ...);
+    }
+
+    template <typename... tArgs>
+    explicit Container(BaseWidget &w, tArgs... args)
+        : Widget(lv_obj_create(w.getHandle()))
+    {
+      (setModifier(args), ...);
+    }
+
+    explicit Container(WidgetType *handle);
 
     template <typename... tArgs> static Container _ROW(tArgs... args)
     {
@@ -29,22 +46,15 @@ namespace Compose
       return _COLUMN(args..., Expand::HORIZONTAL());
     }
 
-    template <typename... tArgs>
-    explicit Container(tArgs... args)
-        : Widget(Gtk::make_managed<Gtk::Box>())
-    {
-      (setModifier(args), ...);
-    }
-
-    explicit Container(WidgetType *handle);
     void setModifier(FixedSize r) const;
     void setModifier(Spacing r) const;
-    void clear() override;
   };
 }
 
-#define CONTAINER(...) it.add(Compose::Container(__VA_ARGS__)) << [=](Compose::Container &&it)
-#define ROW(...) it.add(std::move(Compose::Container::_ROW(__VA_ARGS__))) << [=](Compose::Container &&it)
-#define COLUMN(...) it.add(std::move(Compose::Container::_COLUMN(__VA_ARGS__))) << [=](Compose::Container &&it)
-#define VSPACER(...) it.add(std::move(Compose::Container::V_SPACER(__VA_ARGS__)));
-#define HSPACER(...) it.add(std::move(Compose::Container::H_SPACER(__VA_ARGS__)));
+#define CONTAINER(...) it.add(Compose::Container(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Container &&it)
+#define ROW(...)                                                                                                       \
+  it.add(std::move(Compose::Container::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Container &&it)
+#define COLUMN(...)                                                                                                    \
+  it.add(std::move(Compose::Container::_COLUMN(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Container &&it)
+#define VSPACER(...) it.add(std::move(Compose::Container::V_SPACER(it __VA_OPT__(, __VA_ARGS__))));
+#define HSPACER(...) it.add(std::move(Compose::Container::H_SPACER(it __VA_OPT__(, __VA_ARGS__))));

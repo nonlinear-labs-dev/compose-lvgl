@@ -1,5 +1,5 @@
 #pragma once
-#include <nltools/StringTools.h>
+#include <format>
 
 namespace Compose
 {
@@ -29,9 +29,7 @@ namespace Compose
 
     [[nodiscard]] std::string cssRuleText() const
     {
-      return nltools::string::concat(
-          "border-radius: ", std::to_string(topLeft) + "px ", std::to_string(topRight) + "px ",
-          std::to_string(bottomRight) + "px ", std::to_string(bottomLeft) + "px;");
+      return std::format("border-radius: {}px {}px {}px {}px;", topLeft, topRight, bottomRight, bottomLeft);
     }
   };
 }

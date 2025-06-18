@@ -2,7 +2,6 @@
 #include <memory>
 #include <concepts>
 #include <functional>
-#include <gtkmm.h>
 
 #include "Window.h"
 
@@ -15,21 +14,18 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(const std::string &name);
-    void runBlocking(const tCallback &callback) const;
+    explicit Application(Window::Backend backend);
+    [[noreturn]] void runBlocking(const tCallback &callback) const;
 
-    void operator<<(const tCallback &callback)
+    void operator<<(const tCallback &callback) const
     {
       runBlocking(callback);
     }
 
    private:
-    // Glib::RefPtr<Gtk::Application> m_app;
-
-    void addWindow(Window::WidgetType *windowHandle) const;
-    void addWindowWhenReady(const Window &window) const;
+    Window::Backend m_backend;
   };
 }
 
-#define APPLICATION(name) Compose::Application(name) << [=](Compose::Window & it)
+#define APPLICATION(backend) Compose::Application(backend) << [=](Compose::Window & it)
 #define FONT(name) it.defineAndUseFont(name);

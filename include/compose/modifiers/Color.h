@@ -5,8 +5,8 @@
 #include <ios>
 #include <iosfwd>
 #include <string>
-#include <bits/stl_algo.h>
-#include <nltools/StringTools.h>
+#include <concepts>
+#include <format>
 
 namespace Compose
 {
@@ -54,8 +54,7 @@ namespace Compose
 
     [[nodiscard]] std::string toRGBAString() const
     {
-      return nltools::string::concat("rgba(", static_cast<int>(r), ",", static_cast<int>(g), ",", static_cast<int>(b),
-                                     ",", a, ");");
+      return std::format("rgba({},{},{},{});", static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), a);
     }
 
     [[nodiscard]] uint32_t pack() const

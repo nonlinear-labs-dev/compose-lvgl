@@ -1,9 +1,12 @@
 #pragma once
-#include <pangomm/layout.h>
-#include <nltools/enums/EnumDecl.h>
 
-ENUM(EllipsizeMode, int, NONE = Pango::EllipsizeMode::ELLIPSIZE_NONE, START = Pango::EllipsizeMode::ELLIPSIZE_START,
-     MIDDLE = Pango::EllipsizeMode::ELLIPSIZE_MIDDLE, END = Pango::EllipsizeMode::ELLIPSIZE_END);
+enum class EllipsizeMode : int
+{
+  NONE,
+  START,
+  MIDDLE,
+  END
+};
 
 namespace Compose
 {

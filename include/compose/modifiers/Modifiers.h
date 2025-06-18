@@ -8,7 +8,6 @@
 #include "Expand.h"
 #include "Homogeneous.h"
 #include "LabelCrop.h"
-#include "StyleSheet.h"
 #include "Text.h"
 #include "FontSize.h"
 #include "FontWeight.h"
@@ -21,7 +20,6 @@
 #include "Hidden.h"
 #include "Position.h"
 #include "MonoSpaceNumbers.h"
-#include <nltools/StringTools.h>
 
 template <typename tOut, typename tIn> tOut to(tIn in)
 {
@@ -62,7 +60,7 @@ namespace Compose
 #define COLUMN_SPACING(...) it.doAutorun([=] { it.setModifier(ColumnSpacing(__VA_ARGS__)); });
 #define FIXED_SIZE(...) it.doAutorun([=] { it.setModifier(FixedSize(__VA_ARGS__)); });
 #define MIN_SIZE(...) it.doAutorun([=] { it.setModifier(MinSize(__VA_ARGS__)); });
-#define BACKGROUND_COLOR(...) it.doAutorun([=] { it.setModifier(BackgroundColor(__VA_ARGS__)); });
+#define BACKGROUND_COLOR(...) it.doAutorun([=] { it.setModifier(Compose::BackgroundColor(__VA_ARGS__)); });
 #define PRIMARY_COLOR(...) it.doAutorun([=] { it.setModifier(PrimaryColor(__VA_ARGS__)); });
 #define SVG_PATH(...) it.doAutorun([=] { it.setModifier(SVGPath(__VA_ARGS__)); });
 #define READONLY(...) it.doAutorun([=] { it.setModifier(Readonly(__VA_ARGS__)); });

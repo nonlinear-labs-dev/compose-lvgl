@@ -1,9 +1,11 @@
 #pragma once
-#include <gtkmm/enums.h>
-#include <nltools/enums/EnumDecl.h>
 
-ENUM(AttachOptionsEnum, int, EXPAND = Gtk::AttachOptions::EXPAND, SHRINK = Gtk::AttachOptions::SHRINK,
-     FILL = Gtk::AttachOptions::FILL);
+enum class AttachOptionsEnum
+{
+  SHRINK,
+  FILL,
+  EXPAND
+};
 
 namespace Compose
 {
@@ -24,4 +26,4 @@ namespace Compose
       return { AttachOptionsEnum::EXPAND };
     }
   };
-} 
+}

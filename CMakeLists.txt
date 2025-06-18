@@ -9,8 +9,11 @@ addNLLibrary(
         NAME compose-lvgl
         DESCRIPTION "compose lvgl"
         VERSION 1.0.0
+        EXTERNAL_LIBS sdl2
         OUR_LIBS reactive nltools nltools-2 lvgl
         LIB_SOURCES src/*.cpp include/*.h
+        TEST_SOURCES tests/*.cpp
         INSTALL_HEADERS_DIR include
+        IS_STATIC
         CPP_STANDARD 20
 )

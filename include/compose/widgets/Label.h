@@ -1,38 +1,36 @@
 #pragma once
 #include "Widget.h"
-#include "compose/modifiers/LetterSpacing.h"
-#include "compose/modifiers/XAlign.h"
+#include "src/widgets/label/lv_label.h"
+
 #include <functional>
 #include <string>
-#include <gtkmm/label.h>
 
 namespace Compose
 {
-  class Label final : public Widget<Gtk::Label>
+  class Label final : public BaseWidget
   {
    public:
     using AutorunStringCB = std::function<std::string()>;
-    using Widget::setModifier;
 
     template <typename... tArgs>
     explicit Label(tArgs... args)
-        : Widget(Gtk::make_managed<WidgetType>())
+        : BaseWidget(lv_label_create(lv_screen_active()))
     {
       (setModifier(args), ...);
     }
-    explicit Label(WidgetType* handle);
 
+    explicit Label(WidgetType* handle);
     void operator<<(AutorunStringCB&& cb) const;
 
-    void setModifier(Text s) const;
-    void setModifier(PrimaryColor s) const override;
-    void setModifier(FontSize s) const;
-    void setModifier(FontWeight w) const;
-    void setModifier(XAlign x) const;
-    void setModifier(LabelCrop c) const;
-    void setModifier(Justify j) const;
-    void setModifier(LetterSpacing j) const;
-    void setModifier(MonoSpaceNumbers m) const;
+    // void setModifier(Text s) const;
+    // void setModifier(PrimaryColor s) const override;
+    // void setModifier(FontSize s) const;
+    // void setModifier(FontWeight w) const;
+    // void setModifier(XAlign x) const;
+    // void setModifier(LabelCrop c) const;
+    // void setModifier(Justify j) const;
+    // void setModifier(LetterSpacing j) const;
+    // void setModifier(MonoSpaceNumbers m) const;
   };
 }
 

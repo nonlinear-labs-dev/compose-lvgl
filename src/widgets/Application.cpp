@@ -1,35 +1,34 @@
 #include "compose/widgets/Application.h"
 #include "compose/widgets/Window.h"
+#include "src/misc/lv_timer.h"
+#include "src/tick/lv_tick.h"
 
-#include <assert.h>
-#include <gtkmm/application.h>
+#include <chrono>
+#include <thread>
 #include <reactive/Computations.h>
 
 namespace Compose
 {
-  Application::Application(const std::string& name)
+  Application::Application(Window::Backend backend)
+      : m_backend(backend)
   {
-    assert(g_application_id_is_valid(name.c_str()));
-    // m_app = Gtk::Application::create(name);
   }
 
-  void Application::runBlocking(const tCallback& callback) const
+  [[noreturn]] void Application::runBlocking(const tCallback& callback) const
   {
-    Window window;
-    addWindowWhenReady(window);
-    Reactive::Computations c;
+    Window window { m_backend };
+    const Reactive::Computations c;
     c.add([&] { callback(window); });
-    // m_app->run();
-  }
+    auto lastTick = std::chrono::high_resolution_clock::now();
 
-  void Application::addWindow(Window::WidgetType* windowHandle) const
-  {
-    // m_app->add_window(*windowHandle);
-    windowHandle->show();
-  }
-
-  void Application::addWindowWhenReady(const Window& window) const
-  {
-    // m_app->signal_startup().connect([&] { addWindow(window.getHandle()); });
+    while(true)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      const auto current = std::chrono::high_resolution_clock::now();
+      auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+      lv_tick_inc(delta.count());
+      lastTick = current;
+      lv_timer_handler();
+    }
   }
 }
