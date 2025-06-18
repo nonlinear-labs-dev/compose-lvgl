@@ -7,14 +7,14 @@
 
 namespace Compose
 {
-  class Label final : public BaseWidget
+  class Label final : public Widget
   {
    public:
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit Label(tArgs... args)
-        : BaseWidget(lv_label_create(lv_screen_active()))
+    explicit Label(BaseWidget& parent, tArgs... args)
+        : Widget(lv_label_create(parent.getHandle()))
     {
       (setModifier(args), ...);
     }
@@ -22,8 +22,8 @@ namespace Compose
     explicit Label(WidgetType* handle);
     void operator<<(AutorunStringCB&& cb) const;
 
-    // void setModifier(Text s) const;
-    // void setModifier(PrimaryColor s) const override;
+    void setModifier(Text s) const;
+    void setModifier(PrimaryColor s) const;
     // void setModifier(FontSize s) const;
     // void setModifier(FontWeight w) const;
     // void setModifier(XAlign x) const;
@@ -34,4 +34,4 @@ namespace Compose
   };
 }
 
-#define LABEL(...) it.add(Compose::Label(__VA_ARGS__)) << [=](Compose::Label&& it)
+#define LABEL(...) it.add(Compose::Label(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Label&& it)

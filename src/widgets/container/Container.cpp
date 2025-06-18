@@ -12,6 +12,19 @@ namespace Compose
     // getHandle()->set_spacing(r.it);
   }
 
+  void Container::setModifier(Orientation r) const
+  {
+    switch(r.it)
+    {
+      case OrientationEnum::HORIZONTAL:
+        lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW);
+        break;
+      case OrientationEnum::VERTICAL:
+        lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN);
+        break;
+    }
+  }
+
   void Container::setModifier(FixedSize r) const
   {
     // auto handle = getHandle();

@@ -4,28 +4,27 @@
 namespace Compose
 {
   Label::Label(WidgetType *handle)
-      : BaseWidget(handle)
+      : Widget(handle)
   {
   }
 
-  // void Label::setModifier(Text t) const
-  // {
-  //   getHandle()->set_text(t.text);
-  // }
-  //
-  // void Label::setModifier(PrimaryColor c) const
-  // {
-  //   auto [r, g, b, a] = c.normalized();
-  //   auto attr_list = getHandle()->get_attributes();
-  //   if(!attr_list)
-  //     attr_list = Pango::AttrList();
-  //   auto color_attr = Pango::Attribute::create_attr_foreground(65535 * r, 65535 * g, 65535 * b);
-  //   auto alpha_attr = Pango::Attribute::create_attr_foreground_alpha(1 + a * 65535);
-  //
-  //   attr_list.insert(color_attr);
-  //   attr_list.insert(alpha_attr);
-  //   getHandle()->set_attributes(attr_list);
-  // }
+  void Label::setModifier(Text t) const
+  {
+    lv_label_set_text(getHandle(), t.text.c_str());
+  }
+
+  void Label::setModifier(PrimaryColor c) const
+  {
+    lv_obj_set_style_text_color(getHandle(),
+                                {
+                                    .blue = c.b,
+                                    .green = c.g,
+                                    .red = c.r,
+                                },
+                                LV_PART_MAIN);
+    lv_obj_set_style_text_opa(getHandle(), static_cast<unsigned char>(c.a * 255.0), LV_PART_MAIN);
+  }
+
   // void Label::setModifier(XAlign x) const
   // {
   //   switch(x.it)

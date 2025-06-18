@@ -2,6 +2,7 @@
 #include "compose/widgets/Window.h"
 #include "src/misc/lv_timer.h"
 #include "src/tick/lv_tick.h"
+#include <lvgl.h>
 
 #include <chrono>
 #include <thread>
@@ -12,6 +13,7 @@ namespace Compose
   Application::Application(Window::Backend backend)
       : m_backend(backend)
   {
+    lv_init();
   }
 
   [[noreturn]] void Application::runBlocking(const tCallback& callback) const

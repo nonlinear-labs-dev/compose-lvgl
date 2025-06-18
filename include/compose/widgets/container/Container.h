@@ -7,13 +7,15 @@ namespace Compose
   class Container : public Widget
   {
    public:
+    using Widget::add;
     using Widget::setModifier;
 
     template <typename... tArgs>
     explicit Container(Window &it, tArgs... args)
         : Widget(lv_obj_create(nullptr))
     {
-      lv_screen_load(BaseWidget::getHandle());
+      lv_screen_load(Widget::getHandle());
+      lv_obj_set_layout(Widget::getHandle(), LV_LAYOUT_FLEX);
       (setModifier(args), ...);
     }
 
@@ -21,6 +23,7 @@ namespace Compose
     explicit Container(BaseWidget &w, tArgs... args)
         : Widget(lv_obj_create(w.getHandle()))
     {
+      lv_obj_set_layout(Widget::getHandle(), LV_LAYOUT_FLEX);
       (setModifier(args), ...);
     }
 
@@ -28,7 +31,8 @@ namespace Compose
 
     template <typename... tArgs> static Container _ROW(tArgs... args)
     {
-      return Container(args..., Orientation::HORIZONTAL());
+      auto cont = Container(args..., Orientation::HORIZONTAL());
+      return cont;
     }
 
     template <typename... tArgs> static Container _COLUMN(tArgs... args)
@@ -48,6 +52,7 @@ namespace Compose
 
     void setModifier(FixedSize r) const;
     void setModifier(Spacing r) const;
+    void setModifier(Orientation r) const;
   };
 }
 

@@ -39,20 +39,14 @@ namespace Compose
 
     ~Widget() override = default;
 
-    // template <typename T> T &&add(T &&toAdd)
-    // {
-    //   // getHandle()->add(*toAdd.getHandle());
-    //   // return std::forward<T>(toAdd);
-    // }
+    template <typename T> static T &&add(T &&w)
+    {
+      return std::forward<T>(w);
+    }
 
     virtual void clear()
     {
       lv_obj_clean(getHandle());
-    }
-
-    void setModifier(Orientation o) const
-    {
-      // getHandle()->set_orientation(to<Gtk::Orientation>(o.it));
     }
 
     void setModifier(Expand e) const
