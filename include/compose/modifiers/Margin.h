@@ -21,6 +21,11 @@ namespace Compose
     {
     }
 
+    constexpr static Margin ZERO()
+    {
+      return { 0, 0, 0, 0 };
+    }
+
     int top, bottom, left, right;
   };
 }

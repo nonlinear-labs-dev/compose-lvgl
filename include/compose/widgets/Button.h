@@ -8,6 +8,15 @@
 
 namespace Compose
 {
+  struct ButtonType
+  {
+    enum
+    {
+      NORMAL,
+      TOGGLE
+    } it;
+  };
+
   class Button : public Widget
   {
    public:
@@ -21,6 +30,7 @@ namespace Compose
       (setModifier(args), ...);
     }
 
+    void setModifier(ButtonType t) const;
     void setModifier(const Text& t) const;
     void setModifier(LabelCrop c) const;
 
@@ -29,4 +39,4 @@ namespace Compose
   };
 }
 
-#define BUTTON(...) it.add(Compose::Button(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Button && it)
+#define BUTTON(...) it.add(Compose::Button(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Button&& it)

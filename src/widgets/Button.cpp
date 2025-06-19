@@ -1,6 +1,7 @@
 #include <cassert>
 #include <compose/widgets/Button.h>
 #include <compose/widgets/Label.h>
+#include <src/widgets/button/lv_button.h>
 
 namespace Compose
 {
@@ -10,6 +11,11 @@ namespace Compose
     {
       lv_label_set_text(label, t.text.c_str());
     }
+  }
+
+  void Button::setModifier(ButtonType t) const
+  {
+    lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CHECKABLE, t.it == ButtonType::TOGGLE);
   }
 
   lv_obj_t *Button::getOrCreateLabel() const

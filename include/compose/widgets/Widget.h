@@ -3,10 +3,28 @@
 #include "compose/modifiers/Modifiers.h"
 #include "handler/Clicks.h"
 #include "compose/modifiers/OverflowBehaviour.h"
+#include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
 
 namespace Compose
 {
+  class Window;
+
+  struct LayoutType
+  {
+    enum
+    {
+      NONE,
+      FLEX,
+    } it;
+  };
+
+  struct Border
+  {
+    int width;
+    Color color;
+  };
+
   class Widget : public BaseWidget
   {
    public:
@@ -24,7 +42,25 @@ namespace Compose
       lv_style_init(&defaultStyle);
       lv_style_set_radius(&defaultStyle, 0);
       lv_style_set_border_width(&defaultStyle, 0);
+      lv_style_set_pad_all(&defaultStyle, 0);
+      lv_style_set_margin_all(&defaultStyle, 0);
+      lv_style_set_layout(&defaultStyle, LV_LAYOUT_NONE);
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
+    }
+
+    template <typename... tArgs>
+    explicit Widget(Window &it, tArgs... args)
+        : BaseWidget(lv_obj_create(nullptr))
+    {
+      lv_screen_load(BaseWidget::getHandle());
+      (setModifier(args), ...);
+    }
+
+    template <typename... tArgs>
+    explicit Widget(BaseWidget &w, tArgs... args)
+        : Widget(lv_obj_create(w.getHandle()))
+    {
+      (setModifier(args), ...);
     }
 
     explicit Widget(WidgetType *w)
@@ -84,7 +120,87 @@ namespace Compose
       lv_obj_set_size(getHandle(), size.w, size.h);
     }
 
+    void setModifier(LayoutType r) const
+    {
+      lv_obj_set_layout(getHandle(), r.it == LayoutType::FLEX ? LV_LAYOUT_FLEX : LV_LAYOUT_NONE);
+    }
+
+    void setModifier(Orientation r) const
+    {
+      switch(r.it)
+      {
+        case OrientationEnum::HORIZONTAL:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW);
+          break;
+        case OrientationEnum::VERTICAL:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN);
+          break;
+      }
+    }
+
+    /*
+    *
+    *With default alignment it's the distance from the top left corner
+E.g. LV_ALIGN_CENTER alignment it's the offset from the center of the parent
+The position is interpreted on the content area of the parent
+The values can be set in pixel or in percentage of parent size with lv_pct(v)
+     */
+    void setModifier(Position pos) const
+    {
+      lv_obj_set_pos(getHandle(), pos.x, pos.y);
+    }
+
+    void setModifier(Align align) const
+    {
+      lv_obj_set_align(getHandle(), align.it);
+    }
+
+    void setModifier(Padding padding) const
+    {
+      auto [left, top, right, bottom] = padding;
+      lv_obj_set_style_pad_left(getHandle(), left, LV_PART_MAIN);
+      lv_obj_set_style_pad_top(getHandle(), top, LV_PART_MAIN);
+      lv_obj_set_style_pad_right(getHandle(), right, LV_PART_MAIN);
+      lv_obj_set_style_pad_bottom(getHandle(), bottom, LV_PART_MAIN);
+    }
+
+    void setModifier(Margin margin) const
+    {
+      auto [left, top, right, bottom] = margin;
+      lv_obj_set_style_margin_left(getHandle(), left, LV_PART_MAIN);
+      lv_obj_set_style_margin_top(getHandle(), top, LV_PART_MAIN);
+      lv_obj_set_style_margin_right(getHandle(), right, LV_PART_MAIN);
+      lv_obj_set_style_margin_bottom(getHandle(), bottom, LV_PART_MAIN);
+    }
+
+    void setModifier(Border border) const
+    {
+      lv_obj_set_style_border_width(getHandle(), border.width, LV_PART_MAIN);
+      lv_obj_set_style_border_color(getHandle(),
+                                    lv_color_t {
+                                        .blue = border.color.b,
+                                        .green = border.color.g,
+                                        .red = border.color.r,
+                                    },
+                                    LV_PART_MAIN);
+      lv_obj_set_style_border_opa(getHandle(), border.color.a * 255, LV_PART_MAIN);
+    }
+
+    //sadly only all borders share the same radius
+    void setModifier(RoundedCorner corner) const
+    {
+      const auto max
+          = std::max(std::max(std::max(corner.topLeft, corner.topRight), corner.bottomLeft), corner.bottomRight);
+      lv_obj_set_style_radius(getHandle(), max, LV_PART_MAIN);
+    }
+
+    void setModifier(Hidden h) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_HIDDEN, h.it);
+    }
+
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);
+    std::shared_ptr<StateChange<Widget>> stateChangeHandler = std::make_shared<StateChange<Widget>>(*this);
   };
 
   template <typename T>

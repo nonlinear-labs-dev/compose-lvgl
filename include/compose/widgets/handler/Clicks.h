@@ -62,6 +62,60 @@ namespace Compose
           LV_EVENT_DELETE, wrapper);
     }
   };
+
+  template <typename tHandle>
+  class StateChange : public std::enable_shared_from_this<StateChange<tHandle>>
+  {
+   public:
+    tHandle& widget;
+    std::function<void(bool)> m_callback;
+
+    explicit StateChange(tHandle& widget)
+        : widget(widget)
+    {
+    }
+
+    template <typename tCB> void operator<<(const tCB& cb)
+    {
+      m_callback = cb;
+      auto handle = widget.getHandle();
+      lv_obj_add_event_cb(
+          handle,
+          [](lv_event_t* e)
+          {
+            auto user_data = static_cast<StateChange*>(lv_event_get_user_data(e));
+            if(lv_event_get_code(e) == LV_EVENT_VALUE_CHANGED)
+            {
+              if(user_data->m_callback)
+              {
+                auto obj = static_cast<lv_obj_t*>(lv_event_get_target(e));
+                bool checked = lv_obj_has_state(obj, LV_STATE_CHECKED);
+                user_data->m_callback(checked);
+              }
+            }
+          },
+          LV_EVENT_ALL, this);
+
+      struct SharedPtrWrapper
+      {
+        std::shared_ptr<StateChange> handler_ptr;
+      };
+
+      auto* wrapper = new SharedPtrWrapper(StateChange::shared_from_this());
+
+      lv_obj_add_event_cb(
+          handle,
+          [](lv_event_t* e)
+          {
+            if(lv_event_get_code(e) == LV_EVENT_DELETE)
+            {
+              delete static_cast<SharedPtrWrapper*>(lv_event_get_user_data(e));
+            }
+          },
+          LV_EVENT_DELETE, wrapper);
+    }
+  };
 }
 
 #define LEFT_CLICK() *it.leftClickHandler << [=]
+#define STATE_CHANGE *it.stateChangeHandler << [=]

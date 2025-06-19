@@ -14,6 +14,7 @@ namespace Compose
       : m_backend(backend)
   {
     lv_init();
+    lv_fs_posix_init();
   }
 
   [[noreturn]] void Application::runBlocking(const tCallback& callback) const

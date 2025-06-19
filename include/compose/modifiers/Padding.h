@@ -30,6 +30,11 @@ namespace Compose
       return std::format("padding: {}px {}px {}px {}px;", top, right, bottom, left);
     }
 
+    constexpr static Padding ZERO()
+    {
+      return { 0, 0, 0, 0 };
+    }
+
     int left;
     int right;
     int top;

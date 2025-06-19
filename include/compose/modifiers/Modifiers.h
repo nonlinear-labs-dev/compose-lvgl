@@ -39,8 +39,7 @@ namespace Compose
   };
 }
 
-#define HALIGN(...) it.doAutorun([=] { it.setModifier(HAlign(__VA_ARGS__)); });
-#define VALIGN(...) it.doAutorun([=] { it.setModifier(VAlign(__VA_ARGS__)); });
+#define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
 #define MARGIN(...) it.doAutorun([=] { it.setModifier(Margin(__VA_ARGS__)); });
 #define JUSTIFY(...) it.doAutorun([=] { it.setModifier(Justify(__VA_ARGS__)); });
 #define ATTACH_OPTIONS(...) it.doAutorun([=] { it.setModifier(AttachOptions(__VA_ARGS__)); });
@@ -71,3 +70,6 @@ namespace Compose
 #define HIDDEN(...) it.doAutorun([=] { it.setModifier(Hidden(__VA_ARGS__)); });
 #define MONO_SPACE_NUMBERS(...) it.doAutorun([=] { it.setModifier(MonoSpaceNumbers(__VA_ARGS__)); });
 #define POSITION(...) it.doAutorun([=] { it.setModifier(Position(__VA_ARGS__)); });
+#define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); });
+#define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); });
+#define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); });

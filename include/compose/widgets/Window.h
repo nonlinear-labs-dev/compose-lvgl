@@ -4,6 +4,7 @@
 
 namespace Compose
 {
+  class Widget;
   class Window
   {
    public:
@@ -18,7 +19,7 @@ namespace Compose
     void setFullScreen(bool f) const;
     void setSize(int x, int y) const;
 
-    Container&& add(Container&& it) const;
+    static Widget&& add(Widget&& it);
 
    private:
     lv_display_t* m_display { nullptr };
