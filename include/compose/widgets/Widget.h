@@ -102,7 +102,7 @@ namespace Compose
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_SCROLLABLE, r.it == Scrollable::SCROLLABLE);
     }
 
-    void setModifier(BackgroundColor col) const
+    void setColor(Color col) const
     {
       const auto opacity = static_cast<unsigned char>(col.a * 255.0);
       lv_obj_set_style_bg_color(getHandle(),
@@ -115,9 +115,32 @@ namespace Compose
       lv_obj_set_style_bg_opa(getHandle(), opacity, LV_PART_MAIN);
     }
 
+    virtual void setModifier(PrimaryColor col) const
+    {
+      setColor(col);
+    }
+
+    void setModifier(BackgroundColor col) const
+    {
+      setColor(col);
+    }
+
+    void setSize(Size s) const
+    {
+      if(s.w > 0)
+        lv_obj_set_width(getHandle(), s.w);
+      if(s.h > 0)
+        lv_obj_set_height(getHandle(), s.h);
+    }
+
     void setModifier(FixedSize size) const
     {
-      lv_obj_set_size(getHandle(), size.w, size.h);
+      setSize(size);
+    }
+
+    [[deprecated]] void setModifier(MinSize size) const
+    {
+      setSize(size);
     }
 
     void setModifier(LayoutType r) const
@@ -197,6 +220,23 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
     void setModifier(Hidden h) const
     {
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_HIDDEN, h.it);
+    }
+
+    void setModifier(Expand e) const
+    {
+      if(e.horizontal)
+      {
+        lv_obj_set_width(getHandle(), LV_PCT(100));
+      }
+      if(e.vertical)
+      {
+        lv_obj_set_height(getHandle(), LV_PCT(100));
+      }
+    }
+
+    void setModifier(Homogeneous h) const
+    {
+      nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
     }
 
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);

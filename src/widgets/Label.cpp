@@ -1,5 +1,6 @@
 #include <compose/widgets/Label.h>
 #include <reactive/Computations.h>
+#include <cassert>
 
 namespace Compose
 {
@@ -23,6 +24,62 @@ namespace Compose
                                 },
                                 LV_PART_MAIN);
     lv_obj_set_style_text_opa(getHandle(), static_cast<unsigned char>(c.a * 255.0), LV_PART_MAIN);
+  }
+
+  void Label::setModifier(FontSize s) const
+  {
+#define CASE_FONT(x)                                                                                                   \
+  case x:                                                                                                              \
+    lv_obj_set_style_text_font(getHandle(), &lv_font_montserrat_##x, LV_PART_MAIN);                                    \
+    break;
+
+    switch(s.it)
+    {
+      CASE_FONT(8)
+      CASE_FONT(10)
+      CASE_FONT(12)
+      CASE_FONT(14)
+      CASE_FONT(16)
+      CASE_FONT(18)
+      CASE_FONT(20)
+      CASE_FONT(22)
+      CASE_FONT(24)
+      CASE_FONT(26)
+      CASE_FONT(28)
+      CASE_FONT(30)
+      CASE_FONT(32)
+      CASE_FONT(34)
+      CASE_FONT(36)
+      CASE_FONT(38)
+      CASE_FONT(40)
+      CASE_FONT(42)
+      CASE_FONT(44)
+      CASE_FONT(46)
+      CASE_FONT(48)
+      default:
+        nltools::Log::error("FontSize not found", s.it);
+        assert(false);
+        break;
+    }
+  }
+
+  void Label::setModifier(FontWeight s) const
+  {
+    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
+  }
+  void Label::setModifier(Justify j) const
+  {
+    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
+  }
+
+  void Label::setModifier(LabelCrop c) const
+  {
+    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
+  }
+
+  void Label::setModifier(MonoSpaceNumbers n) const
+  {
+    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
   }
 
   // void Label::setModifier(XAlign x) const

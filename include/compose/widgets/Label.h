@@ -10,6 +10,8 @@ namespace Compose
   class Label final : public Widget
   {
    public:
+    using Widget::setModifier;
+
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
@@ -23,14 +25,12 @@ namespace Compose
     void operator<<(AutorunStringCB&& cb) const;
 
     void setModifier(Text s) const;
-    void setModifier(PrimaryColor s) const;
-    // void setModifier(FontSize s) const;
-    // void setModifier(FontWeight w) const;
-    // void setModifier(XAlign x) const;
-    // void setModifier(LabelCrop c) const;
-    // void setModifier(Justify j) const;
-    // void setModifier(LetterSpacing j) const;
-    // void setModifier(MonoSpaceNumbers m) const;
+    void setModifier(PrimaryColor s) const override;
+    void setModifier(FontSize s) const;
+    void setModifier(FontWeight s) const;
+    [[deprecated]] void setModifier(Justify j) const;
+    [[deprecated]] void setModifier(LabelCrop c) const;
+    [[deprecated]] void setModifier(MonoSpaceNumbers n) const;
   };
 }
 

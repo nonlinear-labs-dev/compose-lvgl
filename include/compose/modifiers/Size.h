@@ -24,7 +24,7 @@ namespace Compose
   {
   };
 
-  struct MinSize : Size
+  struct [[deprecated]]  MinSize : Size
   {
     static MinSize GreedyWidth()
     {

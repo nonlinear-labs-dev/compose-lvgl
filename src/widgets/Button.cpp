@@ -18,6 +18,15 @@ namespace Compose
     lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CHECKABLE, t.it == ButtonType::TOGGLE);
   }
 
+  void Button::setModifier(PrimaryColor color) const
+  {
+    if(const auto label = getOrCreateLabel())
+    {
+      lv_obj_set_style_text_color(label, { .blue = color.b, .green = color.g, .red = color.r }, LV_PART_MAIN);
+      lv_obj_set_style_text_opa(label, color.a * 255, LV_PART_MAIN);
+    }
+  }
+
   lv_obj_t *Button::getOrCreateLabel() const
   {
     const auto handle = getHandle();

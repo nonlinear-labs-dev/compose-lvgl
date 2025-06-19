@@ -33,6 +33,7 @@ namespace Compose
     void setModifier(ButtonType t) const;
     void setModifier(const Text& t) const;
     void setModifier(LabelCrop c) const;
+    void setModifier(PrimaryColor color) const override;
 
    private:
     [[nodiscard]] lv_obj_t* getOrCreateLabel() const;
