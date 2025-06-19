@@ -2,6 +2,7 @@
 #include "compose/modifiers/Color.h"
 #include "compose/modifiers/Rect.h"
 #include "compose/modifiers/RoundedCorner.h"
+#include "src/draw/lv_draw.h"
 #include "src/misc/lv_types.h"
 
 #include <tuple>
@@ -35,9 +36,10 @@ namespace Compose
   class LVGLDrawContext : public DrawContext
   {
    public:
-    using tBuffer = lv_draw_buf_t *;
+    using tCanvas = lv_obj_t *;
 
-    explicit LVGLDrawContext(tBuffer ctx);
+    explicit LVGLDrawContext(tCanvas ctx);
+    ~LVGLDrawContext() override;
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void fillRect(Color color, Rect rect) override;
@@ -45,6 +47,7 @@ namespace Compose
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
 
    private:
-    tBuffer buffer;
+    lv_layer_t m_layer;
+    tCanvas m_canvas;
   };
 };

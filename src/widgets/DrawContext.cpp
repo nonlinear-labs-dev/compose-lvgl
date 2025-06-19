@@ -1,108 +1,130 @@
 #include <compose/widgets/DrawContext.h>
+#include "src/draw/lv_draw.h"
+#include "src/misc/lv_color.h"
+#include "src/misc/lv_area.h"
+#include <src/widgets/canvas/lv_canvas.h>
 
 namespace Compose
 {
-  LVGLDrawContext::LVGLDrawContext(tBuffer ctx)
-      : buffer(ctx)
+  LVGLDrawContext::LVGLDrawContext(tCanvas ctx)
+      : m_layer {}
+      , m_canvas(ctx)
   {
+    lv_canvas_init_layer(m_canvas, &m_layer);
+  }
+
+  LVGLDrawContext::~LVGLDrawContext()
+  {
+    lv_canvas_finish_layer(m_canvas, &m_layer);
   }
 
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
+    if(!m_canvas)
+      return;
 
-    // m_context->begin_new_path();
-    //
-    // auto [r, g, b, a] = style.color.normalized();
-    //
-    // m_context->set_line_width(style.width);
-    // m_context->set_source_rgba(r, g, b, a);
-    //
-    // m_context->move_to(p1.x, p1.y);
-    // m_context->line_to(p2.x, p2.y);
-    //
-    // m_context->stroke();
+    lv_draw_line_dsc_t line_dsc;
+    lv_draw_line_dsc_init(&line_dsc);
+    line_dsc.p1.x = p1.x;
+    line_dsc.p1.y = p1.y;
+    line_dsc.p2.x = p2.x;
+    line_dsc.p2.y = p2.y;
+    line_dsc.color = lv_color_make(style.color.r, style.color.g, style.color.b);
+    line_dsc.width = style.width;
+    line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+
+    lv_draw_line(&m_layer, &line_dsc);
   }
 
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
-    // m_context->begin_new_path();
-    // auto [r, g, b, a] = style.color.normalized();
-    // m_context->set_line_width(style.width);
-    //
-    // m_context->set_source_rgba(r, g, b, a);
-    // m_context->rectangle(rect.pos.x, rect.pos.y, rect.size.w, rect.size.h);
-    // m_context->stroke();
+    if(!m_canvas)
+      return;
+
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_opa = LV_OPA_TRANSP;
+    rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
+    rect_dsc.border_width = style.width;
+    rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+
+    lv_area_t area;
+    area.x1 = rect.pos.x;
+    area.y1 = rect.pos.y;
+    area.x2 = rect.pos.x + rect.size.w - 1;
+    area.y2 = rect.pos.y + rect.size.h - 1;
+
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
-    // m_context->begin_new_path();
-    // auto [r, g, b, a] = color.normalized();
-    // m_context->set_source_rgba(r, g, b, a);
-    // m_context->rectangle(rect.pos.x, rect.pos.y, rect.size.w, rect.size.h);
-    // m_context->fill();
+    if(!m_canvas)
+      return;
+
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
+    rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
+    rect_dsc.border_opa = LV_OPA_TRANSP;
+
+    lv_area_t area;
+    area.x1 = rect.pos.x;
+    area.y1 = rect.pos.y;
+    area.x2 = rect.pos.x + rect.size.w - 1;
+    area.y2 = rect.pos.y + rect.size.h - 1;
+
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-    const auto x = rect.pos.x;
-    const auto y = rect.pos.y;
-    const auto w = rect.size.w;
-    const auto h = rect.size.h;
+    if(!m_canvas)
+      return;
 
-    const auto r1 = rc.topLeft;
-    const auto r2 = rc.topRight;
-    const auto r3 = rc.bottomRight;
-    const auto r4 = rc.bottomLeft;
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
+    rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
+    rect_dsc.border_opa = LV_OPA_TRANSP;
+    rect_dsc.radius = LV_MIN(rc.topLeft, LV_MIN(rc.topRight, LV_MIN(rc.bottomRight, rc.bottomLeft)));
 
-    // m_context->begin_new_path();
-    // auto [r, g, b, a] = color.normalized();
-    // m_context->set_source_rgba(r, g, b, a);
-    // m_context->move_to(x, y + r1);
-    // // curve top-left (r1)
-    // m_context->curve_to(x, y, x + r1, y, x + r1, y);
-    // // top
-    // m_context->line_to(x + w - r2, y);
-    // // curve top-right (r2)
-    // m_context->curve_to(x + w - r2, y, x + w, y, x + w, y + r2);
-    // // right
-    // m_context->line_to(x + w, y + h - r3);
-    // // curve bottom-right (r3)
-    // m_context->curve_to(x + w, y + h, x + w - r3, y + h, x + w - r3, y + h);
-    // // bottom
-    // m_context->line_to(x + r4, y + h);
-    // // curve bottom-left (r4)
-    // m_context->curve_to(x, y + h, x, y + h - r4, x, y + h - r4);
-    // // left
-    // m_context->line_to(x, y + r1);
-    // m_context->close_path();
-    // m_context->fill();
+    lv_area_t area;
+    area.x1 = rect.pos.x;
+    area.y1 = rect.pos.y;
+    area.x2 = rect.pos.x + rect.size.w - 1;
+    area.y2 = rect.pos.y + rect.size.h - 1;
+
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
   void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points)
   {
-    if(points.size() < 3)
-    {
+    if(points.size() < 3 || !m_canvas)
       return;
+
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = lv_color_make(fill.r, fill.g, fill.b);
+    rect_dsc.bg_opa = static_cast<lv_opa_t>(fill.a * 255.0);
+    rect_dsc.border_color = lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b);
+    rect_dsc.border_width = stroke.width;
+    rect_dsc.border_opa = static_cast<lv_opa_t>(stroke.color.a * 255.0);
+
+    lv_area_t area;
+    area.x1 = points[0].x;
+    area.y1 = points[0].y;
+    area.x2 = points[0].x;
+    area.y2 = points[0].y;
+
+    for(const auto &point : points)
+    {
+      area.x1 = LV_MIN(area.x1, point.x);
+      area.y1 = LV_MIN(area.y1, point.y);
+      area.x2 = LV_MAX(area.x2, point.x);
+      area.y2 = LV_MAX(area.y2, point.y);
     }
 
-    // m_context->begin_new_path();
-    //
-    // auto [fr, fg, fb, fa] = fill.normalized();
-    // m_context->set_source_rgba(fr, fg, fb, fa);
-    //
-    // m_context->move_to(points[0].x, points[0].y);
-    // for(size_t i = 1; i < points.size(); ++i)
-    // {
-    //   m_context->line_to(points[i].x, points[i].y);
-    // }
-    // m_context->close_path();
-    // m_context->fill_preserve();
-    //
-    // auto [sr, sg, sb, sa] = stroke.color.normalized();
-    // m_context->set_line_width(stroke.width);
-    // m_context->set_source_rgba(sr, sg, sb, sa);
-    // m_context->stroke();
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
-
 }
