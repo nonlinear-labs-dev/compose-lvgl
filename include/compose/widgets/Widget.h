@@ -239,6 +239,34 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
     }
 
+    struct FitContent
+    {
+      bool it;
+    };
+
+    void setModifier(FitContent c) const
+    {
+      if(c.it)
+      {
+        lv_obj_set_size(getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+      }
+      else
+      {
+        lv_obj_set_size(getHandle(), getWidth(), getHeight());
+      }
+    }
+
+    struct SizePercentage
+    {
+      int w;
+      int h;
+    };
+
+    void setModifier(SizePercentage s) const
+    {
+      lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
+    }
+
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);
     std::shared_ptr<StateChange<Widget>> stateChangeHandler = std::make_shared<StateChange<Widget>>(*this);
   };

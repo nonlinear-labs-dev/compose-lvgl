@@ -32,5 +32,8 @@ namespace Compose
   it.add(std::move(Compose::Container::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Widget &&it)
 #define COLUMN(...)                                                                                                    \
   it.add(std::move(Compose::Container::_COLUMN(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Widget &&it)
-#define VSPACER(...) it.add(std::move(Compose::Container::V_SPACER(it __VA_OPT__(, __VA_ARGS__))));
-#define HSPACER(...) it.add(std::move(Compose::Container::H_SPACER(it __VA_OPT__(, __VA_ARGS__))));
+// #define VSPACER(...) it.add(std::move(Compose::Container::V_SPACER(it __VA_OPT__(, __VA_ARGS__))));
+// #define HSPACER(...) it.add(std::move(Compose::Container::H_SPACER(it __VA_OPT__(, __VA_ARGS__))));
+
+#define VSPACER(...) ;
+#define HSPACER(...) ;
