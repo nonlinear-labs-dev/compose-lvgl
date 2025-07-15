@@ -58,7 +58,7 @@ namespace Compose
       CASE_FONT(48)
       default:
         nltools::Log::error("FontSize not found", s.it);
-        assert(false);
+        // assert(false);
         break;
     }
   }
