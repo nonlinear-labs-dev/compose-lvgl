@@ -17,6 +17,16 @@ namespace Compose
       NONE,
       FLEX,
     } it;
+
+    static constexpr LayoutType none()
+    {
+      return { NONE };
+    }
+
+    static constexpr LayoutType flex()
+    {
+      return { FLEX };
+    }
   };
 
   struct Border
@@ -44,7 +54,7 @@ namespace Compose
       lv_style_set_border_width(&defaultStyle, 0);
       lv_style_set_pad_all(&defaultStyle, 0);
       lv_style_set_margin_all(&defaultStyle, 0);
-      lv_style_set_layout(&defaultStyle, LV_LAYOUT_NONE);
+      lv_style_set_layout(&defaultStyle, LV_LAYOUT_FLEX);
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
     }
 
@@ -67,7 +77,9 @@ namespace Compose
         : BaseWidget(w)
     {
       applyDefaultStyle(w);
-      setModifier(Scrollable(Scrollable::FIXED));
+      // setModifier(FitContent { true });
+      // setModifier(LayoutType::flex());
+      // setModifier(Scrollable(Scrollable::FIXED));
     }
 
     [[nodiscard]] int getWidth() const
@@ -239,11 +251,6 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
     }
 
-    struct FitContent
-    {
-      bool it;
-    };
-
     void setModifier(FitContent c) const
     {
       if(c.it)
@@ -256,11 +263,10 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       }
     }
 
-    struct SizePercentage
+    void setModifier(SizeVariant v) const
     {
-      int w;
-      int h;
-    };
+      std::visit([this](auto &&it) { setModifier(it); }, v.it);
+    }
 
     void setModifier(SizePercentage s) const
     {

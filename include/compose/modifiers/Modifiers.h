@@ -37,6 +37,68 @@ namespace Compose
   {
     std::string id;
   };
+
+  struct FitContent
+  {
+
+    FitContent()
+        : it { true }
+    {
+    }
+
+    explicit FitContent(bool b)
+        : it { b }
+    {
+    }
+
+    bool it;
+  };
+
+  struct SizePercentage
+  {
+    int w;
+    int h;
+  };
+
+  struct SizeVariant
+  {
+    SizeVariant(auto it)
+        : it(it)
+    {
+    }
+
+    static SizeVariant FIXED(int w, int h)
+    {
+      return SizeVariant { FixedSize { w, h } };
+    }
+
+    static SizeVariant FIT_CONTENT()
+    {
+      return SizeVariant { FitContent() };
+    }
+
+    static SizeVariant EXPAND_WIDTH()
+    {
+      return SizeVariant { FixedSize { LV_PCT(100), LV_SIZE_CONTENT } };
+    }
+
+    static SizeVariant EXPAND_HEIGHT()
+    {
+      return SizeVariant { FixedSize { LV_SIZE_CONTENT, LV_PCT(100) } };
+    }
+
+    static SizeVariant EXPAND_BOTH()
+    {
+      return SizeVariant { SizePercentage { 100, 100 } };
+    }
+
+    static SizeVariant PERCENTAGE(int w, int h)
+    {
+      return SizeVariant { SizePercentage { w, h } };
+    }
+
+    std::variant<SizePercentage, FixedSize, FitContent> it;
+  };
 }
 
 #define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
@@ -73,3 +135,4 @@ namespace Compose
 #define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); });
 #define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); });
 #define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); });
+#define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
