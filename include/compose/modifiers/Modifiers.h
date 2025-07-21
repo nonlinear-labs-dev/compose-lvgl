@@ -77,9 +77,19 @@ namespace Compose
       return SizeVariant { FitContent() };
     }
 
+    static SizeVariant EXPAND_WIDTH(int fixedH)
+    {
+      return SizeVariant { FixedSize { LV_PCT(100), fixedH } };
+    }
+
     static SizeVariant EXPAND_WIDTH()
     {
       return SizeVariant { FixedSize { LV_PCT(100), LV_SIZE_CONTENT } };
+    }
+
+    static SizeVariant EXPAND_HEIGHT(int fixedW)
+    {
+      return SizeVariant { FixedSize { fixedW, LV_PCT(100) } };
     }
 
     static SizeVariant EXPAND_HEIGHT()

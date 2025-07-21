@@ -21,7 +21,12 @@ namespace Compose
 
   [[noreturn]] void Application::runBlocking(const tCallback& callback) const
   {
-    Window window { m_backend, Size::ScreenSize() };
+    Size windowSize = Size::ScreenSize();
+
+    if constexpr(DEV_PC)
+      windowSize = { 800, 600 };
+
+    Window window { m_backend, windowSize };
     const Reactive::Computations c;
     c.add([&] { callback(window); });
     auto lastTick = std::chrono::high_resolution_clock::now();
