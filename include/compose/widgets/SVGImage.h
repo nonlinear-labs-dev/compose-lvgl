@@ -19,7 +19,7 @@ namespace Compose
 
     void setModifier(const SVGPath& p) const;
     void setModifier(PixelSize s) const;
-    void setModifier(PrimaryColor col) const;
+    void setModifier(PrimaryColor col) const override;
   };
 }
 

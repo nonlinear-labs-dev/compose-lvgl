@@ -21,7 +21,6 @@ namespace Compose
     explicit CustomDrawingElement(Widget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
-      lv_obj_set_style_margin_all(getHandle(), 0, 0);
       (setModifier(args), ...);
     }
 

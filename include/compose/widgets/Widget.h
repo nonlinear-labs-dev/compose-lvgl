@@ -78,7 +78,6 @@ namespace Compose
         : BaseWidget(w)
     {
       applyDefaultStyle(w);
-      // setModifier(FitContent { true });
       // setModifier(LayoutType::flex());
       // setModifier(Scrollable(Scrollable::FIXED));
     }

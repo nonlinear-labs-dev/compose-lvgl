@@ -7,12 +7,12 @@ namespace Compose
   {
     template <typename... tArgs> static Widget _ROW(tArgs... args)
     {
-      return Widget(args..., Orientation::HORIZONTAL());
+      return Widget(args..., Orientation::HORIZONTAL(), FitContent { true });
     }
 
     template <typename... tArgs> static Widget _COLUMN(tArgs... args)
     {
-      return Widget(args..., Orientation::VERTICAL());
+      return Widget(args..., Orientation::VERTICAL(), FitContent { true });
     }
 
     template <typename... tArgs> static Widget V_SPACER(tArgs... args)
@@ -28,8 +28,7 @@ namespace Compose
 }
 
 #define CONTAINER(...) it.add(Compose::Widget(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Widget &&it)
-#define ROW(...)                                                                                                       \
-  it.add(std::move(Compose::Container::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Widget &&it)
+#define ROW(...) it.add(std::move(Compose::Container::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Widget &&it)
 #define COLUMN(...)                                                                                                    \
   it.add(std::move(Compose::Container::_COLUMN(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Widget &&it)
 // #define VSPACER(...) it.add(std::move(Compose::Container::V_SPACER(it __VA_OPT__(, __VA_ARGS__))));
