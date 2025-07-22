@@ -18,6 +18,7 @@ namespace Compose
     explicit Label(BaseWidget& parent, tArgs... args)
         : Widget(lv_label_create(parent.getHandle()))
     {
+      setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
     }
 
@@ -27,10 +28,6 @@ namespace Compose
     void setModifier(Text s) const;
     void setModifier(PrimaryColor s) const override;
     void setModifier(FontSize s) const;
-    void setModifier(FontWeight s) const;
-    [[deprecated]] void setModifier(Justify j) const;
-    [[deprecated]] void setModifier(LabelCrop c) const;
-    [[deprecated]] void setModifier(MonoSpaceNumbers n) const;
   };
 }
 

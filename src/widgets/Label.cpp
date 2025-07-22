@@ -63,25 +63,6 @@ namespace Compose
     }
   }
 
-  void Label::setModifier(FontWeight s) const
-  {
-    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
-  }
-  void Label::setModifier(Justify j) const
-  {
-    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
-  }
-
-  void Label::setModifier(LabelCrop c) const
-  {
-    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
-  }
-
-  void Label::setModifier(MonoSpaceNumbers n) const
-  {
-    nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
-  }
-
   // void Label::setModifier(XAlign x) const
   // {
   //   switch(x.it)

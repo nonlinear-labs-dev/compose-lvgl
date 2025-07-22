@@ -23,12 +23,4 @@ namespace Compose
   struct FixedSize : Size
   {
   };
-
-  struct [[deprecated]]  MinSize : Size
-  {
-    static MinSize GreedyWidth()
-    {
-      return MinSize { c_screenWidthInPixels, 0 };
-    }
-  };
 }

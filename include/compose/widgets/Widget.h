@@ -150,11 +150,6 @@ namespace Compose
       setSize(size);
     }
 
-    [[deprecated]] void setModifier(MinSize size) const
-    {
-      setSize(size);
-    }
-
     void setModifier(LayoutType r) const
     {
       lv_obj_set_layout(getHandle(), r.it == LayoutType::FLEX ? LV_LAYOUT_FLEX : LV_LAYOUT_NONE);
@@ -244,11 +239,6 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       {
         lv_obj_set_height(getHandle(), LV_PCT(100));
       }
-    }
-
-    void setModifier(Homogeneous h) const
-    {
-      nltools::Log::error(__PRETTY_FUNCTION__, "not implemented");
     }
 
     void setModifier(FitContent c) const
