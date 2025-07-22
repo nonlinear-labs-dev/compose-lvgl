@@ -53,6 +53,7 @@ namespace Compose
       lv_style_set_radius(&defaultStyle, 0);
       lv_style_set_border_width(&defaultStyle, 0);
       lv_style_set_pad_all(&defaultStyle, 0);
+      lv_style_set_pad_gap(&defaultStyle, 0);
       lv_style_set_margin_all(&defaultStyle, 0);
       lv_style_set_layout(&defaultStyle, LV_LAYOUT_FLEX);
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
