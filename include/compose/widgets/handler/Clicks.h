@@ -4,11 +4,7 @@
 #include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
 #include <memory>
-
-namespace Gtk
-{
-  class Widget;
-}
+#include <compose/widgets/BaseWidget.h>
 
 namespace Compose
 {
@@ -18,9 +14,35 @@ namespace Compose
     tHandle& widget;
     std::function<void()> m_callback;
 
+    lv_event_dsc_t* debugDesc;
+
+    lv_obj_t* widgetPtr;
+
     explicit LeftClick(tHandle& widget)
         : widget(widget)
     {
+      auto handle = widget.getHandle();
+      widgetPtr = handle;
+      debugDesc = lv_obj_add_event_cb(
+          handle,
+          [](lv_event_t* e)
+          {
+            if(lv_event_get_code(e) == LV_EVENT_CLICKED)
+            {
+              const auto target = static_cast<lv_obj_t*>(lv_event_get_target(e));
+              nltools::Log::error(std::format("Our ID: {}", BaseWidget(target).getID()));
+              if(const auto parent = lv_obj_get_parent(target))
+              {
+                nltools::Log::error(std::format("Parent ID: {}", BaseWidget(parent).getID()));
+              }
+            }
+          },
+          LV_EVENT_ALL, this);
+    }
+
+    ~LeftClick()
+    {
+      lv_obj_remove_event_dsc(widgetPtr, debugDesc);
     }
 
     template <typename tCB> void operator<<(const tCB& cb)
@@ -63,8 +85,7 @@ namespace Compose
     }
   };
 
-  template <typename tHandle>
-  class StateChange : public std::enable_shared_from_this<StateChange<tHandle>>
+  template <typename tHandle> class StateChange : public std::enable_shared_from_this<StateChange<tHandle>>
   {
    public:
     tHandle& widget;

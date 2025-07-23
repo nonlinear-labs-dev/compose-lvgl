@@ -27,6 +27,7 @@ namespace Compose
     explicit Button(Widget& parent, tArgs... args)
         : Widget(lv_button_create(parent.getHandle()))
     {
+      applyDefaultStyle(BaseWidget::getHandle());
       (setModifier(args), ...);
     }
 

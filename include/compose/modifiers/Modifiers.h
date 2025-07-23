@@ -55,9 +55,24 @@ namespace Compose
     int h;
   };
 
+  struct Width
+  {
+    int it;
+  };
+
+  struct Height
+  {
+    int it;
+  };
+
+  struct FlexGrow
+  {
+    int it;
+  };
+
   struct SizeVariant
   {
-    SizeVariant(auto it)
+    explicit SizeVariant(auto it)
         : it(it)
     {
     }
@@ -102,11 +117,37 @@ namespace Compose
       return SizeVariant { SizePercentage { w, h } };
     }
 
-    std::variant<SizePercentage, FixedSize, FitContent> it;
+    static SizeVariant WIDTH_FIXED(int w)
+    {
+      return SizeVariant { Width { w } };
+    }
+
+    static SizeVariant WIDTH_PERCENT(int w)
+    {
+      return SizeVariant { Width { LV_PCT(w) } };
+    }
+
+    static SizeVariant HEIGHT_FIXED(int h)
+    {
+      return SizeVariant { Height { h } };
+    }
+
+    static SizeVariant HEIGHT_PERCENT(int h)
+    {
+      return SizeVariant { Height { LV_PCT(h) } };
+    }
+
+    static SizeVariant FLEX_GROW(int g)
+    {
+      return SizeVariant { FlexGrow { g } };
+    }
+
+    std::variant<SizePercentage, FixedSize, FitContent, Width, Height, FlexGrow> it;
   };
 }
 
 #define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
+#define TEXT_ALIGN(...) it.doAutorun([=] { it.setModifier(Label::TextAlign { __VA_ARGS__ }); });
 #define MARGIN(...) it.doAutorun([=] { it.setModifier(Margin(__VA_ARGS__)); });
 #define ATTACH_OPTIONS(...) it.doAutorun([=] { it.setModifier(AttachOptions(__VA_ARGS__)); });
 #define ORIENTATION(...) it.doAutorun([=] { it.setModifier(Orientation(__VA_ARGS__)); });
@@ -134,3 +175,4 @@ namespace Compose
 #define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); });
 #define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); });
 #define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
+#define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });

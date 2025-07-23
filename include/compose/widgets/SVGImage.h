@@ -14,15 +14,16 @@ namespace Compose
     explicit SVGImage(BaseWidget& parent, tArgs... args)
         : Widget(lv_image_create(parent.getHandle()))
     {
+      applyDefaultStyle(BaseWidget::getHandle());
       (setModifier(args), ...);
     }
 
     void setModifier(const SVGPath& p) const;
     void setModifier(PixelSize s) const;
     void setModifier(PrimaryColor col) const override;
-    
+
     Size getViewboxSize() const;
   };
 }
 
-#define IMAGE(...) it.add(Compose::SVGImage(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGImage && it)
+#define IMAGE(...) it.add(Compose::SVGImage(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGImage&& it)

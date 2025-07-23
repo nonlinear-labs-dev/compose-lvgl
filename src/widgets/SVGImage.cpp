@@ -13,8 +13,8 @@ namespace Compose
       const auto [w, h] = p.size.value();
       lv_obj_set_size(getHandle(), p.size.value().w, p.size.value().h);
       constexpr static auto baseZoom = 256;
-      const auto scaleX = w / static_cast<float>(viewboxSize.w);
-      const auto scaleY = h / static_cast<float>(viewboxSize.h);
+      const auto scaleX = static_cast<float>(w) / static_cast<float>(viewboxSize.w);
+      const auto scaleY = static_cast<float>(h) / static_cast<float>(viewboxSize.h);
       lv_image_set_scale_x(getHandle(), scaleX * baseZoom);
       lv_image_set_scale_y(getHandle(), scaleY * baseZoom);
     }
@@ -22,17 +22,18 @@ namespace Compose
 
   void SVGImage::setModifier(PrimaryColor c) const
   {
-    lv_obj_style_apply_recolor(getHandle(), LV_PART_MAIN,
-                               {
-                                   .blue = c.b,
-                                   .green = c.g,
-                                   .red = c.r,
-                               });
+    lv_obj_set_style_image_recolor_opa(getHandle(), LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_image_recolor(getHandle(),
+                                   {
+                                       .blue = c.b,
+                                       .green = c.g,
+                                       .red = c.r,
+                                   },
+                                   LV_PART_MAIN);
   }
 
   Size SVGImage::getViewboxSize() const
   {
-    return Size { static_cast<int>(lv_image_get_src_width(getHandle())),
-                  static_cast<int>(lv_image_get_src_height(getHandle())) };
+    return Size { lv_image_get_src_width(getHandle()), lv_image_get_src_height(getHandle()) };
   }
 }

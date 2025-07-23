@@ -19,7 +19,11 @@ namespace Compose
     void setFullScreen(bool f) const;
     void setSize(int x, int y) const;
 
-    static Widget&& add(Widget&& it);
+    template <typename T> static T&& add(T&& it)
+    {
+      lv_screen_load(it.getHandle());
+      return std::forward<T>(it);
+    }
 
    private:
     lv_display_t* m_display { nullptr };

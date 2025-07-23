@@ -17,17 +17,12 @@ namespace Compose
     {
     }
 
-    constexpr Padding(int l, int r, int t, int b)
+    constexpr Padding(int t, int b, int l, int r)
         : left(l)
         , right(r)
         , top(t)
         , bottom(b)
     {
-    }
-
-    std::string cssRuleText() const
-    {
-      return std::format("padding: {}px {}px {}px {}px;", top, right, bottom, left);
     }
 
     constexpr static Padding ZERO()

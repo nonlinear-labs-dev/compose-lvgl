@@ -40,10 +40,4 @@ namespace Compose
   {
     lv_display_set_resolution(m_display, x, y);
   }
-
-  Widget &&Window::add(Widget &&it)
-  {
-    lv_screen_load(it.getHandle());
-    return std::move(it);
-  }
 }

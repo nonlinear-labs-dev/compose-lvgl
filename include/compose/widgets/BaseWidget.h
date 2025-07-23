@@ -17,6 +17,7 @@ class BaseWidget
 {
   using tType = lv_obj_t;
   static constexpr auto c_computationsKey = "Computations";
+  static constexpr auto c_nameKey = "Name";
 
   struct UserDataEntry
   {
@@ -56,6 +57,16 @@ class BaseWidget
   explicit BaseWidget(WidgetType* w)
       : m_widget(w)
   {
+  }
+
+  void setID(const std::string& id) const
+  {
+    ensureDataForKeyExistsOwning<std::string>(c_nameKey) = id;
+  }
+
+  [[nodiscard]] const std::string& getID() const
+  {
+    return ensureDataForKeyExistsOwning<std::string>(c_nameKey);
   }
 
   template <typename T> T* getData(auto key) const

@@ -106,6 +106,11 @@ namespace Compose
       return { 0, 0, 255 };
     }
 
+    static constexpr Color YELLOW()
+    {
+      return { 255, 255, 0 };
+    }
+
     static constexpr Color BLACK()
     {
       return { 0, 0, 0 };

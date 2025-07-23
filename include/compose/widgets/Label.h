@@ -18,12 +18,23 @@ namespace Compose
     explicit Label(BaseWidget& parent, tArgs... args)
         : Widget(lv_label_create(parent.getHandle()))
     {
+      applyDefaultStyle(BaseWidget::getHandle());
       setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
     }
 
     explicit Label(WidgetType* handle);
     void operator<<(AutorunStringCB&& cb) const;
+
+    struct TextAlign
+    {
+      lv_text_align_t it;
+    };
+
+    void setModifier(TextAlign a) const
+    {
+      lv_obj_set_style_text_align(getHandle(), a.it, LV_PART_MAIN);
+    }
 
     void setModifier(Text s) const;
     void setModifier(PrimaryColor s) const override;

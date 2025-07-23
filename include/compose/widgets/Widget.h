@@ -5,6 +5,7 @@
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
+#include "nltools/Assert.h"
 
 namespace Compose
 {
@@ -56,7 +57,9 @@ namespace Compose
       lv_style_set_pad_gap(&defaultStyle, 0);
       lv_style_set_margin_all(&defaultStyle, 0);
       lv_style_set_layout(&defaultStyle, LV_LAYOUT_FLEX);
+      lv_style_set_flex_grow(&defaultStyle, 1);
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
+      lv_obj_set_size(getHandle(), 0, 0);
     }
 
     template <typename... tArgs>
@@ -64,6 +67,7 @@ namespace Compose
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
+      applyDefaultStyle(BaseWidget::getHandle());
       (setModifier(args), ...);
     }
 
@@ -71,15 +75,13 @@ namespace Compose
     explicit Widget(BaseWidget &w, tArgs... args)
         : Widget(lv_obj_create(w.getHandle()))
     {
+      applyDefaultStyle(BaseWidget::getHandle());
       (setModifier(args), ...);
     }
 
     explicit Widget(WidgetType *w)
         : BaseWidget(w)
     {
-      applyDefaultStyle(w);
-      // setModifier(LayoutType::flex());
-      // setModifier(Scrollable(Scrollable::FIXED));
     }
 
     [[nodiscard]] int getWidth() const
@@ -139,10 +141,9 @@ namespace Compose
 
     void setSize(Size s) const
     {
-      if(s.w > 0)
-        lv_obj_set_width(getHandle(), s.w);
-      if(s.h > 0)
-        lv_obj_set_height(getHandle(), s.h);
+      lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+      lv_obj_set_width(getHandle(), s.w);
+      lv_obj_set_height(getHandle(), s.h);
     }
 
     void setModifier(FixedSize size) const
@@ -177,6 +178,11 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
      */
     void setModifier(Position pos) const
     {
+      if(const auto parent = lv_obj_get_parent(getHandle()))
+      {
+        nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
+                                     "position only works with LAYOUT_TYPE NONE");
+      }
       lv_obj_set_pos(getHandle(), pos.x, pos.y);
     }
 
@@ -187,20 +193,18 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
 
     void setModifier(Padding padding) const
     {
-      auto [left, top, right, bottom] = padding;
-      lv_obj_set_style_pad_left(getHandle(), left, LV_PART_MAIN);
-      lv_obj_set_style_pad_top(getHandle(), top, LV_PART_MAIN);
-      lv_obj_set_style_pad_right(getHandle(), right, LV_PART_MAIN);
-      lv_obj_set_style_pad_bottom(getHandle(), bottom, LV_PART_MAIN);
+      lv_obj_set_style_pad_left(getHandle(), padding.left, LV_PART_MAIN);
+      lv_obj_set_style_pad_top(getHandle(), padding.top, LV_PART_MAIN);
+      lv_obj_set_style_pad_right(getHandle(), padding.right, LV_PART_MAIN);
+      lv_obj_set_style_pad_bottom(getHandle(), padding.bottom, LV_PART_MAIN);
     }
 
     void setModifier(Margin margin) const
     {
-      auto [left, top, right, bottom] = margin;
-      lv_obj_set_style_margin_left(getHandle(), left, LV_PART_MAIN);
-      lv_obj_set_style_margin_top(getHandle(), top, LV_PART_MAIN);
-      lv_obj_set_style_margin_right(getHandle(), right, LV_PART_MAIN);
-      lv_obj_set_style_margin_bottom(getHandle(), bottom, LV_PART_MAIN);
+      lv_obj_set_style_margin_left(getHandle(), margin.left, LV_PART_MAIN);
+      lv_obj_set_style_margin_top(getHandle(), margin.top, LV_PART_MAIN);
+      lv_obj_set_style_margin_right(getHandle(), margin.right, LV_PART_MAIN);
+      lv_obj_set_style_margin_bottom(getHandle(), margin.bottom, LV_PART_MAIN);
     }
 
     void setModifier(Border border) const
@@ -260,7 +264,43 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
 
     void setModifier(SizePercentage s) const
     {
+      lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
+    }
+
+    void setModifier(Width w) const
+    {
+      if(const auto parent = lv_obj_get_parent(getHandle());
+         lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+      {
+        lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+      }
+      lv_obj_set_width(getHandle(), w.it);
+    }
+
+    void setModifier(Height h) const
+    {
+      if(const auto parent = lv_obj_get_parent(getHandle());
+         lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
+      {
+        lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+      }
+      lv_obj_set_height(getHandle(), h.it);
+    }
+
+    void setModifier(FlexGrow g) const
+    {
+      lv_obj_set_style_flex_grow(getHandle(), g.it, LV_PART_MAIN);
+    }
+
+    struct Name
+    {
+      std::string name;
+    };
+
+    void setModifier(const Name &n) const
+    {
+      setID(n.name);
     }
 
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);

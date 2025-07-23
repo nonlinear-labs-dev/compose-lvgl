@@ -21,6 +21,7 @@ namespace Compose
     explicit CustomDrawingElement(Widget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
+      applyDefaultStyle(BaseWidget::getHandle());
       (setModifier(args), ...);
     }
 
@@ -38,5 +39,5 @@ namespace Compose
 }
 
 #define CANVAS(...)                                                                                                    \
-  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement && it)
+  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement &&it)
 #define RENDER it.render << [=]
