@@ -15,6 +15,7 @@
 #include "PixelSize.h"
 #include "Hidden.h"
 #include "Position.h"
+#include <variant>
 
 template <typename tOut, typename tIn> tOut to(tIn in)
 {

@@ -4,6 +4,8 @@
 #include "compose/widgets/Window.h"
 #include "src/misc/lv_timer.h"
 #include "src/tick/lv_tick.h"
+
+#include <SDL_events.h>
 #include <lvgl.h>
 
 #include <chrono>
@@ -19,7 +21,7 @@ namespace Compose
     lv_fs_posix_init();
   }
 
-  [[noreturn]] void Application::runBlocking(const tCallback& callback) const
+  void Application::runBlocking(const tCallback& callback) const
   {
     Size windowSize = Size::ScreenSize();
 
@@ -31,7 +33,9 @@ namespace Compose
     c.add([&] { callback(window); });
     auto lastTick = std::chrono::high_resolution_clock::now();
 
-    while(true)
+    bool run = true;
+
+    while(run)
     {
       Glib::MainContext::get_default()->iteration(false);
       std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -41,5 +45,8 @@ namespace Compose
       lastTick = current;
       lv_timer_handler();
     }
+
+    [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
+
   }
 }

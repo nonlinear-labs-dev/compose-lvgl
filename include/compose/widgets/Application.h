@@ -15,7 +15,7 @@ namespace Compose
     using tCallback = std::function<void(Window &)>;
 
     explicit Application(Window::Backend backend);
-    [[noreturn]] void runBlocking(const tCallback &callback) const;
+    void runBlocking(const tCallback &callback) const;
 
     void operator<<(const tCallback &callback) const
     {

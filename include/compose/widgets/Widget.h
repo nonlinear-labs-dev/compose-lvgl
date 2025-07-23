@@ -7,6 +7,8 @@
 #include "compose/modifiers/Scrollable.h"
 #include "nltools/Assert.h"
 
+#include <cassert>
+
 namespace Compose
 {
   class Window;
@@ -60,6 +62,7 @@ namespace Compose
       lv_style_set_flex_grow(&defaultStyle, 1);
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), 0, 0);
+      lv_obj_add_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE);
     }
 
     template <typename... tArgs>
@@ -104,6 +107,7 @@ namespace Compose
     virtual void clear()
     {
       lv_obj_clean(getHandle());
+      clearUserData();
     }
 
     void setModifier(OverflowBehaviour r) const
@@ -303,6 +307,44 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       setID(n.name);
     }
 
+    struct HhoLeftClick
+    {
+      Widget &self;
+      using CB = std::function<void()>;
+
+      struct LeftClickData
+      {
+        LeftClickData(lv_obj_t *handle, CB cb)
+            : m_handle(handle)
+            , m_callback(cb)
+        {
+          m_handler = lv_obj_add_event_cb(
+              handle,
+              [](lv_event_t *e)
+              {
+                auto user_data = static_cast<LeftClickData *>(lv_event_get_user_data(e));
+                user_data->m_callback();
+              },
+              LV_EVENT_CLICKED, this);
+        }
+
+        ~LeftClickData()
+        {
+          lv_obj_remove_event_dsc(m_handle, m_handler);
+        }
+
+        lv_obj_t *m_handle;
+        std::function<void()> m_callback;
+        lv_event_dsc_t *m_handler;
+      };
+
+      void operator<<(const std::function<void()> &cb)
+      {
+        assert(!self.getData<LeftClickData>("left-click"));
+        self.ensureDataForKeyExistsOwning<LeftClickData>("left-click", [this, cb] { return new LeftClickData(self.getHandle(), cb); });
+      }
+    } hhoLeftClick { *this };
+
     std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);
     std::shared_ptr<StateChange<Widget>> stateChangeHandler = std::make_shared<StateChange<Widget>>(*this);
   };
@@ -325,3 +367,5 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
         });
   }
 }
+
+#define HHO_LEFT_CLICK() it.hhoLeftClick << [=]

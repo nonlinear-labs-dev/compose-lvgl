@@ -18,6 +18,7 @@ class BaseWidget
   using tType = lv_obj_t;
   static constexpr auto c_computationsKey = "Computations";
   static constexpr auto c_nameKey = "Name";
+  static constexpr auto c_leftClickKey = "LeftClick";
 
   struct UserDataEntry
   {
@@ -85,12 +86,17 @@ class BaseWidget
 
   template <typename T> T& ensureDataForKeyExistsOwning(auto key) const
   {
+    return ensureDataForKeyExistsOwning<T>(key, [] { return new T(); });
+  }
+
+  template <typename T, typename Factory> T& ensureDataForKeyExistsOwning(auto key, const Factory& factory) const
+  {
     auto storage = ensureUserDataStorage();
     auto it = storage->entries.find(key);
 
     if(it == storage->entries.end() || !it->second)
     {
-      auto data = new T();
+      auto data = factory();
       auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { delete static_cast<T*>(p); });
       storage->entries[key] = std::move(entry);
       return *data;
@@ -113,6 +119,12 @@ class BaseWidget
     }
 
     return *static_cast<T*>(it->second->data);
+  }
+
+  void clearUserData()
+  {
+    auto storage = ensureUserDataStorage();
+    erase_if(storage->entries, [](const auto& it) { return it.first != c_computationsKey; });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const
