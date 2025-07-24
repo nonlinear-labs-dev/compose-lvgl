@@ -27,11 +27,6 @@ namespace Compose
     explicit Label(WidgetType* handle);
     void operator<<(AutorunStringCB&& cb) const;
 
-    struct TextAlign
-    {
-      lv_text_align_t it;
-    };
-
     void setModifier(TextAlign a) const
     {
       lv_obj_set_style_text_align(getHandle(), a.it, LV_PART_MAIN);

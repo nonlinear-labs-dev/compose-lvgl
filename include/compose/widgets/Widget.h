@@ -71,6 +71,7 @@ namespace Compose
     {
       lv_screen_load(BaseWidget::getHandle());
       applyDefaultStyle(BaseWidget::getHandle());
+      setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
     }
 
@@ -79,6 +80,7 @@ namespace Compose
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
+      setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
     }
 
@@ -189,13 +191,6 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       }
       lv_obj_set_pos(getHandle(), pos.x, pos.y);
     }
-
-    struct FlexAlign
-    {
-      lv_flex_align_t main;
-      lv_flex_align_t cross;
-      lv_flex_align_t track_cross;
-    };
 
     void setModifier(FlexAlign align) const
     {
@@ -354,4 +349,5 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
     {                                                                                                                  \
       nltools::Log::error(std::format("Parent ID: {}", BaseWidget(parent).getID()));                                   \
     }                                                                                                                  \
+    nltools::Log::error("width", lv_obj_get_width(handle), "height", lv_obj_get_height(handle));                       \
   }

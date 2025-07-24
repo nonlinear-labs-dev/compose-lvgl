@@ -25,6 +25,15 @@ namespace Compose
     {
     }
 
+    template <typename T>
+    explicit constexpr Padding(T o)
+        : left(o.left)
+        , right(o.right)
+        , top(o.top)
+        , bottom(o.bottom)
+    {
+    }
+
     constexpr static Padding ZERO()
     {
       return { 0, 0, 0, 0 };

@@ -21,6 +21,15 @@ namespace Compose
     {
     }
 
+    template <typename T>
+    explicit constexpr Margin(T o)
+        : top(o.top)
+        , bottom(o.bottom)
+        , left(o.left)
+        , right(o.right)
+    {
+    }
+
     constexpr static Margin ZERO()
     {
       return { 0, 0, 0, 0 };

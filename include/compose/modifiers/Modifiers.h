@@ -155,10 +155,43 @@ namespace Compose
 
     std::variant<SizePercentage, FixedSize, FitContent, Width, Height, FlexGrow> it;
   };
+
+  struct FlexAlign
+  {
+    lv_flex_align_t main;
+    lv_flex_align_t cross;
+    lv_flex_align_t track_cross;
+
+    static constexpr FlexAlign CENTER()
+    {
+      return { LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
+    }
+  };
+
+  struct TextAlign
+  {
+    lv_text_align_t it;
+
+    static constexpr TextAlign CENTER()
+    {
+      return { LV_TEXT_ALIGN_CENTER };
+    }
+
+    static constexpr TextAlign LEFT()
+    {
+      return { LV_TEXT_ALIGN_LEFT };
+    }
+
+    static constexpr TextAlign RIGHT()
+    {
+      return { LV_TEXT_ALIGN_RIGHT };
+    }
+  };
 }
 
 #define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
-#define TEXT_ALIGN(...) it.doAutorun([=] { it.setModifier(Label::TextAlign { __VA_ARGS__ }); });
+#define TEXT_ALIGN(...) it.doAutorun([=] { it.setModifier(TextAlign { __VA_ARGS__ }); });
+#define FLEX_ALIGN(...) it.doAutorun([=] { it.setModifier(FlexAlign { __VA_ARGS__ }); });
 #define MARGIN(...) it.doAutorun([=] { it.setModifier(Margin(__VA_ARGS__)); });
 #define ATTACH_OPTIONS(...) it.doAutorun([=] { it.setModifier(AttachOptions(__VA_ARGS__)); });
 #define ORIENTATION(...) it.doAutorun([=] { it.setModifier(Orientation(__VA_ARGS__)); });
