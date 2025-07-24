@@ -8,14 +8,22 @@
 
 namespace Compose
 {
-  struct LeftClick
+
+  template <lv_event_code_t FilterType> struct ClickHandler
   {
+    const char *m_key;
     BaseWidget &self;
     using CB = std::function<void()>;
 
-    struct LeftClickData
+    ClickHandler(BaseWidget &w, auto key)
+        : m_key { key }
+        , self { w }
     {
-      LeftClickData(lv_obj_t *handle, const CB &cb)
+    }
+
+    struct ClickData
+    {
+      ClickData(lv_obj_t *handle, const CB &cb)
           : m_handle(handle)
           , m_callback(cb)
       {
@@ -23,13 +31,13 @@ namespace Compose
             handle,
             [](lv_event_t *e)
             {
-              const auto user_data = static_cast<LeftClickData *>(lv_event_get_user_data(e));
+              const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
               user_data->m_callback();
             },
-            LV_EVENT_CLICKED, this);
+            FilterType, this);
       }
 
-      ~LeftClickData()
+      ~ClickData()
       {
         lv_obj_remove_event_dsc(m_handle, m_handler);
       }
@@ -41,11 +49,13 @@ namespace Compose
 
     void operator<<(const CB &cb) const
     {
-      assert(!self.getData<LeftClickData>(BaseWidget::c_leftClickKey));
-      self.ensureDataForKeyExistsOwning<LeftClickData>(BaseWidget::c_leftClickKey,
-                                                       [this, cb] { return new LeftClickData(self.getHandle(), cb); });
+      assert(!self.getData<ClickData>(m_key));
+      self.ensureDataForKeyExistsOwning<ClickData>(m_key, [this, cb] { return new ClickData(self.getHandle(), cb); });
     }
   };
+
+  using LeftClick = ClickHandler<LV_EVENT_SHORT_CLICKED>;
+  using LongClick = ClickHandler<LV_EVENT_LONG_PRESSED>;
 
   struct StateChange
   {

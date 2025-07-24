@@ -190,6 +190,18 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       lv_obj_set_pos(getHandle(), pos.x, pos.y);
     }
 
+    struct FlexAlign
+    {
+      lv_flex_align_t main;
+      lv_flex_align_t cross;
+      lv_flex_align_t track_cross;
+    };
+
+    void setModifier(FlexAlign align) const
+    {
+      lv_obj_set_flex_align(getHandle(), align.main, align.cross, align.track_cross);
+    }
+
     void setModifier(Align align) const
     {
       lv_obj_set_align(getHandle(), align.it);
@@ -307,7 +319,8 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       setID(n.name);
     }
 
-    LeftClick leftClick { *this };
+    LeftClick leftClick { *this, c_leftClickKey };
+    LongClick longClick { *this, c_longClickKey };
     StateChange stateChange { *this };
   };
 
@@ -331,6 +344,7 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
 }
 
 #define LEFT_CLICK() it.leftClick << [=]
+#define LONG_CLICK() it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
   it.leftClick << [handle = it.getHandle()]                                                                            \

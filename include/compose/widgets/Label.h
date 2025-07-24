@@ -19,6 +19,7 @@ namespace Compose
         : Widget(lv_label_create(parent.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
+      setModifier(FitContent { true });
       setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
     }
