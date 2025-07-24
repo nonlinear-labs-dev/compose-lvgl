@@ -79,6 +79,7 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
+#warning "this does not do what it says!"
     if(!m_canvas)
       return;
 
@@ -87,7 +88,7 @@ namespace Compose
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
     rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
     rect_dsc.border_opa = LV_OPA_TRANSP;
-    rect_dsc.radius = LV_MIN(rc.topLeft, LV_MIN(rc.topRight, LV_MIN(rc.bottomRight, rc.bottomLeft)));
+    rect_dsc.radius = rc.radius;
 
     lv_area_t area;
     area.x1 = rect.pos.x;

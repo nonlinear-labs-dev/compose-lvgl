@@ -54,6 +54,11 @@ namespace Compose
   {
     int w;
     int h;
+
+    static constexpr SizePercentage FULL()
+    {
+      return { 100, 100 };
+    }
   };
 
   struct Width

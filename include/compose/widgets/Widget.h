@@ -231,12 +231,9 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       lv_obj_set_style_border_opa(getHandle(), border.color.a * 255, LV_PART_MAIN);
     }
 
-    //sadly only all borders share the same radius
     void setModifier(RoundedCorner corner) const
     {
-      const auto max
-          = std::max(std::max(std::max(corner.topLeft, corner.topRight), corner.bottomLeft), corner.bottomRight);
-      lv_obj_set_style_radius(getHandle(), max, LV_PART_MAIN);
+      lv_obj_set_style_radius(getHandle(), corner.radius, LV_PART_MAIN);
     }
 
     void setModifier(Hidden h) const
