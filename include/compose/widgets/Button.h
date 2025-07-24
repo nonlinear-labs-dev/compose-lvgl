@@ -1,6 +1,6 @@
 #pragma once
 #include "Widget.h"
-#include "handler/Clicks.h"
+#include "handler/Handlers.h"
 #include "src/widgets/button/lv_button.h"
 
 #include <functional>

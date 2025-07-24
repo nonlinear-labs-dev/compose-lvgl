@@ -15,10 +15,12 @@
 
 class BaseWidget
 {
+ public:
   using tType = lv_obj_t;
   static constexpr auto c_computationsKey = "Computations";
   static constexpr auto c_nameKey = "Name";
   static constexpr auto c_leftClickKey = "LeftClick";
+  static constexpr auto c_stateChangeKey = "StateChange";
 
   struct UserDataEntry
   {
@@ -50,7 +52,6 @@ class BaseWidget
     }
   };
 
- public:
   virtual ~BaseWidget() = default;
   using WidgetType = tType;
   using AutorunCB = std::function<void(WidgetType&&)>;

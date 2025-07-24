@@ -1,7 +1,7 @@
 #pragma once
 #include "BaseWidget.h"
 #include "compose/modifiers/Modifiers.h"
-#include "handler/Clicks.h"
+#include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
@@ -307,46 +307,8 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       setID(n.name);
     }
 
-    struct HhoLeftClick
-    {
-      Widget &self;
-      using CB = std::function<void()>;
-
-      struct LeftClickData
-      {
-        LeftClickData(lv_obj_t *handle, CB cb)
-            : m_handle(handle)
-            , m_callback(cb)
-        {
-          m_handler = lv_obj_add_event_cb(
-              handle,
-              [](lv_event_t *e)
-              {
-                auto user_data = static_cast<LeftClickData *>(lv_event_get_user_data(e));
-                user_data->m_callback();
-              },
-              LV_EVENT_CLICKED, this);
-        }
-
-        ~LeftClickData()
-        {
-          lv_obj_remove_event_dsc(m_handle, m_handler);
-        }
-
-        lv_obj_t *m_handle;
-        std::function<void()> m_callback;
-        lv_event_dsc_t *m_handler;
-      };
-
-      void operator<<(const std::function<void()> &cb)
-      {
-        assert(!self.getData<LeftClickData>("left-click"));
-        self.ensureDataForKeyExistsOwning<LeftClickData>("left-click", [this, cb] { return new LeftClickData(self.getHandle(), cb); });
-      }
-    } hhoLeftClick { *this };
-
-    std::shared_ptr<LeftClick<Widget>> leftClickHandler = std::make_shared<LeftClick<Widget>>(*this);
-    std::shared_ptr<StateChange<Widget>> stateChangeHandler = std::make_shared<StateChange<Widget>>(*this);
+    LeftClick leftClick { *this };
+    StateChange stateChange { *this };
   };
 
   template <typename T>
@@ -368,4 +330,14 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
   }
 }
 
-#define HHO_LEFT_CLICK() it.hhoLeftClick << [=]
+#define LEFT_CLICK() it.leftClick << [=]
+#define STATE_CHANGE it.stateChange << [=]
+#define CLICK_TRACE()                                                                                                  \
+  it.leftClick << [handle = it.getHandle()]                                                                            \
+  {                                                                                                                    \
+    nltools::Log::error(std::format("Our ID: {}", BaseWidget(handle).getID()));                                        \
+    if(const auto parent = lv_obj_get_parent(handle))                                                                  \
+    {                                                                                                                  \
+      nltools::Log::error(std::format("Parent ID: {}", BaseWidget(parent).getID()));                                   \
+    }                                                                                                                  \
+  }
