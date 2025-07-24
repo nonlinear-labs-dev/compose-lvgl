@@ -59,11 +59,21 @@ namespace Compose
   struct Width
   {
     int it;
+
+    static constexpr Width FULL()
+    {
+      return { LV_PCT(100) };
+    }
   };
 
   struct Height
   {
     int it;
+
+    static constexpr Height FULL()
+    {
+      return { LV_PCT(100) };
+    }
   };
 
   struct FlexGrow
