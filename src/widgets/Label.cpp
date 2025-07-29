@@ -4,6 +4,41 @@
 
 namespace Compose
 {
+  struct FontStorage
+  {
+    struct FontKey
+    {
+      std::string path;
+    };
+
+    struct FontWrapper
+    {
+      FontWrapper(const std::string &path)
+      {
+        m_font = lv_binfont_create(path.c_str());
+      }
+
+      ~FontWrapper()
+      {
+        lv_binfont_destroy(m_font);
+      }
+
+      lv_font_t *m_font;
+    };
+
+    FontWrapper &getFont(const FontKey &key)
+    {
+      auto it = fonts.find(key);
+      if(it == fonts.end())
+      {
+        it = fonts.emplace(key, FontWrapper(key.path)).first;
+      }
+      return it->second;
+    }
+
+    std::unordered_map<FontKey, FontWrapper> fonts;
+  };
+
   Label::Label(WidgetType *handle)
       : Widget(handle)
   {
