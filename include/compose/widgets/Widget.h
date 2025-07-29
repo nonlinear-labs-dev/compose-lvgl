@@ -253,18 +253,6 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
       }
     }
 
-    void setModifier(FitContent c) const
-    {
-      if(c.it)
-      {
-        lv_obj_set_size(getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-      }
-      else
-      {
-        lv_obj_set_size(getHandle(), getWidth(), getHeight());
-      }
-    }
-
     void setModifier(SizeVariant v) const
     {
       std::visit([this](auto &&it) { setModifier(it); }, v.it);

@@ -19,7 +19,7 @@ namespace Compose
         : Widget(lv_label_create(parent.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
-      setModifier(FitContent { true });
+      lv_obj_set_size(getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
       setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
     }
@@ -43,7 +43,6 @@ namespace Compose
 
     explicit FontStorage(tPathBuilder builder)
         : buildPath(std::move(builder))
-        , fonts {}
     {
       nltools::Log::error("build font storage");
     }

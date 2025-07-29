@@ -34,22 +34,6 @@ namespace Compose
     std::string id;
   };
 
-  struct FitContent
-  {
-
-    FitContent()
-        : it { true }
-    {
-    }
-
-    explicit FitContent(bool b)
-        : it { b }
-    {
-    }
-
-    bool it;
-  };
-
   struct SizePercentage
   {
     int w;
@@ -69,6 +53,11 @@ namespace Compose
     {
       return { LV_PCT(100) };
     }
+
+    static constexpr Width PERCENT(auto i)
+    {
+      return { LV_PCT(i) };
+    }
   };
 
   struct Height
@@ -78,6 +67,11 @@ namespace Compose
     static constexpr Height FULL()
     {
       return { LV_PCT(100) };
+    }
+
+    static constexpr Height PERCENT(auto i)
+    {
+      return { LV_PCT(i) };
     }
   };
 
@@ -96,11 +90,6 @@ namespace Compose
     static SizeVariant FIXED(int w, int h)
     {
       return SizeVariant { FixedSize { w, h } };
-    }
-
-    static SizeVariant FIT_CONTENT()
-    {
-      return SizeVariant { FitContent() };
     }
 
     static SizeVariant EXPAND_WIDTH(int fixedH)
@@ -158,7 +147,7 @@ namespace Compose
       return SizeVariant { FlexGrow { g } };
     }
 
-    std::variant<SizePercentage, FixedSize, FitContent, Width, Height, FlexGrow> it;
+    std::variant<SizePercentage, FixedSize, Width, Height, FlexGrow> it;
   };
 
   struct FlexAlign
@@ -170,6 +159,51 @@ namespace Compose
     static constexpr FlexAlign CENTER()
     {
       return { LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
+    }
+
+    static constexpr FlexAlign START()
+    {
+      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START };
+    }
+
+    static constexpr FlexAlign END()
+    {
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END };
+    }
+
+    static constexpr FlexAlign CENTER_START()
+    {
+      return { LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START };
+    }
+
+    static constexpr FlexAlign CENTER_END()
+    {
+      return { LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END };
+    }
+
+    static constexpr FlexAlign START_END()
+    {
+      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_END };
+    }
+
+    static constexpr FlexAlign START_CENTER()
+    {
+      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER };
+    }
+
+    static constexpr FlexAlign END_CENTER()
+    {
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER };
+    }
+
+    static constexpr FlexAlign END_START()
+    {
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START };
+    }
+
+    static constexpr FlexAlign SPACE_EVENLY()
+    {
+      return { LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY };
     }
   };
 

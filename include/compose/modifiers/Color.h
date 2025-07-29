@@ -126,6 +126,11 @@ namespace Compose
       return { 128, 128, 128 };
     }
 
+    static constexpr Color GRAY(auto g)
+    {
+      return { g, g, g };
+    }
+
     Color& TRANSPARENT(float alpha)
     {
       a = alpha;

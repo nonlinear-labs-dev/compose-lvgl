@@ -27,6 +27,14 @@ namespace Compose
     }
   }
 
+  void Button::setModifier(const TextAlign &t) const
+  {
+    if(const auto label = getOrCreateLabel())
+    {
+      lv_obj_set_style_text_align(label, t.it, LV_PART_MAIN);
+    }
+  }
+
   lv_obj_t *Button::getOrCreateLabel() const
   {
     const auto handle = getHandle();
