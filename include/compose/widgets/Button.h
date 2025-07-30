@@ -33,6 +33,7 @@ namespace Compose
 
     void setModifier(ButtonType t) const;
     void setModifier(const Text& t) const;
+    void setModifier(const FontSize& t) const;
     void setModifier(PrimaryColor color) const override;
     void setModifier(const TextAlign& t) const;
 

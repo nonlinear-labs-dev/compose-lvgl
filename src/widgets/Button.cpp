@@ -13,6 +13,14 @@ namespace Compose
     }
   }
 
+  void Button::setModifier(const FontSize &t) const
+  {
+    if(const auto label = getOrCreateLabel())
+    {
+      lv_obj_set_style_text_font(label, s_fontStorage->getFont(t).m_font, LV_PART_MAIN);
+    }
+  }
+
   void Button::setModifier(ButtonType t) const
   {
     lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CHECKABLE, t.it == ButtonType::TOGGLE);
