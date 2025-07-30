@@ -14,6 +14,7 @@ namespace Compose
   class CustomDrawingElement : public Widget
   {
    public:
+    using Widget::setModifier;
     using Widget::Widget;
 
     using tDrawCB = std::function<void(DrawContext &, int, int)>;
