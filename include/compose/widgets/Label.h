@@ -18,8 +18,10 @@ namespace Compose
     explicit Label(BaseWidget &parent, tArgs... args)
         : Widget(lv_label_create(parent.getHandle()))
     {
+      setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
-      lv_obj_set_size(getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+      lv_obj_set_size(BaseWidget::getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+      setModifier(FlexGrow { 0 });
       setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
     }

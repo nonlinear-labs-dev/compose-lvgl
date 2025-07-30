@@ -58,6 +58,11 @@ namespace Compose
     {
       return { LV_PCT(i) };
     }
+
+    static constexpr Width FIT_CONTENT()
+    {
+      return { LV_SIZE_CONTENT };
+    }
   };
 
   struct Height
@@ -72,6 +77,11 @@ namespace Compose
     static constexpr Height PERCENT(auto i)
     {
       return { LV_PCT(i) };
+    }
+
+    static constexpr Height FIT_CONTENT()
+    {
+      return { LV_SIZE_CONTENT };
     }
   };
 
