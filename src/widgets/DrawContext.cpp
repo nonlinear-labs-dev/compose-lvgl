@@ -3,6 +3,7 @@
 #include "src/misc/lv_color.h"
 #include "src/misc/lv_area.h"
 #include <src/widgets/canvas/lv_canvas.h>
+#include "src/draw/lv_draw_vector.h"
 
 namespace Compose
 {
@@ -104,28 +105,38 @@ namespace Compose
     if(points.size() < 3 || !m_canvas)
       return;
 
-    lv_draw_rect_dsc_t rect_dsc;
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_make(fill.r, fill.g, fill.b);
-    rect_dsc.bg_opa = static_cast<lv_opa_t>(fill.a * 255.0);
-    rect_dsc.border_color = lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b);
-    rect_dsc.border_width = stroke.width;
-    rect_dsc.border_opa = static_cast<lv_opa_t>(stroke.color.a * 255.0);
+    lv_vector_dsc_t *dsc = lv_vector_dsc_create(&m_layer);
+    if(!dsc)
+      return;
 
-    lv_area_t area;
-    area.x1 = points[0].x;
-    area.y1 = points[0].y;
-    area.x2 = points[0].x;
-    area.y2 = points[0].y;
-
-    for(const auto &point : points)
+    lv_vector_path_t *path = lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM);
+    if(!path)
     {
-      area.x1 = LV_MIN(area.x1, point.x);
-      area.y1 = LV_MIN(area.y1, point.y);
-      area.x2 = LV_MAX(area.x2, point.x);
-      area.y2 = LV_MAX(area.y2, point.y);
+      lv_vector_dsc_delete(dsc);
+      return;
     }
 
-    lv_draw_rect(&m_layer, &rect_dsc, &area);
+    lv_fpoint_t first_point = { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
+    lv_vector_path_move_to(path, &first_point);
+
+    for(size_t i = 1; i < points.size(); ++i)
+    {
+      lv_fpoint_t point = { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
+      lv_vector_path_line_to(path, &point);
+    }
+
+    lv_vector_path_close(path);
+
+    lv_vector_dsc_set_fill_color(dsc, lv_color_make(fill.r, fill.g, fill.b));
+    lv_vector_dsc_set_fill_opa(dsc, static_cast<lv_opa_t>(fill.a * 255.0));
+    lv_vector_dsc_set_stroke_color(dsc, lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+    lv_vector_dsc_set_stroke_opa(dsc, static_cast<lv_opa_t>(stroke.color.a * 255.0));
+    lv_vector_dsc_set_stroke_width(dsc, static_cast<float>(stroke.width));
+    lv_vector_dsc_add_path(dsc, path);
+
+    lv_draw_vector(dsc);
+
+    lv_vector_path_delete(path);
+    lv_vector_dsc_delete(dsc);
   }
 }
