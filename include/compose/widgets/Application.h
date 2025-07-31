@@ -28,4 +28,3 @@ namespace Compose
 }
 
 #define APPLICATION(backend) Compose::Application(backend) << [=](Compose::Window & it)
-#define FONT(name) it.defineAndUseFont(name);

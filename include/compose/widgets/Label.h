@@ -36,15 +36,16 @@ namespace Compose
 
     void setModifier(Text s) const;
     void setModifier(PrimaryColor s) const override;
-    void setModifier(FontSize s) const;
+    void setModifier(Font s) const;
   };
 
   struct FontStorage
   {
-    using tPathBuilder = std::function<std::string(int)>;
+    using tPathBuilder = std::function<std::string(Font)>;
 
     explicit FontStorage(tPathBuilder builder)
         : buildPath(std::move(builder))
+        , fonts()
     {
       nltools::Log::error("build font storage");
     }
@@ -67,18 +68,18 @@ namespace Compose
       lv_font_t *m_font;
     };
 
-    FontWrapper &getFont(const FontSize &size)
+    FontWrapper &getFont(const Font &font)
     {
-      auto it = fonts.find(size);
+      auto it = fonts.find(font);
       if(it == fonts.end())
       {
-        it = fonts.emplace(size, std::make_unique<FontWrapper>(buildPath(size.it))).first;
+        it = fonts.emplace(font, std::make_unique<FontWrapper>(buildPath(font))).first;
       }
       return *it->second;
     }
 
     tPathBuilder buildPath;
-    std::unordered_map<FontSize, std::unique_ptr<FontWrapper>> fonts;
+    std::unordered_map<Font, std::unique_ptr<FontWrapper>> fonts;
   };
 
   extern std::unique_ptr<FontStorage> s_fontStorage;

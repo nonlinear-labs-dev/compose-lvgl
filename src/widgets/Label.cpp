@@ -29,7 +29,7 @@ namespace Compose
     lv_obj_set_style_text_opa(getHandle(), static_cast<unsigned char>(c.a * 255.0), LV_PART_MAIN);
   }
 
-  void Label::setModifier(FontSize s) const
+  void Label::setModifier(Font s) const
   {
     lv_obj_set_style_text_font(getHandle(), s_fontStorage->getFont(s).m_font, LV_PART_MAIN);
   }

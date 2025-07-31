@@ -13,7 +13,7 @@ namespace Compose
     }
   }
 
-  void Button::setModifier(const FontSize &t) const
+  void Button::setModifier(const Font &t) const
   {
     if(const auto label = getOrCreateLabel())
     {

@@ -6,7 +6,7 @@
 #include "Orientation.h"
 #include "Expand.h"
 #include "Text.h"
-#include "FontSize.h"
+#include "Font.h"
 #include "Spacing.h"
 #include "Size.h"
 #include "BackgroundColor.h"
@@ -248,7 +248,7 @@ namespace Compose
 #define STYLE_SHEET(...) it.doAutorun([=] { it.setModifier(StyleSheet(__VA_ARGS__)); });
 #define LIST_ID(...) it.doAutorun([=] { it.setModifier(ListEntryID(__VA_ARGS__)); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
-#define FONT_SIZE(...) it.doAutorun([=] { it.setModifier(FontSize(__VA_ARGS__)); });
+#define FONT(...) it.doAutorun([=] { it.setModifier(Font{__VA_ARGS__}); });
 #define SPACING(...) it.doAutorun([=] { it.setModifier(Spacing(__VA_ARGS__)); });
 #define ROW_SPACING(...) it.doAutorun([=] { it.setModifier(RowSpacing(__VA_ARGS__)); });
 #define COLUMN_SPACING(...) it.doAutorun([=] { it.setModifier(ColumnSpacing(__VA_ARGS__)); });
