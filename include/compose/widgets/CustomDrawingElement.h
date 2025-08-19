@@ -27,6 +27,13 @@ namespace Compose
     }
 
     void setDrawCall(tDrawCB &&draw) const;
+    void cleanup() const;
+    
+    void clear() override
+    {
+      cleanup();
+      Widget::clear();
+    }
     struct
     {
       void operator<<(tDrawCB &&cb) const

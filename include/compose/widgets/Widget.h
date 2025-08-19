@@ -108,8 +108,8 @@ namespace Compose
 
     virtual void clear()
     {
-      lv_obj_clean(getHandle());
       clearUserData();
+      lv_obj_clean(getHandle());
     }
 
     void setModifier(OverflowBehaviour r) const

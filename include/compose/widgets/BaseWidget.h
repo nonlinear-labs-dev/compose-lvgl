@@ -115,7 +115,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = fac();
-      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { });
+      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) {});
       storage->entries[key] = std::move(entry);
       return *static_cast<T*>(data);
     }
@@ -157,15 +157,15 @@ class BaseWidget
         });
   }
 
+  [[nodiscard]] UserDataStorage* getUserDataStorage() const
+  {
+    return static_cast<UserDataStorage*>(lv_obj_get_user_data(m_widget));
+  }
+
  private:
   [[nodiscard]] Reactive::Computations& getComputations() const
   {
     return ensureDataForKeyExistsOwning<Reactive::Computations>(c_computationsKey);
-  }
-
-  [[nodiscard]] UserDataStorage* getUserDataStorage() const
-  {
-    return static_cast<UserDataStorage*>(lv_obj_get_user_data(m_widget));
   }
 
   [[nodiscard]] UserDataStorage* ensureUserDataStorage() const

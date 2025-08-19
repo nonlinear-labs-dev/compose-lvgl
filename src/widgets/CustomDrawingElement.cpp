@@ -13,9 +13,10 @@ namespace Compose
     lv_event_dsc_t* resizeHandler = nullptr;
     lv_event_dsc_t* readyHandler = nullptr;
     lv_event_dsc_t* deleteHandler = nullptr;
+    lv_obj_t* handle = nullptr;
 
     CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb)
-        : drawCallback(std::move(cb))
+        : drawCallback(std::move(cb)), handle(handle)
     {
       resizeHandler = lv_obj_add_event_cb(
           handle,
@@ -24,9 +25,10 @@ namespace Compose
             if(lv_event_get_code(e) == LV_EVENT_SIZE_CHANGED)
             {
               const auto data = static_cast<CanvasData*>(lv_event_get_user_data(e));
-              if(data)
+              const auto handle = static_cast<lv_obj_t*>(lv_event_get_target(e));
+              
+              if(data && handle && lv_obj_is_valid(handle) && data->resizeHandler)
               {
-                const auto handle = static_cast<lv_obj_t*>(lv_event_get_target(e));
                 const int width = lv_obj_get_width(handle);
                 const int height = lv_obj_get_height(handle);
 
@@ -54,11 +56,15 @@ namespace Compose
           {
             const auto handle = static_cast<lv_obj_t*>(lv_event_get_target(e));
             const auto data = static_cast<CanvasData*>(lv_event_get_user_data(e));
-            lv_obj_update_layout(handle);
-            if(data && data->drawCallback)
+            
+            if(data && handle && lv_obj_is_valid(handle))
             {
-              LVGLDrawContext drawContext(handle);
-              data->drawCallback(drawContext, lv_obj_get_width(handle), lv_obj_get_height(handle));
+              lv_obj_update_layout(handle);
+              if(data->drawCallback)
+              {
+                LVGLDrawContext drawContext(handle);
+                data->drawCallback(drawContext, lv_obj_get_width(handle), lv_obj_get_height(handle));
+              }
             }
           },
           LV_EVENT_READY, this);
@@ -72,14 +78,11 @@ namespace Compose
               const auto data = static_cast<CanvasData*>(lv_event_get_user_data(e));
               if(data)
               {
-                if(data->resizeHandler)
-                  lv_obj_remove_event_dsc(static_cast<lv_obj_t*>(lv_event_get_target(e)), data->resizeHandler);
-                if(data->readyHandler)
-                  lv_obj_remove_event_dsc(static_cast<lv_obj_t*>(lv_event_get_target(e)), data->readyHandler);
-                if(data->deleteHandler)
-                  lv_obj_remove_event_dsc(static_cast<lv_obj_t*>(lv_event_get_target(e)), data->deleteHandler);
                 if(data->buffer)
+                {
                   lv_draw_buf_destroy(data->buffer);
+                  data->buffer = nullptr;
+                }
               }
             }
           },
@@ -88,6 +91,26 @@ namespace Compose
 
     ~CanvasData()
     {
+      if(handle && lv_obj_is_valid(handle))
+      {
+        if(resizeHandler)
+          lv_obj_remove_event_dsc(handle, resizeHandler);
+        if(readyHandler)
+          lv_obj_remove_event_dsc(handle, readyHandler);
+        if(deleteHandler)
+          lv_obj_remove_event_dsc(handle, deleteHandler);
+        if(buffer)
+          lv_draw_buf_destroy(buffer);
+      }
+      else if(buffer)
+      {
+        lv_draw_buf_destroy(buffer);
+      }
+      
+      resizeHandler = nullptr;
+      readyHandler = nullptr;
+      deleteHandler = nullptr;
+      handle = nullptr;
     }
   };
 
@@ -108,5 +131,45 @@ namespace Compose
             canvasData->drawCallback(drawContext, w, h);
           }
         });
+  }
+
+  void CustomDrawingElement::cleanup() const
+  {
+    auto storage = getUserDataStorage();
+    if(storage)
+    {
+      auto it = storage->entries.find(CANVAS_DATA_KEY);
+      if(it != storage->entries.end() && it->second)
+      {
+        auto canvasData = static_cast<CanvasData*>(it->second->data);
+        if(canvasData)
+        {
+          if(canvasData->handle && lv_obj_is_valid(canvasData->handle))
+          {
+            if(canvasData->resizeHandler)
+            {
+              lv_obj_remove_event_dsc(canvasData->handle, canvasData->resizeHandler);
+              canvasData->resizeHandler = nullptr;
+            }
+            if(canvasData->readyHandler)
+            {
+              lv_obj_remove_event_dsc(canvasData->handle, canvasData->readyHandler);
+              canvasData->readyHandler = nullptr;
+            }
+            if(canvasData->deleteHandler)
+            {
+              lv_obj_remove_event_dsc(canvasData->handle, canvasData->deleteHandler);
+              canvasData->deleteHandler = nullptr;
+            }
+          }
+          if(canvasData->buffer)
+          {
+            lv_draw_buf_destroy(canvasData->buffer);
+            canvasData->buffer = nullptr;
+          }
+          canvasData->handle = nullptr;
+        }
+      }
+    }
   }
 }
