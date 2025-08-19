@@ -22,5 +22,9 @@ namespace Compose
 
   struct FixedSize : Size
   {
+    constexpr static FixedSize ScreenSize()
+    {
+      return { Size::ScreenSize() };
+    }
   };
 }

@@ -25,6 +25,11 @@ namespace Compose
       return Position { x * v, y * v };
     }
 
+    static constexpr Position ZERO()
+    {
+      return { 0, 0 };
+    }
+
     int x {};
     int y {};
   };

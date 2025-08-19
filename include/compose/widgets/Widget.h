@@ -186,8 +186,16 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
-                                     "position only works with LAYOUT_TYPE NONE");
+
+        try
+        {
+          nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
+                                       "position only works with LAYOUT_TYPE NONE");
+        }
+        catch(std::exception &e)
+        {
+          throw;
+        }
       }
       lv_obj_set_pos(getHandle(), pos.x, pos.y);
     }
