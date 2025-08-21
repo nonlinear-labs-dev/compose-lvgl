@@ -248,7 +248,7 @@ namespace Compose
 #define STYLE_SHEET(...) it.doAutorun([=] { it.setModifier(StyleSheet(__VA_ARGS__)); });
 #define LIST_ID(...) it.doAutorun([=] { it.setModifier(ListEntryID(__VA_ARGS__)); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
-#define FONT(...) it.doAutorun([=] { it.setModifier(Font{__VA_ARGS__}); });
+#define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });
 #define SPACING(...) it.doAutorun([=] { it.setModifier(Spacing(__VA_ARGS__)); });
 #define ROW_SPACING(...) it.doAutorun([=] { it.setModifier(RowSpacing(__VA_ARGS__)); });
 #define COLUMN_SPACING(...) it.doAutorun([=] { it.setModifier(ColumnSpacing(__VA_ARGS__)); });
@@ -269,3 +269,4 @@ namespace Compose
 #define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); });
 #define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
 #define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });
+#define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
