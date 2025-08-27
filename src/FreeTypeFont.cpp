@@ -43,7 +43,7 @@ namespace Compose
     return x >> 6;
   }
 
-  uint32_t FreeTypeFont::draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb)
+  uint32_t FreeTypeFont::draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const
   {
     y += m_height;
     auto oldX = x;
@@ -70,7 +70,7 @@ namespace Compose
   }
 
   FreeTypeFont::tCoordinate FreeTypeFont::drawLetter(FT_GlyphSlot slot, FreeTypeFont::tCoordinate x,
-                                                     FreeTypeFont::tCoordinate y, const tSetPixelCB &cb)
+                                                     FreeTypeFont::tCoordinate y, const tSetPixelCB &cb) const
   {
     x >>= 6;
 

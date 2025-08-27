@@ -17,7 +17,7 @@ namespace Compose
       Regular,
       SemiBold
     } weight
-        = FontWeight::ExtraBold;
+        = FontWeight::Regular;
 
     std::string baseName = "Nonlegible-Rubik";
 

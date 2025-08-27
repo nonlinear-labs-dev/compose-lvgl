@@ -48,7 +48,7 @@ namespace Compose
     if(lv_obj_get_child_count(handle) == 0)
     {
       Label l(const_cast<Button &>(*this));
-      l.setModifier(SizePercentage::FULL());
+      l.setModifier(Height::FULL());
       lv_obj_center(l.getHandle());
     }
 

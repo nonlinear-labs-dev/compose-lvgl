@@ -12,6 +12,7 @@ namespace Compose
       , m_canvas(ctx)
   {
     lv_canvas_init_layer(m_canvas, &m_layer);
+    lv_canvas_fill_bg(m_canvas, lv_color_black(), LV_OPA_0);
   }
 
   LVGLDrawContext::~LVGLDrawContext()

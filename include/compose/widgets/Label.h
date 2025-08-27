@@ -22,8 +22,7 @@ namespace Compose
     {
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
-      lv_obj_set_size(BaseWidget::getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-      setModifier(FlexGrow { 0 });
+      lv_obj_set_flag(BaseWidget::getHandle(), LV_OBJ_FLAG_CLICKABLE, false);
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
       (setModifier(args), ...);
@@ -31,24 +30,19 @@ namespace Compose
     }
 
     explicit Label(WidgetType *handle);
-    void operator<<(AutorunStringCB &&cb) const;
-
-    void setModifier(TextAlign a) const
-    {
-      lv_obj_set_style_text_align(getHandle(), a.it, LV_PART_MAIN);
-    }
 
     template <typename T> T &getModifier() const
     {
       return ensureDataForKeyExistsOwning<T>(typeid(T).name());
     }
 
+    void operator<<(AutorunStringCB &&cb) const;
+
     void setModifier(const Text &s) const;
     void setModifier(PrimaryColor s) const override;
     void setModifier(BackgroundColor c) const override;
+    void setModifier(TextAlign a) const;
     virtual void setModifier(Font s) const;
-
-    void cleanup() const;
 
     void clear() override
     {
@@ -57,16 +51,8 @@ namespace Compose
     }
 
    private:
+    void cleanup() const;
     void setDrawCall(CustomDrawingElement::tDrawCB &&draw) const;
-    struct
-    {
-      void operator<<(CustomDrawingElement::tDrawCB &&cb) const
-      {
-        m_parent->setDrawCall(std::move(cb));
-      }
-
-      Label *m_parent;
-    } render { this };
   };
 
   struct FontStorage

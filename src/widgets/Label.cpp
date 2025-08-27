@@ -10,18 +10,43 @@ namespace Compose
 
   void Label::setRenderCallback() const
   {
-    render << [handle = getHandle()](DrawContext &ctx, int w, int h)
-    {
-      const Label labelWidget(handle);
-      ctx.fillRect(labelWidget.getModifier<BackgroundColor>(), { 0, 0, w, h });
-      s_fontStorage->getFont(labelWidget.getModifier<Font>())
-          .draw(labelWidget.getModifier<Text>().text, 0, 0,
-                [&](auto x, auto y, auto value)
-                {
-                  auto factor = value / 255.0;
-                  ctx.fillRect(labelWidget.getModifier<PrimaryColor>().multiply(factor), { x, y, 1, 1 });
-                });
-    };
+    setDrawCall(
+        [handle = getHandle()](DrawContext &ctx, int w, int h)
+        {
+          const Label labelWidget(handle);
+          ctx.fillRect(labelWidget.getModifier<BackgroundColor>(), { 0, 0, w, h });
+
+          const auto &font = s_fontStorage->getFont(labelWidget.getModifier<Font>());
+          const auto displayText = labelWidget.getModifier<Text>().text;
+          const auto textWidth = font.getStringWidth(displayText);
+          const auto textAlign = labelWidget.getModifier<TextAlign>();
+
+          const auto startX = [w, textWidth](const TextAlign &a) -> unsigned int
+          {
+            switch(a.it)
+            {
+              case LV_TEXT_ALIGN_LEFT:
+                return 0;
+              case LV_TEXT_ALIGN_RIGHT:
+                return w - textWidth;
+              default:
+              case LV_TEXT_ALIGN_CENTER:
+              case LV_TEXT_ALIGN_AUTO:
+                return (w - textWidth) / 2;
+            }
+          }(textAlign);
+
+          font.draw(displayText, startX, 0,
+                    [&](auto x, auto y, auto value)
+                    {
+                      constexpr auto threshold = 64;
+                      auto factor = value / 255.0;
+                      if(value > threshold)
+                      {
+                        ctx.fillRect(labelWidget.getModifier<PrimaryColor>().multiply(factor), { x, y, 1, 1 });
+                      }
+                    });
+        });
   }
 
   Label::Label(WidgetType *handle)
@@ -49,7 +74,7 @@ namespace Compose
 
   void Label::setModifier(Font s) const
   {
-    ensureDataForKeyExistsOwning<Font>(typeid(Font).name()) = s;
+    ensureDataForKeyExistsOwning<Font>(typeid(Font).name()) = std::move(s);
     lv_obj_invalidate(getHandle());
   }
 
@@ -113,5 +138,11 @@ namespace Compose
   void Label::operator<<(AutorunStringCB &&cb) const
   {
     doAutorun([cb = std::move(cb), label = getHandle()] { Label(label).setModifier(Text { cb() }); });
+  }
+
+  void Label::setModifier(TextAlign a) const
+  {
+    ensureDataForKeyExistsOwning<TextAlign>(typeid(a).name()) = a;
+    lv_obj_invalidate(getHandle());
   }
 }
