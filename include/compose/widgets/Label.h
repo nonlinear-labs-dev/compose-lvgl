@@ -15,7 +15,7 @@ namespace Compose
 
     using AutorunStringCB = std::function<std::string()>;
 
-    void setRenderCallback();
+    void setRenderCallback() const;
     template <typename... tArgs>
     explicit Label(BaseWidget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
@@ -24,7 +24,8 @@ namespace Compose
       applyDefaultStyle(BaseWidget::getHandle());
       lv_obj_set_size(BaseWidget::getHandle(), LV_SIZE_CONTENT, LV_SIZE_CONTENT);
       setModifier(FlexGrow { 0 });
-      setModifier(BackgroundColor { Color::TRANSPARENT() });
+      Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
+      Label::setModifier(PrimaryColor { Color::WHITE() });
       (setModifier(args), ...);
       setRenderCallback();
     }
@@ -44,6 +45,7 @@ namespace Compose
 
     void setModifier(const Text &s) const;
     void setModifier(PrimaryColor s) const override;
+    void setModifier(BackgroundColor c) const override;
     virtual void setModifier(Font s) const;
 
     void cleanup() const;

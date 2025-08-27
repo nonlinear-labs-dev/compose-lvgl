@@ -8,18 +8,18 @@ namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
 
-  void Label::setRenderCallback()
+  void Label::setRenderCallback() const
   {
-    render << [this](DrawContext &ctx, int w, int h)
+    render << [handle = getHandle()](DrawContext &ctx, int w, int h)
     {
-#warning add text-align
-      ctx.fillRect(getModifier<BackgroundColor>(), { 0, 0, w, h });
-      s_fontStorage->getFont(getModifier<Font>())
-          .draw(getModifier<Text>().text, 0, 0,
+      const Label labelWidget(handle);
+      ctx.fillRect(labelWidget.getModifier<BackgroundColor>(), { 0, 0, w, h });
+      s_fontStorage->getFont(labelWidget.getModifier<Font>())
+          .draw(labelWidget.getModifier<Text>().text, 0, 0,
                 [&](auto x, auto y, auto value)
                 {
                   auto factor = value / 255.0;
-                  ctx.fillRect(getModifier<PrimaryColor>().multiply(factor), { x, y, 1, 1 });
+                  ctx.fillRect(labelWidget.getModifier<PrimaryColor>().multiply(factor), { x, y, 1, 1 });
                 });
     };
   }
@@ -38,6 +38,12 @@ namespace Compose
   void Label::setModifier(PrimaryColor c) const
   {
     ensureDataForKeyExistsOwning<PrimaryColor>(typeid(c).name()) = c;
+    lv_obj_invalidate(getHandle());
+  }
+
+  void Label::setModifier(BackgroundColor c) const
+  {
+    ensureDataForKeyExistsOwning<BackgroundColor>(typeid(c).name()) = c;
     lv_obj_invalidate(getHandle());
   }
 

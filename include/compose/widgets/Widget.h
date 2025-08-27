@@ -140,7 +140,7 @@ namespace Compose
       setColor(col);
     }
 
-    void setModifier(BackgroundColor col) const
+    virtual void setModifier(BackgroundColor col) const
     {
       setColor(col);
     }

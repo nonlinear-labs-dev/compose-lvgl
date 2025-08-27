@@ -94,7 +94,7 @@ class BaseWidget
 
   template <typename T, typename Factory> T& ensureDataForKeyExistsOwning(auto key, const Factory& factory) const
   {
-    auto storage = ensureUserDataStorage();
+    const auto storage = ensureUserDataStorage();
     auto it = storage->entries.find(key);
 
     if(it == storage->entries.end() || !it->second)

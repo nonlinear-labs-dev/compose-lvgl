@@ -47,7 +47,9 @@ namespace Compose
     const auto handle = getHandle();
     if(lv_obj_get_child_count(handle) == 0)
     {
-      lv_obj_center(Label(const_cast<Button &>(*this)).getHandle());
+      Label l(const_cast<Button &>(*this));
+      l.setModifier(SizePercentage::FULL());
+      lv_obj_center(l.getHandle());
     }
 
     auto childCount = lv_obj_get_child_count(handle);

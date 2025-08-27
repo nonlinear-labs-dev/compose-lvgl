@@ -19,9 +19,11 @@ namespace Compose
     } weight
         = FontWeight::ExtraBold;
 
+    std::string baseName = "Nonlegible-Rubik";
+
     bool operator==(const Font &o) const noexcept
     {
-      return size == o.size && weight == o.weight;
+      return size == o.size && baseName == o.baseName && weight == o.weight;
     }
 
     static std::string getWeightString(FontWeight weight)
@@ -54,7 +56,8 @@ namespace std
   {
     std::size_t operator()(const Compose::Font &sz) const noexcept
     {
-      return sz.size * 1000 + static_cast<int>(sz.weight);
+      constexpr std::hash<std::string> h {};
+      return sz.size * 1000 + h(sz.baseName);
     }
   };
 }
