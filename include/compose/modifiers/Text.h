@@ -5,7 +5,7 @@
 template <typename T>
 concept tNumber = std::integral<T> || std::floating_point<T>;
 
-template<typename T>
+template <typename T>
 concept tWChar = std::is_same_v<T, wchar_t>;
 
 namespace Compose
@@ -30,6 +30,10 @@ namespace Compose
     {
     }
 
+    Text()
+    {
+    }
+
     std::string text;
   };
-} 
+}

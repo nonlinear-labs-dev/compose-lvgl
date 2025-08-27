@@ -17,18 +17,29 @@ namespace Compose
     using Widget::setModifier;
     using Widget::Widget;
 
-    using tDrawCB = std::function<void(DrawContext &, int, int)>;
-    template <typename... tArgs>
-    explicit CustomDrawingElement(Widget &parent, tArgs... args)
+    using tDrawCB = std::function<void(DrawContext&, int, int)>;
+
+    explicit CustomDrawingElement(WidgetType* w)
+        : Widget(w)
+    {
+    }
+
+    explicit CustomDrawingElement(Widget& parent)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
+    }
+
+    template <typename... tArgs>
+    explicit CustomDrawingElement(Widget& parent, tArgs... args)
+        : CustomDrawingElement(parent)
+    {
       (setModifier(args), ...);
     }
 
-    void setDrawCall(tDrawCB &&draw) const;
+    void setDrawCall(tDrawCB&& draw) const;
     void cleanup() const;
-    
+
     void clear() override
     {
       cleanup();
@@ -36,16 +47,29 @@ namespace Compose
     }
     struct
     {
-      void operator<<(tDrawCB &&cb) const
+      void operator<<(tDrawCB&& cb) const
       {
         m_parent->setDrawCall(std::move(cb));
       }
 
-      CustomDrawingElement *m_parent;
+      CustomDrawingElement* m_parent;
     } render { this };
+  };
+
+  struct CanvasData
+  {
+    lv_draw_buf_t* buffer = nullptr;
+    CustomDrawingElement::tDrawCB drawCallback;
+    lv_event_dsc_t* resizeHandler = nullptr;
+    lv_event_dsc_t* readyHandler = nullptr;
+    lv_event_dsc_t* deleteHandler = nullptr;
+    lv_obj_t* handle = nullptr;
+
+    CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
+    ~CanvasData();
   };
 }
 
 #define CANVAS(...)                                                                                                    \
-  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement &&it)
+  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement&& it)
 #define RENDER it.render << [=]

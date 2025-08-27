@@ -9,7 +9,7 @@ namespace Compose
   {
     if(const auto label = getOrCreateLabel())
     {
-      lv_label_set_text(label, t.text.c_str());
+      Label(label).setModifier(t);
     }
   }
 
@@ -17,7 +17,7 @@ namespace Compose
   {
     if(const auto label = getOrCreateLabel())
     {
-      lv_obj_set_style_text_font(label, s_fontStorage->getFont(t).m_font, LV_PART_MAIN);
+      Label(label).setModifier(t);
     }
   }
 
@@ -30,8 +30,7 @@ namespace Compose
   {
     if(const auto label = getOrCreateLabel())
     {
-      lv_obj_set_style_text_color(label, { .blue = color.b, .green = color.g, .red = color.r }, LV_PART_MAIN);
-      lv_obj_set_style_text_opa(label, color.a * 255, LV_PART_MAIN);
+      Label(label).setModifier(color);
     }
   }
 
@@ -39,7 +38,7 @@ namespace Compose
   {
     if(const auto label = getOrCreateLabel())
     {
-      lv_obj_set_style_text_align(label, t.it, LV_PART_MAIN);
+      Label(label).setModifier(t);
     }
   }
 
@@ -48,10 +47,11 @@ namespace Compose
     const auto handle = getHandle();
     if(lv_obj_get_child_count(handle) == 0)
     {
-      lv_obj_center(lv_label_create(handle));
+      lv_obj_center(Label(const_cast<Button &>(*this)).getHandle());
     }
 
-    assert(lv_obj_get_child_count(handle) == 1);
+    auto childCount = lv_obj_get_child_count(handle);
+    assert(childCount == 1);
     return lv_obj_get_child(handle, 0);
   }
 }

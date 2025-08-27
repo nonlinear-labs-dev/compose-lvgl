@@ -22,6 +22,7 @@ class BaseWidget
   static constexpr auto c_leftClickKey = "LeftClick";
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_stateChangeKey = "StateChange";
+  static constexpr auto c_canvasData = "CanvasData";
 
   struct UserDataEntry
   {
@@ -115,7 +116,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = fac();
-      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) {});
+      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { });
       storage->entries[key] = std::move(entry);
       return *static_cast<T*>(data);
     }

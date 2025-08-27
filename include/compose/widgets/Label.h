@@ -1,22 +1,24 @@
 #pragma once
-#include "Widget.h"
-#include "src/widgets/label/lv_label.h"
+#include "CustomDrawingElement.h"
+#include "compose/FreeTypeFont.h"
 
 #include <functional>
 #include <string>
+#include <memory>
 
 namespace Compose
 {
-  class Label final : public Widget
+  class Label : public Widget
   {
    public:
     using Widget::setModifier;
 
     using AutorunStringCB = std::function<std::string()>;
 
+    void setRenderCallback();
     template <typename... tArgs>
     explicit Label(BaseWidget &parent, tArgs... args)
-        : Widget(lv_label_create(parent.getHandle()))
+        : Widget(lv_canvas_create(parent.getHandle()))
     {
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
@@ -24,6 +26,7 @@ namespace Compose
       setModifier(FlexGrow { 0 });
       setModifier(BackgroundColor { Color::TRANSPARENT() });
       (setModifier(args), ...);
+      setRenderCallback();
     }
 
     explicit Label(WidgetType *handle);
@@ -34,9 +37,34 @@ namespace Compose
       lv_obj_set_style_text_align(getHandle(), a.it, LV_PART_MAIN);
     }
 
-    void setModifier(Text s) const;
+    template <typename T> T &getModifier() const
+    {
+      return ensureDataForKeyExistsOwning<T>(typeid(T).name());
+    }
+
+    void setModifier(const Text &s) const;
     void setModifier(PrimaryColor s) const override;
-    void setModifier(Font s) const;
+    virtual void setModifier(Font s) const;
+
+    void cleanup() const;
+
+    void clear() override
+    {
+      cleanup();
+      Widget::clear();
+    }
+
+   private:
+    void setDrawCall(CustomDrawingElement::tDrawCB &&draw) const;
+    struct
+    {
+      void operator<<(CustomDrawingElement::tDrawCB &&cb) const
+      {
+        m_parent->setDrawCall(std::move(cb));
+      }
+
+      Label *m_parent;
+    } render { this };
   };
 
   struct FontStorage
@@ -50,36 +78,21 @@ namespace Compose
       nltools::Log::error("build font storage");
     }
 
-    FontStorage(const FontStorage &) = delete;             // no copy
-    FontStorage &operator=(const FontStorage &) = delete;  // no assignment
+    FontStorage(const FontStorage &) = delete;
+    FontStorage &operator=(const FontStorage &) = delete;
 
-    struct FontWrapper
-    {
-      explicit FontWrapper(const std::string &path)
-          : m_font { lv_binfont_create(std::format("S:{}", path).c_str()) }
-      {
-      }
-
-      ~FontWrapper()
-      {
-        lv_binfont_destroy(m_font);
-      }
-
-      lv_font_t *m_font;
-    };
-
-    FontWrapper &getFont(const Font &font)
+    FreeTypeFont &getFont(const Font &font)
     {
       auto it = fonts.find(font);
       if(it == fonts.end())
       {
-        it = fonts.emplace(font, std::make_unique<FontWrapper>(buildPath(font))).first;
+        it = fonts.emplace(font, std::make_unique<FreeTypeFont>(buildPath(font), font.size)).first;
       }
       return *it->second;
     }
 
     tPathBuilder buildPath;
-    std::unordered_map<Font, std::unique_ptr<FontWrapper>> fonts;
+    std::unordered_map<Font, std::unique_ptr<FreeTypeFont>> fonts;
   };
 
   extern std::unique_ptr<FontStorage> s_fontStorage;
