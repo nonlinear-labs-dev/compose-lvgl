@@ -12,6 +12,7 @@ namespace Compose
   {
    public:
     using Widget::setModifier;
+    using Widget::Widget;
 
     using AutorunStringCB = std::function<std::string()>;
 

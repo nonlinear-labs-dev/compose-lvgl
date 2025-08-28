@@ -71,7 +71,7 @@ namespace Compose
     {
       lv_screen_load(BaseWidget::getHandle());
       applyDefaultStyle(BaseWidget::getHandle());
-      setModifier(BackgroundColor::TRANSPARENT());
+      Widget::setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
     }
 
@@ -80,7 +80,7 @@ namespace Compose
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
-      setModifier(BackgroundColor::TRANSPARENT());
+      Widget::setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
     }
 
@@ -175,13 +175,6 @@ namespace Compose
       }
     }
 
-    /*
-    *
-    *With default alignment it's the distance from the top left corner
-E.g. LV_ALIGN_CENTER alignment it's the offset from the center of the parent
-The position is interpreted on the content area of the parent
-The values can be set in pixel or in percentage of parent size with lv_pct(v)
-     */
     void setModifier(Position pos) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
@@ -192,7 +185,7 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
           nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
                                        "position only works with LAYOUT_TYPE NONE");
         }
-        catch(std::exception &e)
+        catch([[maybe_unused]] std::exception &e)
         {
           throw;
         }
@@ -236,7 +229,7 @@ The values can be set in pixel or in percentage of parent size with lv_pct(v)
                                         .red = border.color.r,
                                     },
                                     LV_PART_MAIN);
-      lv_obj_set_style_border_opa(getHandle(), border.color.a * 255, LV_PART_MAIN);
+      lv_obj_set_style_border_opa(getHandle(), static_cast<unsigned short>(border.color.a * 255), LV_PART_MAIN);
     }
 
     void setModifier(RoundedCorner corner) const

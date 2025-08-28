@@ -262,6 +262,8 @@ namespace Compose
 #define XALIGN(...) it.doAutorun([=] { it.setModifier(XAlign(__VA_ARGS__)); });
 #define LETTER_SPACING(...) it.doAutorun([=] { it.setModifier(LetterSpacing(__VA_ARGS__)); });
 #define HIDDEN(...) it.doAutorun([=] { it.setModifier(Hidden(__VA_ARGS__)); });
+#define WIDTH(...) it.doAutorun([=] { it.setModifier(Width { __VA_ARGS__ }); });
+#define HEIGHT(...) it.doAutorun([=] { it.setModifier(Height { __VA_ARGS__ }); });
 #define POSITION(...) it.doAutorun([=] { it.setModifier(Position(__VA_ARGS__)); });
 #define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); });
 #define NOT_SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::FIXED)); });
@@ -270,3 +272,4 @@ namespace Compose
 #define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
 #define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });
 #define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
+#define FLEX_GROW(...) it.doAutorun([=] { it.setModifier(FlexGrow { __VA_ARGS__ }); });

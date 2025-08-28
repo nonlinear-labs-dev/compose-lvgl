@@ -74,6 +74,7 @@ namespace Compose
 
             if(data && handle && lv_obj_is_valid(handle) && data->resizeHandler)
             {
+              lv_obj_update_layout(handle);
               const int width = lv_obj_get_width(handle);
               const int height = lv_obj_get_height(handle);
 

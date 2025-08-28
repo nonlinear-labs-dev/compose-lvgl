@@ -18,10 +18,10 @@ namespace Compose
 
           const auto &font = s_fontStorage->getFont(labelWidget.getModifier<Font>());
           const auto displayText = labelWidget.getModifier<Text>().text;
-          const auto textWidth = font.getStringWidth(displayText);
+          const auto textWidth = static_cast<int32_t>(font.getStringWidth(displayText));
           const auto textAlign = labelWidget.getModifier<TextAlign>();
 
-          const auto startX = [w, textWidth](const TextAlign &a) -> unsigned int
+          const auto startX = [w, textWidth](const TextAlign &a) -> int
           {
             switch(a.it)
             {
@@ -36,15 +36,15 @@ namespace Compose
             }
           }(textAlign);
 
+          const auto baseColor = labelWidget.getModifier<PrimaryColor>();
+
           font.draw(displayText, startX, 0,
                     [&](auto x, auto y, auto value)
                     {
-                      constexpr auto threshold = 64;
                       auto factor = value / 255.0;
-                      if(value > threshold)
-                      {
-                        ctx.fillRect(labelWidget.getModifier<PrimaryColor>().multiply(factor), { x, y, 1, 1 });
-                      }
+                      auto pixelColor = baseColor;
+                      pixelColor.a = factor;
+                      ctx.fillRect(pixelColor, { x, y, 1, 1 });
                     });
         });
   }
