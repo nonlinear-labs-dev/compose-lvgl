@@ -7,6 +7,7 @@ namespace Compose
 {
   void Button::setModifier(const Text &t) const
   {
+    persistModifier(t);
     if(const auto label = getOrCreateLabel())
     {
       Label(label).setModifier(t);
@@ -15,6 +16,7 @@ namespace Compose
 
   void Button::setModifier(const Font &t) const
   {
+    persistModifier(t);
     if(const auto label = getOrCreateLabel())
     {
       Label(label).setModifier(t);
@@ -23,11 +25,13 @@ namespace Compose
 
   void Button::setModifier(ButtonType t) const
   {
+    persistModifier(t);
     lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CHECKABLE, t.it == ButtonType::TOGGLE);
   }
 
   void Button::setModifier(PrimaryColor color) const
   {
+    persistModifier(color);
     if(const auto label = getOrCreateLabel())
     {
       Label(label).setModifier(color);
@@ -36,6 +40,7 @@ namespace Compose
 
   void Button::setModifier(const TextAlign &t) const
   {
+    persistModifier(t);
     if(const auto label = getOrCreateLabel())
     {
       Label(label).setModifier(t);
@@ -49,7 +54,6 @@ namespace Compose
     {
       Label l(const_cast<Button &>(*this));
       l.setModifier(Height::FULL());
-      lv_obj_center(l.getHandle());
     }
 
     auto childCount = lv_obj_get_child_count(handle);

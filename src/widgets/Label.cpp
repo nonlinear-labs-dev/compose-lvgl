@@ -1,7 +1,6 @@
 #include <compose/widgets/Label.h>
 #include <compose/widgets/DrawContext.h>
 #include <compose/FreeTypeFont.h>
-#include <cassert>
 #include <utility>
 
 namespace Compose
@@ -49,32 +48,27 @@ namespace Compose
         });
   }
 
-  Label::Label(WidgetType *handle)
-      : Widget(handle)
-  {
-  }
-
   void Label::setModifier(Text t) const
   {
-    ensureDataForKeyExistsOwning<Text>(typeid(t).name()) = t;
+    persistModifier(t);
     lv_obj_invalidate(getHandle());
   }
 
   void Label::setModifier(PrimaryColor c) const
   {
-    ensureDataForKeyExistsOwning<PrimaryColor>(typeid(c).name()) = c;
+    persistModifier(c);
     lv_obj_invalidate(getHandle());
   }
 
   void Label::setModifier(BackgroundColor c) const
   {
-    ensureDataForKeyExistsOwning<BackgroundColor>(typeid(c).name()) = c;
+    persistModifier(c);
     lv_obj_invalidate(getHandle());
   }
 
   void Label::setModifier(Font s) const
   {
-    ensureDataForKeyExistsOwning<Font>(typeid(Font).name()) = std::move(s);
+    persistModifier(std::move(s));
     lv_obj_invalidate(getHandle());
   }
 
@@ -142,7 +136,7 @@ namespace Compose
 
   void Label::setModifier(TextAlign a) const
   {
-    ensureDataForKeyExistsOwning<TextAlign>(typeid(a).name()) = a;
+    persistModifier(a);
     lv_obj_invalidate(getHandle());
   }
 }

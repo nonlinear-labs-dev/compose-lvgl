@@ -29,8 +29,6 @@ namespace Compose
       setRenderCallback();
     }
 
-    explicit Label(WidgetType *handle);
-
     void operator<<(AutorunStringCB &&cb) const;
 
     void setModifier(Text s) const;

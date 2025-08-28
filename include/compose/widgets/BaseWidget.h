@@ -124,7 +124,7 @@ class BaseWidget
     return *static_cast<T*>(it->second->data);
   }
 
-  void clearUserData()
+  void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
     erase_if(storage->entries, [](const auto& it) { return it.first != c_computationsKey; });

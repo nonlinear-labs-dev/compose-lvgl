@@ -5,6 +5,7 @@ namespace Compose
 {
   void SVGImage::setModifier(const SVGPath &p) const
   {
+    persistModifier(p);
     lv_image_set_src(getHandle(), std::format("S:{}", p.it.c_str()).c_str());
 
     if(p.size.has_value())
@@ -22,6 +23,7 @@ namespace Compose
 
   void SVGImage::setModifier(PrimaryColor c) const
   {
+    persistModifier(c);
     lv_obj_set_style_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
     lv_obj_set_style_image_recolor(getHandle(),
                                    {
@@ -34,13 +36,13 @@ namespace Compose
 #ifdef ENABLE_DEBUG_SHADOWS
     lv_obj_set_style_bg_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
     lv_obj_set_style_bg_image_recolor(getHandle(),
-                                   {
-                                       .blue = c.b,
-                                       .green = c.g,
-                                       .red = c.r,
-                                   },
-                                   LV_PART_MAIN);
-    
+                                      {
+                                          .blue = c.b,
+                                          .green = c.g,
+                                          .red = c.r,
+                                      },
+                                      LV_PART_MAIN);
+
     lv_obj_set_style_shadow_spread(getHandle(), 10, LV_PART_MAIN);
     lv_obj_set_style_shadow_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
     lv_obj_set_style_shadow_color(getHandle(),
@@ -52,7 +54,6 @@ namespace Compose
                                   LV_PART_MAIN);
     lv_obj_set_style_shadow_width(getHandle(), 10, LV_PART_MAIN);
 #endif
-
   }
 
   Size SVGImage::getViewboxSize() const
