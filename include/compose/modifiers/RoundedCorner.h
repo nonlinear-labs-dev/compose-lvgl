@@ -7,6 +7,11 @@ namespace Compose
   {
     static constexpr auto key = "_RoundedCorner";
 
+    RoundedCorner()
+        : radius(0)
+    {
+    }
+
     explicit RoundedCorner(int r)
         : radius(r)
     {

@@ -89,6 +89,16 @@ namespace Compose
     {
     }
 
+    template <typename T> T &getModifier() const
+    {
+      return ensureDataForKeyExistsOwning<T>(typeid(T).name());
+    }
+
+    template <typename T> void persistModifier(T t) const
+    {
+      ensureDataForKeyExistsOwning<Width>(typeid(t).name()) = t;
+    }
+
     [[nodiscard]] int getWidth() const
     {
       return lv_obj_get_width(getHandle());
@@ -114,11 +124,13 @@ namespace Compose
 
     void setModifier(OverflowBehaviour r) const
     {
+      persistModifier(r);
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_OVERFLOW_VISIBLE, r.it == OverflowBehaviour::VISIBLE);
     }
 
     void setModifier(Scrollable r) const
     {
+      persistModifier(r);
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_SCROLLABLE, r.it == Scrollable::SCROLLABLE);
     }
 
@@ -137,16 +149,19 @@ namespace Compose
 
     virtual void setModifier(PrimaryColor col) const
     {
+      persistModifier(col);
       setColor(col);
     }
 
     virtual void setModifier(BackgroundColor col) const
     {
+      persistModifier(col);
       setColor(col);
     }
 
     void setSize(Size s) const
     {
+      persistModifier(s);
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_width(getHandle(), s.w);
       lv_obj_set_height(getHandle(), s.h);
@@ -159,11 +174,13 @@ namespace Compose
 
     void setModifier(LayoutType r) const
     {
-      lv_obj_set_layout(getHandle(), r.it == LayoutType::FLEX ? LV_LAYOUT_FLEX : LV_LAYOUT_NONE);
+      per lv_obj_set_layout(getHandle(), r.it == LayoutType::FLEX ? LV_LAYOUT_FLEX : LV_LAYOUT_NONE);
     }
 
     void setModifier(Orientation r) const
     {
+      ensureDataForKeyExistsOwning<Orientation>(typeid(r).name()) = r;
+
       switch(r.it)
       {
         case OrientationEnum::HORIZONTAL:
@@ -177,9 +194,10 @@ namespace Compose
 
     void setModifier(Position pos) const
     {
+      ensureDataForKeyExistsOwning<Position>(typeid(pos).name()) = pos;
+
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-
         try
         {
           nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
@@ -195,16 +213,19 @@ namespace Compose
 
     void setModifier(FlexAlign align) const
     {
+      ensureDataForKeyExistsOwning<FlexAlign>(typeid(align).name()) = align;
       lv_obj_set_flex_align(getHandle(), align.main, align.cross, align.track_cross);
     }
 
     void setModifier(Align align) const
     {
+      ensureDataForKeyExistsOwning<Align>(typeid(align).name()) = align;
       lv_obj_set_align(getHandle(), align.it);
     }
 
     void setModifier(Padding padding) const
     {
+      ensureDataForKeyExistsOwning<Padding>(typeid(padding).name()) = padding;
       lv_obj_set_style_pad_left(getHandle(), padding.left, LV_PART_MAIN);
       lv_obj_set_style_pad_top(getHandle(), padding.top, LV_PART_MAIN);
       lv_obj_set_style_pad_right(getHandle(), padding.right, LV_PART_MAIN);
@@ -213,6 +234,7 @@ namespace Compose
 
     void setModifier(Margin margin) const
     {
+      ensureDataForKeyExistsOwning<Margin>(typeid(margin).name()) = margin;
       lv_obj_set_style_margin_left(getHandle(), margin.left, LV_PART_MAIN);
       lv_obj_set_style_margin_top(getHandle(), margin.top, LV_PART_MAIN);
       lv_obj_set_style_margin_right(getHandle(), margin.right, LV_PART_MAIN);
@@ -221,6 +243,7 @@ namespace Compose
 
     void setModifier(Border border) const
     {
+      ensureDataForKeyExistsOwning<Border>(typeid(border).name()) = border;
       lv_obj_set_style_border_width(getHandle(), border.width, LV_PART_MAIN);
       lv_obj_set_style_border_color(getHandle(),
                                     lv_color_t {
@@ -234,16 +257,20 @@ namespace Compose
 
     void setModifier(RoundedCorner corner) const
     {
+      ensureDataForKeyExistsOwning<RoundedCorner>(typeid(corner).name()) = corner;
       lv_obj_set_style_radius(getHandle(), corner.radius, LV_PART_MAIN);
     }
 
     void setModifier(Hidden h) const
     {
+      ensureDataForKeyExistsOwning<Hidden>(typeid(h).name()) = h;
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_HIDDEN, h.it);
     }
 
     void setModifier(Expand e) const
     {
+      ensureDataForKeyExistsOwning<Expand>(typeid(e).name()) = e;
+
       if(e.horizontal)
       {
         lv_obj_set_width(getHandle(), LV_PCT(100));
@@ -261,12 +288,14 @@ namespace Compose
 
     void setModifier(SizePercentage s) const
     {
+      ensureDataForKeyExistsOwning<SizePercentage>(typeid(s).name()) = s;
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
     }
 
     void setModifier(Width w) const
     {
+      ensureDataForKeyExistsOwning<Width>(typeid(w).name()) = w;
       if(const auto parent = lv_obj_get_parent(getHandle());
          lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
       {

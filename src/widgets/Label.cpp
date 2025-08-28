@@ -54,7 +54,7 @@ namespace Compose
   {
   }
 
-  void Label::setModifier(const Text &t) const
+  void Label::setModifier(Text t) const
   {
     ensureDataForKeyExistsOwning<Text>(typeid(t).name()) = t;
     lv_obj_invalidate(getHandle());
@@ -85,7 +85,7 @@ namespace Compose
          canvasData = &ensureDataForKeyExistsOwning<CanvasData>(
              c_canvasData, [this, &draw] { return new CanvasData(getHandle(), std::move(draw)); })]
         {
-          if(handle && canvasData && canvasData->drawCallback)
+          if(handle && canvasData && canvasData->drawCallback && lv_obj_is_valid(handle))
           {
             LVGLDrawContext drawContext(handle);
             const auto w = lv_obj_get_width(handle);

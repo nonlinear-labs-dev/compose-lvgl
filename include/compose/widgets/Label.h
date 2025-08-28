@@ -16,7 +16,6 @@ namespace Compose
 
     using AutorunStringCB = std::function<std::string()>;
 
-    void setRenderCallback() const;
     template <typename... tArgs>
     explicit Label(BaseWidget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
@@ -32,17 +31,13 @@ namespace Compose
 
     explicit Label(WidgetType *handle);
 
-    template <typename T> T &getModifier() const
-    {
-      return ensureDataForKeyExistsOwning<T>(typeid(T).name());
-    }
-
     void operator<<(AutorunStringCB &&cb) const;
 
-    void setModifier(const Text &s) const;
+    void setModifier(Text s) const;
+    void setModifier(TextAlign a) const;
+
     void setModifier(PrimaryColor s) const override;
     void setModifier(BackgroundColor c) const override;
-    void setModifier(TextAlign a) const;
     virtual void setModifier(Font s) const;
 
     void clear() override
@@ -52,6 +47,7 @@ namespace Compose
     }
 
    private:
+    void setRenderCallback() const;
     void cleanup() const;
     void setDrawCall(CustomDrawingElement::tDrawCB &&draw) const;
   };
