@@ -118,7 +118,7 @@ namespace Compose
 
     virtual void clear()
     {
-      clearUserData();
+      // clearUserData();
       lv_obj_clean(getHandle());
     }
 

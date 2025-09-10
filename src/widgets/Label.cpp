@@ -74,19 +74,9 @@ namespace Compose
 
   void Label::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const
   {
-    doAutorun(
-        [handle = getHandle(),
-         canvasData = &ensureDataForKeyExistsOwning<CanvasData>(
-             c_canvasData, [this, &draw] { return new CanvasData(getHandle(), std::move(draw)); })]
-        {
-          if(handle && canvasData && canvasData->drawCallback && lv_obj_is_valid(handle))
-          {
-            LVGLDrawContext drawContext(handle);
-            const auto w = lv_obj_get_width(handle);
-            const auto h = lv_obj_get_height(handle);
-            canvasData->drawCallback(drawContext, w, h);
-          }
-        });
+    auto &canvasData = ensureDataForKeyExistsOwning<CanvasData>(
+        c_canvasData, [this, &draw] { return new CanvasData(getHandle(), std::move(draw)); });
+    canvasData.drawCallback = std::move(draw);
   }
 
   void Label::cleanup() const
