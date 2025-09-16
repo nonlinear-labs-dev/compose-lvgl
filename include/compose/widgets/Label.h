@@ -77,8 +77,6 @@ namespace Compose
     tPathBuilder buildPath;
     std::unordered_map<Font, std::unique_ptr<FreeTypeFont>> fonts;
   };
-
-  extern std::unique_ptr<FontStorage> s_fontStorage;
 }
 
 #define LABEL(...) it.add(Compose::Label(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Label &&it)

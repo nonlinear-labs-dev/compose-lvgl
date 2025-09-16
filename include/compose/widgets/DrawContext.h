@@ -2,11 +2,16 @@
 #include "compose/modifiers/Color.h"
 #include "compose/modifiers/Rect.h"
 #include "compose/modifiers/RoundedCorner.h"
+#include "compose/modifiers/Text.h"
+#include "compose/modifiers/Font.h"
+#include "compose/modifiers/Modifiers.h"
 #include "src/draw/lv_draw.h"
 #include "src/misc/lv_types.h"
 
 #include <tuple>
 #include <vector>
+#include <memory>
+#include "compose/widgets/Label.h"
 
 namespace Compose
 {
@@ -31,6 +36,7 @@ namespace Compose
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
+    virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -45,9 +51,12 @@ namespace Compose
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
+    void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) override;
 
    private:
     lv_layer_t m_layer;
     tCanvas m_canvas;
   };
+
+  extern std::unique_ptr<FontStorage> s_fontStorage;
 };

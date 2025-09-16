@@ -4,9 +4,13 @@
 #include "src/misc/lv_area.h"
 #include <src/widgets/canvas/lv_canvas.h>
 #include "src/draw/lv_draw_vector.h"
+#include <memory>
+#include "compose/widgets/Label.h"
 
 namespace Compose
 {
+  std::unique_ptr<FontStorage> s_fontStorage = nullptr;
+
   LVGLDrawContext::LVGLDrawContext(tCanvas ctx)
       : m_layer {}
       , m_canvas(ctx)
@@ -139,5 +143,41 @@ namespace Compose
 
     lv_vector_path_delete(path);
     lv_vector_dsc_delete(dsc);
+  }
+
+  void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
+  {
+    if(!m_canvas || t.text.empty())
+      return;
+
+    if(!s_fontStorage)
+      return;
+
+    auto& font = s_fontStorage->getFont(f);
+    const auto textWidth = static_cast<int32_t>(font.getStringWidth(t.text));
+    
+    const auto startX = [&]() -> int
+    {
+      switch(ta.it)
+      {
+        case LV_TEXT_ALIGN_LEFT:
+          return r.pos.x;
+        case LV_TEXT_ALIGN_RIGHT:
+          return r.pos.x + r.size.w - textWidth;
+        default:
+        case LV_TEXT_ALIGN_CENTER:
+        case LV_TEXT_ALIGN_AUTO:
+          return r.pos.x + (r.size.w - textWidth) / 2;
+      }
+    }();
+
+    font.draw(t.text, startX, r.pos.y,
+              [&](auto x, auto y, auto value)
+              {
+                auto factor = value / 255.0;
+                auto pixelColor = c;
+                pixelColor.a = factor * c.a;
+                fillRect(pixelColor, { x, y, 1, 1 });
+              });
   }
 }

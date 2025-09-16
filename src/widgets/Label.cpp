@@ -5,8 +5,7 @@
 
 namespace Compose
 {
-  std::unique_ptr<FontStorage> s_fontStorage = nullptr;
-
+  extern std::unique_ptr<FontStorage> s_fontStorage;
   void Label::setRenderCallback() const
   {
     setDrawCall(
