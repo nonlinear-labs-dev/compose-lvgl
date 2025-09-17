@@ -59,21 +59,17 @@ namespace Compose
 
   struct CanvasData
   {
-    lv_draw_buf_t* buffer = nullptr;
+    Reactive::Var<lv_draw_buf_t*> buffer = nullptr;
     CustomDrawingElement::tDrawCB drawCallback;
-    lv_event_dsc_t* drawHandler = nullptr;
     lv_event_dsc_t* resizeHandler = nullptr;
-    lv_event_dsc_t* readyHandler = nullptr;
-    lv_event_dsc_t* deleteHandler = nullptr;
     lv_obj_t* handle = nullptr;
-
-    Reactive::Var<uint64_t> redrawCounter = 0;
 
     CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
     ~CanvasData();
+    void ensureBuffer();
   };
 }
 
 #define CANVAS(...)                                                                                                    \
-  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement && it)
+  it.add(Compose::CustomDrawingElement(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::CustomDrawingElement&& it)
 #define RENDER it.render << [=]

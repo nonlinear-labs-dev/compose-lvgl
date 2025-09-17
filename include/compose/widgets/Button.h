@@ -15,6 +15,8 @@ namespace Compose
       NORMAL,
       TOGGLE
     } it;
+
+    bool operator==(const ButtonType&) const = default;
   };
 
   class Button : public Widget

@@ -19,5 +19,7 @@ namespace Compose
     {
       return { SCROLLABLE };
     }
+
+    bool operator==(const Scrollable &) const = default;
   };
 }

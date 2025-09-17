@@ -7,14 +7,14 @@ namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
 
-  void Label::setRenderCallback() const
+  void Label::setLabelRenderingFunction() const
   {
     setDrawCall(
         [handle = getHandle()](DrawContext &ctx, int w, int h)
         {
+          // return;
           const Label labelWidget(handle);
           ctx.fillRect(labelWidget.getModifier<BackgroundColor>(), { 0, 0, w, h });
-
           const auto &font = s_fontStorage->getFont(labelWidget.getModifier<Font>());
           const auto displayText = labelWidget.getModifier<Text>().text;
           const auto textWidth = static_cast<int32_t>(font.getStringWidth(displayText));
@@ -74,49 +74,31 @@ namespace Compose
 
   void Label::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const
   {
-    auto &canvasData = ensureDataForKeyExistsOwning<CanvasData>(
-        c_canvasData, [this, &draw] { return new CanvasData(getHandle(), std::move(draw)); });
-    canvasData.drawCallback = std::move(draw);
-  }
+    nltools_detailedAssertAlways(!doesDataForKeyExist<CanvasData>(),
+                                 "CanvasData should not exist, setting a new render callback is prohibited");
+    Widget(getHandle())
+        .doAutorun(
+            [draw = std::move(draw), handle = getHandle()]
+            {
+              const Widget widget(handle);
 
-  void Label::cleanup() const
-  {
-    auto storage = getUserDataStorage();
-    if(storage)
-    {
-      auto it = storage->entries.find(c_canvasData);
-      if(it != storage->entries.end() && it->second)
-      {
-        auto canvasData = static_cast<CanvasData *>(it->second->data);
-        if(canvasData)
-        {
-          if(canvasData->handle && lv_obj_is_valid(canvasData->handle))
-          {
-            if(canvasData->resizeHandler)
-            {
-              lv_obj_remove_event_dsc(canvasData->handle, canvasData->resizeHandler);
-              canvasData->resizeHandler = nullptr;
-            }
-            if(canvasData->readyHandler)
-            {
-              lv_obj_remove_event_dsc(canvasData->handle, canvasData->readyHandler);
-              canvasData->readyHandler = nullptr;
-            }
-            if(canvasData->deleteHandler)
-            {
-              lv_obj_remove_event_dsc(canvasData->handle, canvasData->deleteHandler);
-              canvasData->deleteHandler = nullptr;
-            }
-          }
-          if(canvasData->buffer)
-          {
-            lv_draw_buf_destroy(canvasData->buffer);
-            canvasData->buffer = nullptr;
-          }
-          canvasData->handle = nullptr;
-        }
-      }
-    }
+              auto &canvasData = widget.ensureDataForKeyExistsOwning<CanvasData>(c_canvasData, [handle, d = draw]
+                                                                                 { return new CanvasData(handle, d); });
+
+              const auto w = lv_obj_get_width(handle);
+              const auto h = lv_obj_get_height(handle);
+
+              //draw buffer is set and init
+              LVGLDrawContext drawContext(handle);
+
+              try
+              {
+                canvasData.drawCallback(drawContext, w, h);
+              }
+              catch(std::exception &)
+              {
+              }
+            });
   }
 
   void Label::operator<<(AutorunStringCB &&cb) const

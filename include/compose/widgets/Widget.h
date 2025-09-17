@@ -30,12 +30,16 @@ namespace Compose
     {
       return { FLEX };
     }
+
+    bool operator==(const LayoutType &) const = default;
   };
 
   struct Border
   {
     int width;
     Color color;
+
+    bool operator==(const Border &) const = default;
   };
 
   class Widget : public BaseWidget
@@ -75,6 +79,7 @@ namespace Compose
       (setModifier(args), ...);
     }
 
+    void setDefaultWidthAndHeightAccordingToParent();
     template <typename... tArgs>
     explicit Widget(BaseWidget &w, tArgs... args)
         : Widget(lv_obj_create(w.getHandle()))
@@ -82,6 +87,12 @@ namespace Compose
       applyDefaultStyle(BaseWidget::getHandle());
       Widget::setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
+
+      if(!doesDataForModifierExists<SizePercentage>() && !doesDataForModifierExists<Height>()
+         && !doesDataForModifierExists<Width>())
+      {
+        setDefaultWidthAndHeightAccordingToParent();
+      }
     }
 
     explicit Widget(WidgetType *w)
@@ -89,14 +100,20 @@ namespace Compose
     {
     }
 
-    template <typename T> T &getModifier() const
+    template <typename T> T getModifier() const
     {
-      return ensureDataForKeyExistsOwning<T>(typeid(T).name());
+      return ensureReactiveModifier<T>().get();
     }
 
     template <typename T> void persistModifier(T t) const
     {
-      ensureDataForKeyExistsOwning<T>(typeid(t).name()) = t;
+      ensureReactiveModifier<T>() = t;
+    }
+
+    template <typename T> bool doesDataForModifierExists() const
+    {
+      const auto storage = ensureUserDataStorage();
+      return storage->entries.contains(typeid(T).name());
     }
 
     [[nodiscard]] int getWidth() const
@@ -118,7 +135,7 @@ namespace Compose
 
     virtual void clear()
     {
-      // clearUserData();
+      clearUserData();
       lv_obj_clean(getHandle());
     }
 
@@ -298,10 +315,12 @@ namespace Compose
     void setModifier(Width w) const
     {
       persistModifier(w);
-      if(const auto parent = lv_obj_get_parent(getHandle());
-         lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+      if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+        {
+          lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        }
       }
       lv_obj_set_width(getHandle(), w.it);
       lv_obj_update_layout(getHandle());
@@ -339,6 +358,21 @@ namespace Compose
     LongClick longClick { *this, c_longClickKey };
     StateChange stateChange { *this };
   };
+
+  inline void Widget::setDefaultWidthAndHeightAccordingToParent()
+  {
+    if(auto parent = lv_obj_get_parent(getHandle()))
+    {
+      if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
+      {
+        setModifier(Width::FULL());
+      }
+      else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+      {
+        setModifier(Height::FULL());
+      }
+    }
+  }
 
   template <typename T>
   concept IsWidget = requires { typename T::WidgetType; };

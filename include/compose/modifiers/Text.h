@@ -30,9 +30,8 @@ namespace Compose
     {
     }
 
-    Text()
-    {
-    }
+    Text() = default;
+    bool operator==(const Text &) const = default;
 
     std::string text;
   };

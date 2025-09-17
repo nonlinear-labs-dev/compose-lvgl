@@ -6,5 +6,6 @@ namespace Compose
   struct PrimaryColor : Color
   {
     static constexpr auto key = "_PrimaryColor";
+    bool operator==(const PrimaryColor &) const = default;
   };
 }

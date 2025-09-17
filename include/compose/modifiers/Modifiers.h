@@ -43,6 +43,8 @@ namespace Compose
     {
       return { 100, 100 };
     }
+
+    bool operator==(const SizePercentage &) const = default;
   };
 
   struct Width
@@ -63,6 +65,8 @@ namespace Compose
     {
       return { LV_SIZE_CONTENT };
     }
+
+    bool operator==(const Width &) const = default;
   };
 
   struct Height
@@ -83,11 +87,15 @@ namespace Compose
     {
       return { LV_SIZE_CONTENT };
     }
+
+    bool operator==(const Height &) const = default;
   };
 
   struct FlexGrow
   {
     int it;
+
+    bool operator==(const FlexGrow &) const = default;
   };
 
   struct SizeVariant
@@ -158,6 +166,8 @@ namespace Compose
     }
 
     std::variant<SizePercentage, FixedSize, Width, Height, FlexGrow> it;
+
+    bool operator==(const SizeVariant &) const = default;
   };
 
   struct FlexAlign
@@ -215,6 +225,8 @@ namespace Compose
     {
       return { LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY };
     }
+
+    bool operator==(const FlexAlign &) const = default;
   };
 
   struct TextAlign
@@ -235,6 +247,8 @@ namespace Compose
     {
       return { LV_TEXT_ALIGN_RIGHT };
     }
+
+    bool operator==(const TextAlign &) const = default;
   };
 }
 

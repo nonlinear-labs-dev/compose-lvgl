@@ -26,5 +26,7 @@ namespace Compose
     {
       return Expand(true, true);
     }
+
+    bool operator==(const Expand &) const = default;
   };
-} 
+}

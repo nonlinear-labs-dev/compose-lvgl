@@ -32,5 +32,7 @@ namespace Compose
 
     int x {};
     int y {};
+
+    bool operator==(const Position &) const = default;
   };
 }

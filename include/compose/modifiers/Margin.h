@@ -36,5 +36,7 @@ namespace Compose
     }
 
     int top, bottom, left, right;
+
+    bool operator==(const Margin &) const = default;
   };
 }

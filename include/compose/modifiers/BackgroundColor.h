@@ -11,5 +11,7 @@ namespace Compose
     {
       return BackgroundColor { Color::TRANSPARENT() };
     }
+
+    bool operator==(const BackgroundColor &) const = default;
   };
 }
