@@ -1,3 +1,5 @@
+#include "compose/state/CanvasData.h"
+
 #include <compose/widgets/Label.h>
 #include <compose/widgets/DrawContext.h>
 #include <compose/FreeTypeFont.h>
@@ -11,7 +13,7 @@ namespace Compose
         [handle = getHandle()](DrawContext &ctx, int w, int h)
         {
           const Label labelWidget(handle);
-          auto &cd = labelWidget.getDataForKey<CanvasData>(BaseWidget::c_canvasData);
+          auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
 
           if(cd.bgColor.get().a > 0)
             ctx.fillRect(cd.bgColor, { 0, 0, w, h });
@@ -51,27 +53,32 @@ namespace Compose
 
   void Label::setModifier(Text t) const
   {
-    getDataForKey<CanvasData>(BaseWidget::c_canvasData).text = t;
+    getDataForKey<LabelData>(c_labelData).text = t;
   }
 
   void Label::setModifier(PrimaryColor c) const
   {
-    getDataForKey<CanvasData>(BaseWidget::c_canvasData).primaryColor = c;
+    getDataForKey<LabelData>(c_labelData).primaryColor = c;
   }
 
   void Label::setModifier(BackgroundColor c) const
   {
-    getDataForKey<CanvasData>(BaseWidget::c_canvasData).bgColor = c;
+    getDataForKey<LabelData>(c_labelData).bgColor = c;
   }
 
   void Label::setModifier(Font s) const
   {
-    getDataForKey<CanvasData>(BaseWidget::c_canvasData).font = s;
+    getDataForKey<LabelData>(c_labelData).font = s;
+  }
+
+  void Label::setModifier(TextAlign a) const
+  {
+    getDataForKey<LabelData>(c_labelData).align = a;
   }
 
   void Label::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const
   {
-    nltools_detailedAssertAlways(!doesDataForKeyExist<CanvasData>(),
+    nltools_detailedAssertAlways(!doesDataForKeyExist<LabelData>(),
                                  "CanvasData should not exist, setting a new render callback is prohibited");
     Widget(getHandle())
         .doAutorun(
@@ -79,15 +86,13 @@ namespace Compose
             {
               const Widget widget(handle);
 
-              auto &canvasData = widget.ensureDataForKeyExistsOwning<CanvasData>(c_canvasData, [handle, d = draw]
-                                                                                 { return new CanvasData(handle, d); });
+              auto &canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(c_labelData, [handle, d = draw]
+                                                                                 { return new LabelData(handle, d); });
 
               const auto w = lv_obj_get_width(handle);
               const auto h = lv_obj_get_height(handle);
 
-              //draw buffer is set and init
               LVGLDrawContext drawContext(handle);
-
               try
               {
                 canvasData.drawCallback(drawContext, w, h);
@@ -103,8 +108,4 @@ namespace Compose
     doAutorun([cb = std::move(cb), label = getHandle()] { Label(label).setModifier(Text { cb() }); });
   }
 
-  void Label::setModifier(TextAlign a) const
-  {
-    getDataForKey<CanvasData>(BaseWidget::c_canvasData).align = a;
-  }
 }

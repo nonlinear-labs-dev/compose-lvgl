@@ -39,13 +39,7 @@ namespace Compose
     }
 
     void setDrawCall(tDrawCB&& draw) const;
-    void cleanup() const;
 
-    void clear() override
-    {
-      cleanup();
-      Widget::clear();
-    }
     struct
     {
       void operator<<(tDrawCB&& cb) const
@@ -55,25 +49,6 @@ namespace Compose
 
       CustomDrawingElement* m_parent;
     } render { this };
-  };
-
-  struct CanvasData
-  {
-    Reactive::Var<std::unique_ptr<lv_draw_buf_t, decltype(&lv_draw_buf_destroy)>> buffer { { nullptr,
-                                                                                             lv_draw_buf_destroy } };
-    Reactive::Var<BackgroundColor> bgColor;
-    Reactive::Var<Font> font;
-    Reactive::Var<Text> text;
-    Reactive::Var<TextAlign> align;
-    Reactive::Var<PrimaryColor> primaryColor;
-
-    CustomDrawingElement::tDrawCB drawCallback;
-    lv_event_dsc_t* resizeHandler = nullptr;
-    lv_obj_t* handle = nullptr;
-
-    CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
-    ~CanvasData();
-    void ensureBuffer();
   };
 }
 

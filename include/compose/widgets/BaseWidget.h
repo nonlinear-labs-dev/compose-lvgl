@@ -25,6 +25,7 @@ class BaseWidget
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_stateChangeKey = "StateChange";
   static constexpr auto c_canvasData = "CanvasData";
+  static constexpr auto c_labelData = "LabelData";
 
   struct UserDataEntry
   {
@@ -140,7 +141,7 @@ class BaseWidget
   {
     auto storage = ensureUserDataStorage();
     erase_if(storage->entries,
-             [](const auto& it) { return it.first != c_computationsKey && it.first != c_canvasData; });
+             [](const auto& it) { return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData; });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const
