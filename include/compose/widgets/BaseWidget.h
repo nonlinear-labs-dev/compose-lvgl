@@ -89,11 +89,6 @@ class BaseWidget
     return nullptr;
   }
 
-  template <typename T> [[nodiscard]] Reactive::Var<T>& ensureReactiveModifier() const
-  {
-    return ensureDataForKeyExistsOwning<Reactive::Var<T>>(typeid(T).name());
-  }
-
   template <typename T> T& ensureDataForKeyExistsOwning(auto key) const
   {
     return ensureDataForKeyExistsOwning<T>(key, [] { return new T(); });
@@ -103,6 +98,12 @@ class BaseWidget
   {
     const auto storage = ensureUserDataStorage();
     return storage->entries.contains(typeid(T).name());
+  }
+
+  template <typename T> T& getDataForKey(auto key) const
+  {
+    auto storage = ensureUserDataStorage();
+    return *static_cast<T*>(storage->entries.at(key)->data);
   }
 
   template <typename T, typename Factory> T& ensureDataForKeyExistsOwning(auto key, const Factory& factory) const

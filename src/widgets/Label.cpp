@@ -10,13 +10,16 @@ namespace Compose
     setDrawCall(
         [handle = getHandle()](DrawContext &ctx, int w, int h)
         {
-          // return;
           const Label labelWidget(handle);
-          ctx.fillRect(labelWidget.getModifier<BackgroundColor>(), { 0, 0, w, h });
-          const auto &font = s_fontStorage->getFont(labelWidget.getModifier<Font>());
-          const auto displayText = labelWidget.getModifier<Text>().text;
+          auto &cd = labelWidget.getDataForKey<CanvasData>(BaseWidget::c_canvasData);
+
+          if(cd.bgColor.get().a > 0)
+            ctx.fillRect(cd.bgColor, { 0, 0, w, h });
+
+          const auto &font = s_fontStorage->getFont(cd.font);
+          const auto displayText = cd.text.get().text;
           const auto textWidth = static_cast<int32_t>(font.getStringWidth(displayText));
-          const auto textAlign = labelWidget.getModifier<TextAlign>();
+          const auto textAlign = cd.align.get();
 
           const auto startX = [w, textWidth](const TextAlign &a) -> int
           {
@@ -33,7 +36,7 @@ namespace Compose
             }
           }(textAlign);
 
-          const auto baseColor = labelWidget.getModifier<PrimaryColor>();
+          const auto baseColor = cd.primaryColor.get();
 
           font.draw(displayText, startX, 0,
                     [&](auto x, auto y, auto value)
@@ -48,26 +51,22 @@ namespace Compose
 
   void Label::setModifier(Text t) const
   {
-    persistModifier(t);
-    lv_obj_invalidate(getHandle());
+    getDataForKey<CanvasData>(BaseWidget::c_canvasData).text = t;
   }
 
   void Label::setModifier(PrimaryColor c) const
   {
-    persistModifier(c);
-    lv_obj_invalidate(getHandle());
+    getDataForKey<CanvasData>(BaseWidget::c_canvasData).primaryColor = c;
   }
 
   void Label::setModifier(BackgroundColor c) const
   {
-    persistModifier(c);
-    lv_obj_invalidate(getHandle());
+    getDataForKey<CanvasData>(BaseWidget::c_canvasData).bgColor = c;
   }
 
   void Label::setModifier(Font s) const
   {
-    persistModifier(std::move(s));
-    lv_obj_invalidate(getHandle());
+    getDataForKey<CanvasData>(BaseWidget::c_canvasData).font = s;
   }
 
   void Label::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const
@@ -106,7 +105,6 @@ namespace Compose
 
   void Label::setModifier(TextAlign a) const
   {
-    persistModifier(a);
-    lv_obj_invalidate(getHandle());
+    getDataForKey<CanvasData>(BaseWidget::c_canvasData).align = a;
   }
 }

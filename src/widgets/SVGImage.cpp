@@ -5,7 +5,7 @@ namespace Compose
 {
   void SVGImage::setModifier(const SVGPath &p) const
   {
-    persistModifier(p);
+
     lv_image_set_src(getHandle(), std::format("S:{}", p.it.c_str()).c_str());
 
     if(p.size.has_value())
@@ -23,7 +23,7 @@ namespace Compose
 
   void SVGImage::setModifier(PrimaryColor c) const
   {
-    persistModifier(c);
+   
     lv_obj_set_style_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
     lv_obj_set_style_image_recolor(getHandle(),
                                    {

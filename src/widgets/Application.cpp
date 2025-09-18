@@ -31,20 +31,23 @@ namespace Compose
     Window window { m_backend, windowSize };
     const Reactive::Computations c;
     c.add([&] { callback(window); });
+
     auto lastTick = std::chrono::high_resolution_clock::now();
 
-    bool run = true;
+    Glib::signal_timeout().connect(
+        [&]
+        {
+          const auto current = std::chrono::high_resolution_clock::now();
+          auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+          lv_tick_inc(delta.count());
+          lastTick = current;
+          lv_timer_handler();
+          return true;
+        },
+        5);
 
-    while(run)
-    {
-      Glib::MainContext::get_default()->iteration(false);
-      // std::this_thread::sleep_for(std::chrono::milliseconds(5));
-      const auto current = std::chrono::high_resolution_clock::now();
-      auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
-      lv_tick_inc(delta.count());
-      lastTick = current;
-      lv_timer_handler();
-    }
+    auto loop = Glib::MainLoop::create();
+    loop->run();
 
     [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
   }

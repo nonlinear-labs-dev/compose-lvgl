@@ -59,7 +59,14 @@ namespace Compose
 
   struct CanvasData
   {
-    Reactive::Var<lv_draw_buf_t*> buffer = nullptr;
+    Reactive::Var<std::unique_ptr<lv_draw_buf_t, decltype(&lv_draw_buf_destroy)>> buffer { { nullptr,
+                                                                                             lv_draw_buf_destroy } };
+    Reactive::Var<BackgroundColor> bgColor;
+    Reactive::Var<Font> font;
+    Reactive::Var<Text> text;
+    Reactive::Var<TextAlign> align;
+    Reactive::Var<PrimaryColor> primaryColor;
+
     CustomDrawingElement::tDrawCB drawCallback;
     lv_event_dsc_t* resizeHandler = nullptr;
     lv_obj_t* handle = nullptr;

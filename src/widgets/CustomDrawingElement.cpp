@@ -30,11 +30,6 @@ namespace Compose
               canvasData->resizeHandler = nullptr;
             }
           }
-          if(canvasData->buffer)
-          {
-            lv_draw_buf_destroy(canvasData->buffer);
-            canvasData->buffer = nullptr;
-          }
           canvasData->handle = nullptr;
         }
       }
@@ -62,25 +57,15 @@ namespace Compose
     const int width = lv_obj_get_width(this->handle);
     const int height = lv_obj_get_height(this->handle);
 
-    auto bufferCopy = buffer.peek();
-    // if(bufferCopy && bufferCopy->header.w == width && bufferCopy->header.h == height)
-    // {
-    //   return;
-    // }
-
-    if(bufferCopy && bufferCopy->header.flags & LV_IMAGE_FLAGS_ALLOCATED)
-    {
-      lv_draw_buf_destroy(bufferCopy);
-    }
-
     if(width > 0 && height > 0)
     {
-      this->buffer = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
-    }
-
-    if(this->buffer.peek())
-    {
-      lv_canvas_set_buffer(this->handle, this->buffer.peek()->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+      auto b = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
+      buffer.modify(
+          [=, this](auto& f)
+          {
+            f.reset(b);
+            lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+          });
     }
   }
 
@@ -90,12 +75,6 @@ namespace Compose
     {
       if(resizeHandler)
         lv_obj_remove_event_dsc(handle, resizeHandler);
-      if(buffer)
-        lv_draw_buf_destroy(buffer);
-    }
-    else if(buffer)
-    {
-      lv_draw_buf_destroy(buffer);
     }
   }
 }

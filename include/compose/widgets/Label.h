@@ -20,13 +20,13 @@ namespace Compose
     explicit Label(BaseWidget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
+      setLabelRenderingFunction();
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
       lv_obj_set_flag(BaseWidget::getHandle(), LV_OBJ_FLAG_CLICKABLE, false);
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
       (setModifier(args), ...);
-      setLabelRenderingFunction();
     }
 
     void operator<<(AutorunStringCB &&cb) const;
