@@ -4,7 +4,6 @@ namespace Compose
 {
   struct Hidden
   {
-    constexpr static auto key = "_displayNone";
     bool it = true;
 
     static Hidden ON()
@@ -16,5 +15,7 @@ namespace Compose
     {
       return Hidden(false);
     }
+
+    bool operator==(const Hidden &) const = default;
   };
 }

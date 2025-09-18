@@ -42,6 +42,7 @@ namespace Compose
     Color(Color&& c) = default;
     Color(const Color& c) = default;
     Color& operator=(const Color&) = default;
+    bool operator==(const Color&) const = default;
 
     [[nodiscard]] std::string toHEXString() const
     {

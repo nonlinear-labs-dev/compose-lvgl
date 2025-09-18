@@ -14,6 +14,10 @@ addNLLibrary(
         LIB_SOURCES src/*.cpp include/*.h
         TEST_SOURCES tests/*.cpp
         INSTALL_HEADERS_DIR include
+
         IS_STATIC
         CPP_STANDARD 20
 )
+
+target_compile_options(compose-lvgl PRIVATE -fsanitize=address)
+target_link_options(compose-lvgl PRIVATE -fsanitize=address)

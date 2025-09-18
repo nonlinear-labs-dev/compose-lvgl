@@ -9,5 +9,7 @@ namespace Compose
   {
     std::filesystem::path it;
     std::optional<Size> size = std::nullopt;
+
+    bool operator==(const SVGPath &) const = default;
   };
-} 
+}

@@ -9,5 +9,7 @@ namespace Compose
       VISIBLE,
       HIDDEN
     } it;
+
+    bool operator==(const OverflowBehaviour &) const = default;
   };
 }

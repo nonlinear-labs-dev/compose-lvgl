@@ -26,7 +26,7 @@ namespace Compose
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
       (setModifier(args), ...);
-      setRenderCallback();
+      setLabelRenderingFunction();
     }
 
     void operator<<(AutorunStringCB &&cb) const;
@@ -38,15 +38,8 @@ namespace Compose
     void setModifier(BackgroundColor c) const override;
     virtual void setModifier(Font s) const;
 
-    void clear() override
-    {
-      cleanup();
-      Widget::clear();
-    }
-
    private:
-    void setRenderCallback() const;
-    void cleanup() const;
+    void setLabelRenderingFunction() const;
     void setDrawCall(CustomDrawingElement::tDrawCB &&draw) const;
   };
 
@@ -58,7 +51,6 @@ namespace Compose
         : buildPath(std::move(builder))
         , fonts()
     {
-      nltools::Log::error("build font storage");
     }
 
     FontStorage(const FontStorage &) = delete;

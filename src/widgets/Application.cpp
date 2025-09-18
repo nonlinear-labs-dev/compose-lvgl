@@ -38,7 +38,7 @@ namespace Compose
     while(run)
     {
       Glib::MainContext::get_default()->iteration(false);
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      // std::this_thread::sleep_for(std::chrono::milliseconds(5));
       const auto current = std::chrono::high_resolution_clock::now();
       auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
       lv_tick_inc(delta.count());
@@ -47,6 +47,5 @@ namespace Compose
     }
 
     [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
-
   }
 }

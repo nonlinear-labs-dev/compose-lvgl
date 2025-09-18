@@ -18,6 +18,8 @@ namespace Compose
 
     int w = {};
     int h = {};
+
+    bool operator==(const Size &) const = default;
   };
 
   struct FixedSize : Size
@@ -26,5 +28,7 @@ namespace Compose
     {
       return { Size::ScreenSize() };
     }
+
+    bool operator==(const FixedSize &) const = default;
   };
 }

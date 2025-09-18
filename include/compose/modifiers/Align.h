@@ -33,5 +33,7 @@ namespace Compose
     BUILD_ALIGN(BOTTOM_LEFT, LV_ALIGN_BOTTOM_LEFT)
     BUILD_ALIGN(BOTTOM_MID, LV_ALIGN_BOTTOM_MID)
     BUILD_ALIGN(BOTTOM_RIGHT, LV_ALIGN_BOTTOM_RIGHT)
+
+    bool operator==(const Align &) const = default;
   };
 }

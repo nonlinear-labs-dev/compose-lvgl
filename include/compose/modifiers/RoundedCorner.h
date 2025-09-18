@@ -1,5 +1,4 @@
 #pragma once
-#include <format>
 
 namespace Compose
 {
@@ -18,5 +17,7 @@ namespace Compose
     }
 
     int radius;
+
+    bool operator==(const RoundedCorner &) const = default;
   };
 }

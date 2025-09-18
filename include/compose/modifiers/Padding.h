@@ -43,5 +43,7 @@ namespace Compose
     int right;
     int top;
     int bottom;
+
+    bool operator==(const Padding &) const = default;
   };
 }

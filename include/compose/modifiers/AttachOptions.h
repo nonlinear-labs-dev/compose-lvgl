@@ -25,5 +25,7 @@ namespace Compose
     {
       return { AttachOptionsEnum::EXPAND };
     }
+
+    bool operator==(const AttachOptions &) const = default;
   };
 }

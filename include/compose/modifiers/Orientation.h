@@ -20,5 +20,7 @@ namespace Compose
     {
       return { OrientationEnum::VERTICAL };
     }
+
+    bool operator==(const Orientation &) const = default;
   };
-} 
+}

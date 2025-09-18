@@ -1,4 +1,5 @@
 #pragma once
+#include "nltools/logging/Log.h"
 #include "src/core/lv_obj.h"
 #include "src/misc/lv_types.h"
 
@@ -11,6 +12,7 @@
 #include <memory>
 #include <utility>
 #include <reactive/Computations.h>
+#include <reactive/Var.h>
 #include <nltools-2/NotSyncedException.h>
 
 class BaseWidget
@@ -87,9 +89,20 @@ class BaseWidget
     return nullptr;
   }
 
+  template <typename T> [[nodiscard]] Reactive::Var<T>& ensureReactiveModifier() const
+  {
+    return ensureDataForKeyExistsOwning<Reactive::Var<T>>(typeid(T).name());
+  }
+
   template <typename T> T& ensureDataForKeyExistsOwning(auto key) const
   {
     return ensureDataForKeyExistsOwning<T>(key, [] { return new T(); });
+  }
+
+  template <typename T> bool doesDataForKeyExist() const
+  {
+    const auto storage = ensureUserDataStorage();
+    return storage->entries.contains(typeid(T).name());
   }
 
   template <typename T, typename Factory> T& ensureDataForKeyExistsOwning(auto key, const Factory& factory) const
@@ -100,8 +113,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = factory();
-      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { delete static_cast<T*>(p); });
-      storage->entries[key] = std::move(entry);
+      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) { delete static_cast<T*>(p); }));
       return *data;
     }
 
@@ -116,8 +128,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = fac();
-      auto entry = std::make_unique<UserDataEntry>(data, [](void* p) { });
-      storage->entries[key] = std::move(entry);
+      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) { }));
       return *static_cast<T*>(data);
     }
 
@@ -127,7 +138,8 @@ class BaseWidget
   void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
-    erase_if(storage->entries, [](const auto& it) { return it.first != c_computationsKey; });
+    erase_if(storage->entries,
+             [](const auto& it) { return it.first != c_computationsKey && it.first != c_canvasData; });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const
@@ -137,7 +149,8 @@ class BaseWidget
 
   template <typename tCB> void doAutorun(tCB&& cb) const
   {
-    getComputations().add(
+    auto& comp = getComputations();
+    comp.add(
         [cb = std::forward<tCB>(cb)]
         {
           try
@@ -163,12 +176,7 @@ class BaseWidget
     return static_cast<UserDataStorage*>(lv_obj_get_user_data(m_widget));
   }
 
- private:
-  [[nodiscard]] Reactive::Computations& getComputations() const
-  {
-    return ensureDataForKeyExistsOwning<Reactive::Computations>(c_computationsKey);
-  }
-
+ protected:
   [[nodiscard]] UserDataStorage* ensureUserDataStorage() const
   {
     auto storage = getUserDataStorage();
@@ -192,6 +200,12 @@ class BaseWidget
           LV_EVENT_DELETE, nullptr);
     }
     return storage;
+  }
+
+ private:
+  [[nodiscard]] Reactive::Computations& getComputations() const
+  {
+    return ensureDataForKeyExistsOwning<Reactive::Computations>(c_computationsKey);
   }
 
   WidgetType* m_widget;
