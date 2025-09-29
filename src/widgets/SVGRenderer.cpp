@@ -11,21 +11,19 @@ namespace Compose
 
     if(document)
     {
-      Widget widget(getHandle());
+      const Widget widget(getHandle());
 
       auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
           c_svgData, [handle = getHandle(), cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
 
-      svgData.document.modify([&document](auto& doc) { doc.reset(document.release()); });
+      //svgData.document.modify([&document](auto& doc) { doc = std::move(document); });
 
       setDrawCall(
           [handle = getHandle()](DrawContext& ctx, int width, int height)
           {
             Widget widget(handle);
-
             auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
                 c_svgData, [handle, cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
-
             svgData.renderToDrawContext(ctx, width, height);
           });
     }

@@ -28,7 +28,7 @@ namespace Compose
       Label::setModifier(PrimaryColor { Color::WHITE() });
       setModifier(VerticalAlign::CENTER());
       setModifier(TextAlign::CENTER());
-      // setModifier(Height::FULL());
+      setModifier(Height::FULL());
       (setModifier(args), ...);
     }
 
