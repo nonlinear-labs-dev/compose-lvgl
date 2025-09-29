@@ -79,7 +79,7 @@ namespace Compose
       (setModifier(args), ...);
     }
 
-    void setDefaultWidthAndHeightAccordingToParent();
+    void setDefaultWidthAndHeightAccordingToParent() const;
     template <typename... tArgs>
     explicit Widget(BaseWidget &w, tArgs... args)
         : Widget(lv_obj_create(w.getHandle()))
@@ -89,7 +89,10 @@ namespace Compose
       (setModifier(args), ...);
 
       using T = std::tuple<tArgs...>;
-      if constexpr(requires { std::get<SizePercentage>(T()) || std::get<Height>(T()) || std::get<Width>(T()); })
+      if constexpr(requires {
+                     std::get<SizePercentage>(T()) || std::get<Height>(T()) || std::get<Width>(T())
+                         || std::get<FixedSize>(T());
+                   })
       {
       }
       else
@@ -323,7 +326,7 @@ namespace Compose
     StateChange stateChange { *this };
   };
 
-  inline void Widget::setDefaultWidthAndHeightAccordingToParent()
+  inline void Widget::setDefaultWidthAndHeightAccordingToParent() const
   {
     if(auto parent = lv_obj_get_parent(getHandle()))
     {

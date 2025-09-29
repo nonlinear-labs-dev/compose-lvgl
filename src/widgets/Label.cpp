@@ -87,10 +87,12 @@ namespace Compose
               const Widget widget(handle);
 
               auto &canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(c_labelData, [handle, d = draw]
-                                                                                 { return new LabelData(handle, d); });
+                                                                                { return new LabelData(handle, d); });
 
               const auto w = lv_obj_get_width(handle);
               const auto h = lv_obj_get_height(handle);
+
+              auto &bufferUser = canvasData.buffer.get();
 
               LVGLDrawContext drawContext(handle);
               try
