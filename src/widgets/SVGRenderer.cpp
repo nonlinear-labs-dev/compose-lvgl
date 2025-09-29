@@ -47,4 +47,11 @@ namespace Compose
     buffer << file.rdbuf();
     setSVG(buffer.str());
   }
+
+  void SVGRenderer::setModifier(PrimaryColor col) const
+  {
+    auto& svgData = ensureDataForKeyExistsOwning<SVGData>(
+        c_svgData, [handle = getHandle(), cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
+    svgData.color = col;
+  }
 }

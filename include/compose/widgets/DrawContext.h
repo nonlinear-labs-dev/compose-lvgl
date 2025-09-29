@@ -11,6 +11,7 @@
 #include <tuple>
 #include <vector>
 #include <memory>
+#include <optional>
 #include "compose/widgets/Label.h"
 
 namespace Compose
@@ -31,12 +32,22 @@ namespace Compose
       Color color {};
     };
 
+    struct Bitmap
+    {
+      int width {};
+      int height {};
+      int stride {};
+
+      const uint8_t *start;
+    };
+
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) = 0;
+    virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -52,6 +63,7 @@ namespace Compose
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) override;
+    void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
 
    private:
     lv_layer_t m_layer;

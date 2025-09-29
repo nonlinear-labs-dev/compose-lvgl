@@ -23,8 +23,7 @@ namespace Compose
 
   void SVGImage::setModifier(PrimaryColor c) const
   {
-   
-    lv_obj_set_style_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
+
     lv_obj_set_style_image_recolor(getHandle(),
                                    {
                                        .blue = c.b,
@@ -32,6 +31,7 @@ namespace Compose
                                        .red = c.r,
                                    },
                                    LV_PART_MAIN);
+    lv_obj_set_style_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);
 
 #ifdef ENABLE_DEBUG_SHADOWS
     lv_obj_set_style_bg_image_recolor_opa(getHandle(), static_cast<float>(LV_OPA_COVER) * c.a, LV_PART_MAIN);

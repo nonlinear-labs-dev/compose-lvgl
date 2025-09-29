@@ -8,8 +8,8 @@ namespace Compose
   class SVGRenderer : public CustomDrawingElement
   {
    public:
-    using CustomDrawingElement::setModifier;
     using CustomDrawingElement::CustomDrawingElement;
+    using CustomDrawingElement::setModifier;
 
     explicit SVGRenderer(Widget& parent)
         : CustomDrawingElement(parent)
@@ -25,8 +25,8 @@ namespace Compose
 
     void setSVG(const std::string& svgContent);
     void setSVGFile(const std::string& filePath);
+    void setModifier(PrimaryColor col) const override;
   };
 }
 
-#define SVG_RENDERER(...)                                                                                              \
-  it.add(Compose::SVGRenderer(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGRenderer&& it)
+#define SVG_RENDERER(...) it.add(Compose::SVGRenderer(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGRenderer&& it)

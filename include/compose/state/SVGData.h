@@ -15,6 +15,7 @@ namespace Compose
     CustomDrawingElement::tDrawCB drawCallback;
     lv_event_dsc_t* resizeHandler = nullptr;
     lv_obj_t* handle = nullptr;
+    Reactive::Var<std::optional<PrimaryColor>> color;
 
     SVGData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
     ~SVGData();

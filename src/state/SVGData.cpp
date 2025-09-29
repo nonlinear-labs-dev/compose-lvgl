@@ -43,43 +43,21 @@ namespace Compose
 
   void SVGData::renderToDrawContext(DrawContext& ctx, int width, int height)
   {
-    auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 
-    auto doc = document.get().get();
+    const auto doc = document.get().get();
     if(!doc)
       return;
 
-    auto bitmap = doc->renderToBitmap(width, height);
+    const auto bitmap = doc->renderToBitmap(width, height);
+
     if(!bitmap.valid())
       return;
 
     const auto* data = bitmap.data();
     const auto stride = bitmap.stride();
 
-    for(int y = 0; y < height; ++y)
-    {
-      for(int x = 0; x < width; ++x)
-      {
-        const auto* pixel = data + y * stride + x * 4;
-        const auto r = pixel[2];
-        const auto g = pixel[1];
-        const auto b = pixel[0];
-        const auto a = pixel[3];
-
-        if(a > 0)
-        {
-          Color color;
-          color.r = r;
-          color.g = g;
-          color.b = b;
-          color.a = a / 255.0f;
-
-          Point point { x, y };
-          Rect rect { point, { 1, 1 } };
-          ctx.fillRect(color, rect);
-        }
-      }
-    }
+    ctx.putBitmap({ width, height, stride, data }, { 0, 0 }, color.get());
 
     auto end = std::chrono::high_resolution_clock::now();
     auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
