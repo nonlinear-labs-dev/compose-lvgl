@@ -13,7 +13,7 @@ namespace Compose
         [handle = getHandle()](DrawContext &ctx, int w, int h)
         {
           const Label labelWidget(handle);
-          auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
+          const auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
 
           if(cd.bgColor.get().a > 0)
             ctx.fillRect(cd.bgColor, { 0, 0, w, h });

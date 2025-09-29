@@ -10,7 +10,7 @@ addNLLibrary(
         DESCRIPTION "compose lvgl"
         VERSION 1.0.0
         EXTERNAL_LIBS sdl2 freetype2
-        OUR_LIBS reactive nltools nltools-2 lvgl
+        OUR_LIBS reactive nltools nltools-2 lvgl lunasvg
         LIB_SOURCES src/*.cpp include/*.h
         TEST_SOURCES tests/*.cpp
         INSTALL_HEADERS_DIR include
