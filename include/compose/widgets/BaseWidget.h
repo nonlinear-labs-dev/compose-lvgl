@@ -5,12 +5,12 @@
 
 #include <functional>
 #include <optional>
-#include <format>
-#include <iostream>
 #include <unordered_map>
 #include <string>
 #include <memory>
 #include <utility>
+#include <iostream>
+#include <format>
 #include <reactive/Computations.h>
 #include <reactive/Var.h>
 #include <nltools-2/NotSyncedException.h>
@@ -140,8 +140,8 @@ class BaseWidget
   void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
-    erase_if(storage->entries,
-             [](const auto& it) { return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData; });
+    erase_if(storage->entries, [](const auto& it)
+             { return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData; });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const
@@ -191,12 +191,13 @@ class BaseWidget
           m_widget,
           [](lv_event_t* e)
           {
-            auto storage
-                = static_cast<UserDataStorage*>(lv_obj_get_user_data(static_cast<lv_obj_t*>(lv_event_get_target(e))));
+            auto target = static_cast<lv_obj_t*>(lv_event_get_target(e));
+            auto storage = static_cast<UserDataStorage*>(lv_obj_get_user_data(target));
+
             if(storage)
             {
               delete storage;
-              lv_obj_set_user_data(static_cast<lv_obj_t*>(lv_event_get_target(e)), nullptr);
+              lv_obj_set_user_data(target, nullptr);
             }
           },
           LV_EVENT_DELETE, nullptr);
