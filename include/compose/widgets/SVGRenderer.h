@@ -23,8 +23,8 @@ namespace Compose
       (setModifier(args), ...);
     }
 
-    void setSVG(const std::string& svgContent);
-    void setSVGFile(const std::string& filePath);
+    void setModifier(SVGPath path) const;
+    void setModifier(SVGFileContent content) const;
     void setModifier(PrimaryColor col) const override;
   };
 }

@@ -22,6 +22,7 @@ namespace Compose
           const auto displayText = cd.text.get().text;
           const auto textWidth = static_cast<int32_t>(font.getStringWidth(displayText));
           const auto textAlign = cd.align.get();
+          const auto vertAlign = cd.verticalAlign.get();
 
           const auto startX = [w, textWidth](const TextAlign &a) -> int
           {
@@ -38,9 +39,23 @@ namespace Compose
             }
           }(textAlign);
 
+          const auto startY = [h, textHeight = font.getHeight()](const VerticalAlign &a) -> int
+          {
+            switch(a.it)
+            {
+              case VerticalAlign::Top:
+                return 0;
+              case VerticalAlign::Bottom:
+                return h - textHeight;
+              default:
+              case VerticalAlign::Center:
+                return (h - textHeight) / 2;
+            }
+          }(vertAlign);
+
           const auto baseColor = cd.primaryColor.get();
 
-          font.draw(displayText, startX, 0,
+          font.draw(displayText, startX, startY,
                     [&](auto x, auto y, auto value)
                     {
                       auto factor = value / 255.0;
@@ -74,6 +89,11 @@ namespace Compose
   void Label::setModifier(TextAlign a) const
   {
     getDataForKey<LabelData>(c_labelData).align = a;
+  }
+
+  void Label::setModifier(VerticalAlign v) const
+  {
+    getDataForKey<LabelData>(c_labelData).verticalAlign = v;
   }
 
   void Label::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const

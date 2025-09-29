@@ -12,4 +12,10 @@ namespace Compose
 
     bool operator==(const SVGPath &) const = default;
   };
+
+  struct SVGFileContent
+  {
+    std::string content;
+    bool operator==(const SVGFileContent &) const = default;
+  };
 }

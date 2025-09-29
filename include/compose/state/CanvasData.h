@@ -28,6 +28,7 @@ namespace Compose
     Reactive::Var<Font> font;
     Reactive::Var<Text> text;
     Reactive::Var<TextAlign> align;
+    Reactive::Var<VerticalAlign> verticalAlign;
     Reactive::Var<PrimaryColor> primaryColor;
   };
 }

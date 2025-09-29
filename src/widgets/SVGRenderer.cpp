@@ -5,10 +5,9 @@
 
 namespace Compose
 {
-  void SVGRenderer::setSVG(const std::string& svgContent)
+  void SVGRenderer::setModifier(SVGFileContent svgContent) const
   {
-    auto start = std::chrono::high_resolution_clock::now();
-    auto document = lunasvg::Document::loadFromData(svgContent);
+    auto document = lunasvg::Document::loadFromData(svgContent.content);
 
     if(document)
     {
@@ -30,22 +29,17 @@ namespace Compose
             svgData.renderToDrawContext(ctx, width, height);
           });
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    nltools::Log::error("parsing took", elapsed.count(), "ms");
   }
 
-  void SVGRenderer::setSVGFile(const std::string& filePath)
+  void SVGRenderer::setModifier(SVGPath path) const
   {
-    std::ifstream file(filePath);
+    std::ifstream file(path.it);
     if(!file.is_open())
       return;
 
     std::stringstream buffer;
     buffer << file.rdbuf();
-    setSVG(buffer.str());
+    setModifier(SVGFileContent { buffer.str() });
   }
 
   void SVGRenderer::setModifier(PrimaryColor col) const

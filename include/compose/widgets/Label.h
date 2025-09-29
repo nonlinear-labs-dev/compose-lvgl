@@ -26,6 +26,9 @@ namespace Compose
       lv_obj_set_flag(BaseWidget::getHandle(), LV_OBJ_FLAG_CLICKABLE, false);
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
+      setModifier(VerticalAlign::CENTER());
+      setModifier(TextAlign::CENTER());
+      // setModifier(Height::FULL());
       (setModifier(args), ...);
     }
 
@@ -33,6 +36,7 @@ namespace Compose
 
     void setModifier(Text s) const;
     void setModifier(TextAlign a) const;
+    void setModifier(VerticalAlign v) const;
 
     void setModifier(PrimaryColor s) const override;
     void setModifier(BackgroundColor c) const override;

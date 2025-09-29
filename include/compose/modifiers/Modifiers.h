@@ -250,6 +250,33 @@ namespace Compose
 
     bool operator==(const TextAlign &) const = default;
   };
+
+  struct VerticalAlign
+  {
+    enum
+    {
+      Top,
+      Center,
+      Bottom
+    } it;
+
+    bool operator==(const VerticalAlign &) const = default;
+
+    static constexpr VerticalAlign TOP()
+    {
+      return { Top };
+    }
+
+    static constexpr VerticalAlign CENTER()
+    {
+      return { Center };
+    }
+
+    static constexpr VerticalAlign BOTTOM()
+    {
+      return { Bottom };
+    }
+  };
 }
 
 #define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
@@ -269,7 +296,7 @@ namespace Compose
 #define FIXED_SIZE(...) it.doAutorun([=] { it.setModifier(FixedSize(__VA_ARGS__)); });
 #define BACKGROUND_COLOR(...) it.doAutorun([=] { it.setModifier(BackgroundColor(__VA_ARGS__)); });
 #define PRIMARY_COLOR(...) it.doAutorun([=] { it.setModifier(PrimaryColor(__VA_ARGS__)); });
-#define SVG_PATH(...) it.doAutorun([=] { it.setModifier(SVGPath(__VA_ARGS__)); });
+#define SVG_PATH(...) it.doAutorun([=] { it.setModifier(SVGPath { __VA_ARGS__ }); });
 #define READONLY(...) it.doAutorun([=] { it.setModifier(Readonly(__VA_ARGS__)); });
 #define ROUNDED_CORNERS(...) it.doAutorun([=] { it.setModifier(RoundedCorner(__VA_ARGS__)); });
 #define PADDING(...) it.doAutorun([=] { it.setModifier(Padding(__VA_ARGS__)); });
@@ -287,3 +314,4 @@ namespace Compose
 #define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });
 #define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
 #define FLEX_GROW(...) it.doAutorun([=] { it.setModifier(FlexGrow { __VA_ARGS__ }); });
+#define VERTICAL_ALIGN(...) it.doAutorun([=] { it.setModifier(VerticalAlign(__VA_ARGS__)); });

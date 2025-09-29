@@ -43,8 +43,6 @@ namespace Compose
 
   void SVGData::renderToDrawContext(DrawContext& ctx, int width, int height)
   {
-    const auto start = std::chrono::high_resolution_clock::now();
-
     const auto doc = document.get().get();
     if(!doc)
       return;
@@ -58,9 +56,5 @@ namespace Compose
     const auto stride = bitmap.stride();
 
     ctx.putBitmap({ width, height, stride, data }, { 0, 0 }, color.get());
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    nltools::Log::error("rendering took", diff.count(), "ms");
   }
 }
