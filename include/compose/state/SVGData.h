@@ -19,6 +19,6 @@ namespace Compose
 
     SVGData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
     ~SVGData();
-    void renderToDrawContext(DrawContext& ctx, int width, int height);
+    void renderToDrawContext(DrawContext& ctx, int width, int height) const;
   };
 }

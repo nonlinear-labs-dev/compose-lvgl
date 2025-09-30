@@ -5,7 +5,7 @@
 
 namespace Compose
 {
-  void SVGRenderer::setModifier(SVGFileContent svgContent) const
+  void SVGRenderer::setModifier(const SVGFileContent& svgContent) const
   {
     auto document = lunasvg::Document::loadFromData(svgContent.content);
 
@@ -16,20 +16,20 @@ namespace Compose
       auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
           c_svgData, [handle = getHandle(), cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
 
-      //svgData.document.modify([&document](auto& doc) { doc = std::move(document); });
+      svgData.document.modify([&document](auto& doc) { doc = std::move(document); });
 
       setDrawCall(
           [handle = getHandle()](DrawContext& ctx, int width, int height)
           {
-            Widget widget(handle);
-            auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
+            const Widget widget(handle);
+            const auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
                 c_svgData, [handle, cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
             svgData.renderToDrawContext(ctx, width, height);
           });
     }
   }
 
-  void SVGRenderer::setModifier(SVGPath path) const
+  void SVGRenderer::setModifier(const SVGPath& path) const
   {
     std::ifstream file(path.it);
     if(!file.is_open())

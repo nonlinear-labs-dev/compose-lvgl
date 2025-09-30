@@ -87,7 +87,6 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-#warning "this does not do what it says!"
     if(!m_canvas)
       return;
 

@@ -297,6 +297,7 @@ namespace Compose
 #define BACKGROUND_COLOR(...) it.doAutorun([=] { it.setModifier(BackgroundColor(__VA_ARGS__)); });
 #define PRIMARY_COLOR(...) it.doAutorun([=] { it.setModifier(PrimaryColor(__VA_ARGS__)); });
 #define SVG_PATH(...) it.doAutorun([=] { it.setModifier(SVGPath { __VA_ARGS__ }); });
+#define SVG_CONTENT(...) it.doAutorun([=] { it.setModifier(SVGFileContent { __VA_ARGS__ }); });
 #define READONLY(...) it.doAutorun([=] { it.setModifier(Readonly(__VA_ARGS__)); });
 #define ROUNDED_CORNERS(...) it.doAutorun([=] { it.setModifier(RoundedCorner(__VA_ARGS__)); });
 #define PADDING(...) it.doAutorun([=] { it.setModifier(Padding(__VA_ARGS__)); });

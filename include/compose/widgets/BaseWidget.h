@@ -96,7 +96,7 @@ class BaseWidget
     return ensureDataForKeyExistsOwning<T>(key, [] { return new T(); });
   }
 
-  template <typename T> bool doesDataForKeyExist() const
+  template <typename T> [[nodiscard]] bool doesDataForKeyExist() const
   {
     const auto storage = ensureUserDataStorage();
     return storage->entries.contains(typeid(T).name());
@@ -141,8 +141,12 @@ class BaseWidget
   void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
-    erase_if(storage->entries, [](const auto& it)
-             { return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData && it.first != c_svgData; });
+    erase_if(storage->entries,
+             [](const auto& it)
+             {
+               return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData
+                   && it.first != c_svgData;
+             });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const

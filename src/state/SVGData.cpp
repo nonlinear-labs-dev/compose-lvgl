@@ -41,7 +41,7 @@ namespace Compose
     }
   }
 
-  void SVGData::renderToDrawContext(DrawContext& ctx, int width, int height)
+  void SVGData::renderToDrawContext(DrawContext& ctx, int width, int height) const
   {
     const auto doc = document.get().get();
     if(!doc)
