@@ -31,6 +31,7 @@ namespace Compose
             handle,
             [](lv_event_t *e)
             {
+              Reactive::Deferrer def;
               const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
               user_data->m_callback();
             },
@@ -72,6 +73,7 @@ namespace Compose
             handle,
             [](lv_event_t *e)
             {
+              Reactive::Deferrer def;
               const auto user_data = static_cast<StateChangeData *>(lv_event_get_user_data(e));
               const auto checked = lv_obj_has_state(user_data->m_handle, LV_STATE_CHECKED);
               user_data->m_callback(checked);

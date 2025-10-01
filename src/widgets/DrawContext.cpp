@@ -215,7 +215,7 @@ namespace Compose
     if(copy_width <= 0 || copy_height <= 0)
       return;
 
-    uint8_t *canvas_data = (uint8_t *) draw_buf->data;
+    auto canvas_data = (uint8_t *) draw_buf->data;
     const uint8_t *src_data = image.start;
 
     for(int y = 0; y < copy_height; ++y)
