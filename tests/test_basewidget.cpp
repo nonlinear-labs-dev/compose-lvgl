@@ -7,7 +7,6 @@
 TEST_CASE("BaseWidget LVGL user data storage", "[BaseWidget]")
 {
   lv_init();
-  Compose::Window w { Compose::Window::Backend::SDL, {} };
 
   lv_obj_t* obj = lv_obj_create(nullptr);
   REQUIRE(obj != nullptr);
