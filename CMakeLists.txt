@@ -19,5 +19,3 @@ addNLLibrary(
         CPP_STANDARD 20
 )
 
-target_compile_options(compose-lvgl PRIVATE -fsanitize=address)
-target_link_options(compose-lvgl PRIVATE -fsanitize=address)
