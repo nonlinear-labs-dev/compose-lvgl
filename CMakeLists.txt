@@ -14,8 +14,6 @@ addNLLibrary(
         LIB_SOURCES src/*.cpp include/*.h
         TEST_SOURCES tests/*.cpp
         INSTALL_HEADERS_DIR include
-
         IS_STATIC
         CPP_STANDARD 20
 )
-
