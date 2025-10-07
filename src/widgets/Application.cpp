@@ -34,9 +34,11 @@ namespace Compose
         [&]
         {
           const auto current = std::chrono::high_resolution_clock::now();
-          auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+          const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
+
+          Reactive::Deferrer def;
           lv_timer_handler();
           return true;
         },
