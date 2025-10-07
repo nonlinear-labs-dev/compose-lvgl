@@ -4,14 +4,64 @@
 #include <string>
 #include <compose/widgets/Window.h>
 
-TEST_CASE("BaseWidget LVGL user data storage", "[BaseWidget]")
+class TestScreen
 {
-  lv_init();
+ public:
+  explicit TestScreen(int width, int height)
+  {
+    if(!lv_is_initialized())
+      lv_init();
 
-  lv_obj_t* obj = lv_obj_create(nullptr);
-  REQUIRE(obj != nullptr);
+    m_display = lv_display_create(width, height);
+    m_root = createObject(nullptr);
+  }
 
-  BaseWidget widget(obj);
+  ~TestScreen()
+  {
+    if(m_display)
+    {
+      lv_display_delete(m_display);
+    }
+  }
+
+  [[nodiscard]] lv_display_t* getDisplay() const
+  {
+    return m_display;
+  }
+
+  [[nodiscard]] lv_obj_t* getRoot() const
+  {
+    return m_root;
+  }
+
+  static lv_obj_t* createObject(lv_obj_t* parent = nullptr)
+  {
+    return lv_obj_create(parent);
+  }
+
+  TestScreen(const TestScreen&) = delete;
+  TestScreen& operator=(const TestScreen&) = delete;
+
+ private:
+  lv_display_t* m_display = nullptr;
+  lv_obj_t* m_root = nullptr;
+};
+
+struct LVGLFixture
+{
+  TestScreen screen;
+
+  LVGLFixture()
+      : screen(800, 480)
+  {
+  }
+};
+
+TEST_CASE_METHOD(LVGLFixture, "BaseWidget LVGL user data storage", "[BaseWidget]")
+{
+  REQUIRE(screen.getDisplay() != nullptr);
+  REQUIRE(screen.getRoot() != nullptr);
+  BaseWidget widget(screen.getRoot());
 
   SECTION("Store and retrieve string data")
   {
@@ -49,6 +99,7 @@ TEST_CASE("BaseWidget LVGL user data storage", "[BaseWidget]")
     auto* retrievedData = widget.getData<std::string>(testKey);
     REQUIRE(retrievedData != nullptr);
     REQUIRE(*retrievedData == "non_owning_value");
+    delete testValue;
   }
 
   SECTION("Get non-existent data returns nullptr")
