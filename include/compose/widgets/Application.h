@@ -14,7 +14,7 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(Window::Backend backend, Size size = Size::ScreenSizeAudioBox());
+    explicit Application(Window::Backend backend, Size size);
     void runBlocking(const tCallback &callback) const;
 
     void operator<<(const tCallback &callback) const

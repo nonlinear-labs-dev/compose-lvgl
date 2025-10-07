@@ -37,8 +37,6 @@ namespace Compose
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
-
-          Reactive::Deferrer def;
           lv_timer_handler();
           return true;
         },
@@ -46,7 +44,5 @@ namespace Compose
 
     auto loop = Glib::MainLoop::create();
     loop->run();
-
-    [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
   }
 }
