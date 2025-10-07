@@ -4,11 +4,20 @@ namespace Compose
 {
   struct Size
   {
-    constexpr static int c_screenWidthInPixels = 480;
-    constexpr static int c_screenHeightInPixels = 128;
-    constexpr static Size ScreenSize()
+    constexpr static int c_screenAudioBoxWidthInPixels = 480;
+    constexpr static int c_screenAudioBoxHeightInPixels = 128;
+
+    constexpr static int c_screenC16WidthInPixels = 1025;
+    constexpr static int c_screenC16HeightInPixels = 600;
+
+    constexpr static Size ScreenSizeAudioBox()
     {
-      return Size { c_screenWidthInPixels, c_screenHeightInPixels };
+      return { c_screenAudioBoxWidthInPixels, c_screenAudioBoxHeightInPixels };
+    }
+
+    constexpr static Size ScreenSizeC16()
+    {
+      return { c_screenC16WidthInPixels, c_screenC16HeightInPixels };
     }
 
     template <typename T> constexpr Size operator*(T v) const
@@ -24,9 +33,14 @@ namespace Compose
 
   struct FixedSize : Size
   {
-    constexpr static FixedSize ScreenSize()
+    constexpr static FixedSize ScreenSizeAudioBox()
     {
-      return { Size::ScreenSize() };
+      return { Size::ScreenSizeAudioBox() };
+    }
+
+    constexpr static FixedSize ScreenSizeC16()
+    {
+      return { Size::ScreenSizeC16() };
     }
 
     bool operator==(const FixedSize &) const = default;

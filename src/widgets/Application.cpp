@@ -14,8 +14,9 @@
 
 namespace Compose
 {
-  Application::Application(Window::Backend backend)
+  Application::Application(Window::Backend backend, Size size)
       : m_backend(backend)
+      , m_size(size)
   {
     lv_init();
     lv_fs_posix_init();
@@ -23,12 +24,7 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Size windowSize = Size::ScreenSize();
-
-    if constexpr(DEV_PC)
-      windowSize = { 800, 600 };
-
-    Window window { m_backend, windowSize };
+    Window window { m_backend, m_size };
     const Reactive::Computations c;
     c.add([&] { callback(window); });
 
