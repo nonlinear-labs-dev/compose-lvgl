@@ -91,7 +91,7 @@ namespace Compose
       using T = std::tuple<tArgs...>;
       if constexpr(requires {
                      std::get<SizePercentage>(T()) || std::get<Height>(T()) || std::get<Width>(T())
-                         || std::get<FixedSize>(T());
+                         || std::get<FixedSize>(T()) || std::get<SizeVariant>(T());
                    })
       {
       }
