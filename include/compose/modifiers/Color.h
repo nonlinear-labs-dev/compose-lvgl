@@ -53,6 +53,26 @@ namespace Compose
       return ss.str();
     }
 
+    static Color fromHEXString(const std::string& hexString)
+    {
+      const auto hashtagOffset = hexString[0] == '#' ? 1 : 0;
+      const auto hexPart = hexString.substr(hashtagOffset);
+      
+      if(hexPart.size() != 6 && hexPart.size() != 8)
+        throw std::invalid_argument("Invalid hex string length");
+
+      const auto parseHex = [](const std::string& hex) -> unsigned int {
+        return static_cast<unsigned int>(std::stoul(hex, nullptr, 16));
+      };
+
+      const auto r = parseHex(hexPart.substr(0, 2));
+      const auto g = parseHex(hexPart.substr(2, 2));
+      const auto b = parseHex(hexPart.substr(4, 2));
+      const auto a = hexPart.size() == 8 ? parseHex(hexPart.substr(6, 2)) : 255;
+
+      return Color(r, g, b, static_cast<float>(a) / maxTFixed);
+    }
+
     [[nodiscard]] std::string toRGBAString() const
     {
       return std::format("rgba({},{},{},{});", static_cast<int>(r), static_cast<int>(g), static_cast<int>(b), a);
