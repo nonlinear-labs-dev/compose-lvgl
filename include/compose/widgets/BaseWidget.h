@@ -1,5 +1,6 @@
 #pragma once
 #include "nltools/logging/Log.h"
+#include "reactive/Deferrer.h"
 #include "src/core/lv_obj.h"
 #include "src/misc/lv_types.h"
 
@@ -54,6 +55,7 @@ class BaseWidget
 
     ~UserDataStorage()
     {
+      Reactive::Deferrer deferrer{};
       entries.clear();
     }
   };

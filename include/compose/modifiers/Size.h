@@ -10,6 +10,11 @@ namespace Compose
       return Size { w * v, h * v };
     }
 
+    constexpr Size operator+(const Size & size) const
+    {
+      return Size {w + size.w, h + size.h };
+    }
+
     int w = {};
     int h = {};
 
