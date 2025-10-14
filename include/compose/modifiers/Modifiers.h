@@ -44,6 +44,11 @@ namespace Compose
       return { 100, 100 };
     }
 
+    static constexpr SizePercentage PERCENTAGE(int s)
+    {
+      return { s, s };
+    }
+
     bool operator==(const SizePercentage &) const = default;
   };
 
