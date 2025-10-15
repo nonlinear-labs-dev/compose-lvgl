@@ -23,7 +23,6 @@ namespace Compose
       setLabelRenderingFunction();
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
-      lv_obj_set_flag(BaseWidget::getHandle(), LV_OBJ_FLAG_CLICKABLE, false);
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
       setModifier(VerticalAlign::CENTER());

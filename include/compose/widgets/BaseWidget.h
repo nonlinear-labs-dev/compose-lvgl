@@ -24,6 +24,7 @@ class BaseWidget
   static constexpr auto c_nameKey = "Name";
   static constexpr auto c_leftClickKey = "LeftClick";
   static constexpr auto c_longClickKey = "LongClick";
+  static constexpr auto c_pressedKey = "Pressed";
   static constexpr auto c_stateChangeKey = "StateChange";
   static constexpr auto c_canvasData = "CanvasData";
   static constexpr auto c_labelData = "LabelData";
@@ -55,7 +56,7 @@ class BaseWidget
 
     ~UserDataStorage()
     {
-      Reactive::Deferrer deferrer{};
+      Reactive::Deferrer deferrer {};
       entries.clear();
     }
   };

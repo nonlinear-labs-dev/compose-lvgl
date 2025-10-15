@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseWidget.h"
+#include "compose/modifiers/Clickable.h"
 #include "compose/modifiers/Modifiers.h"
 #include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
@@ -67,6 +68,7 @@ namespace Compose
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), 0, 0);
       lv_obj_add_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_add_flag(getHandle(), LV_OBJ_FLAG_EVENT_BUBBLE);
     }
 
     template <typename... tArgs>
@@ -319,6 +321,11 @@ namespace Compose
     void setModifier(const Name &n) const
     {
       setID(n.name);
+    }
+
+    void setModifier(const Clickable &c) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE, static_cast<bool>(c));
     }
 
     LeftClick leftClick { *this, c_leftClickKey };
