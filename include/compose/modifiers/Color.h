@@ -53,24 +53,23 @@ namespace Compose
       return ss.str();
     }
 
-    static Color fromHEXString(const std::string& hexString)
+    constexpr static Color fromHEXString(const std::string& hexString)
     {
       const auto hashtagOffset = hexString[0] == '#' ? 1 : 0;
       const auto hexPart = hexString.substr(hashtagOffset);
-      
+
       if(hexPart.size() != 6 && hexPart.size() != 8)
         throw std::invalid_argument("Invalid hex string length");
 
-      const auto parseHex = [](const std::string& hex) -> unsigned int {
-        return static_cast<unsigned int>(std::stoul(hex, nullptr, 16));
-      };
+      const auto parseHex = [](const std::string& hex) -> unsigned int
+      { return static_cast<unsigned int>(std::stoul(hex, nullptr, 16)); };
 
       const auto r = parseHex(hexPart.substr(0, 2));
       const auto g = parseHex(hexPart.substr(2, 2));
       const auto b = parseHex(hexPart.substr(4, 2));
       const auto a = hexPart.size() == 8 ? parseHex(hexPart.substr(6, 2)) : 255;
 
-      return Color(r, g, b, static_cast<float>(a) / maxTFixed);
+      return { r, g, b, static_cast<float>(a) / maxTFixed };
     }
 
     [[nodiscard]] std::string toRGBAString() const
@@ -85,13 +84,13 @@ namespace Compose
       return packedColor;
     }
 
-    std::tuple<float, float, float, float> normalized() const
+    [[nodiscard]] std::tuple<float, float, float, float> normalized() const
     {
       constexpr auto factor = static_cast<float>(maxTFixed);
       return std::make_tuple(r / factor, g / factor, b / factor, a);
     }
 
-    Color multiply(float f) const
+    [[nodiscard]] Color multiply(float f) const
     {
       return Color { static_cast<tColorValueType>(r * f), static_cast<tColorValueType>(g * f),
                      static_cast<tColorValueType>(b * f), a };

@@ -11,7 +11,7 @@ namespace Compose
     {
     }
 
-    explicit RoundedCorner(int r)
+    constexpr explicit RoundedCorner(int r)
         : radius(r)
     {
     }

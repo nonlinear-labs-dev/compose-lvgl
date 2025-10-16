@@ -100,6 +100,11 @@ namespace Compose
   {
     int it;
 
+    static constexpr FlexGrow NONE()
+    {
+      return { 0 };
+    }
+
     bool operator==(const FlexGrow &) const = default;
   };
 
