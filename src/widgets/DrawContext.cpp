@@ -6,6 +6,7 @@
 #include "src/draw/lv_draw_vector.h"
 #include <memory>
 #include <algorithm>
+#include <cmath>
 #include "compose/widgets/Label.h"
 #include "src/widgets/canvas/lv_canvas_private.h"
 
@@ -106,44 +107,69 @@ namespace Compose
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
+  using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+  using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
+
   void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points)
   {
     if(points.size() < 3 || !m_canvas)
       return;
 
-    lv_vector_dsc_t *dsc = lv_vector_dsc_create(&m_layer);
+    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
       return;
 
-    lv_vector_path_t *path = lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM);
+    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
     if(!path)
-    {
-      lv_vector_dsc_delete(dsc);
       return;
-    }
 
     lv_fpoint_t first_point = { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
-    lv_vector_path_move_to(path, &first_point);
+    lv_vector_path_move_to(path.get(), &first_point);
 
     for(size_t i = 1; i < points.size(); ++i)
     {
       lv_fpoint_t point = { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
-      lv_vector_path_line_to(path, &point);
+      lv_vector_path_line_to(path.get(), &point);
     }
 
-    lv_vector_path_close(path);
+    lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_fill_color(dsc, lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc, static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc, lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc, static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc, static_cast<float>(stroke.width));
-    lv_vector_dsc_add_path(dsc, path);
+    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    lv_vector_dsc_add_path(dsc.get(), path.get());
 
-    lv_draw_vector(dsc);
+    lv_draw_vector(dsc.get());
+  }
 
-    lv_vector_path_delete(path);
-    lv_vector_dsc_delete(dsc);
+  void LVGLDrawContext::fillArc(Color color, Point position, float radius, int width, double startAngle, double sweep)
+  {
+    if(!m_canvas)
+      return;
+
+    const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    if(!dsc)
+      return;
+
+    const auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+    if(!path)
+      return;
+
+    const lv_fpoint_t center = { static_cast<float>(position.x), static_cast<float>(position.y) };
+
+    lv_vector_path_append_arc(path.get(), &center, radius, startAngle, sweep, false);
+
+    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
+
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
+    lv_vector_dsc_set_stroke_width(dsc.get(), width);
+
+    lv_vector_dsc_add_path(dsc.get(), path.get());
+
+    lv_draw_vector(dsc.get());
   }
 
   void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
