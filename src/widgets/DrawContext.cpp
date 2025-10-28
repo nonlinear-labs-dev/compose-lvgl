@@ -45,6 +45,28 @@ namespace Compose
     lv_draw_line(&m_layer, &line_dsc);
   }
 
+  void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control,
+                                            const Point end)
+  {
+    constexpr int segments = 20;
+    for(int i = 0; i < segments; ++i)
+    {
+      const float t0 = static_cast<float>(i) / segments;
+      const float t1 = static_cast<float>(i + 1) / segments;
+
+      const float s0 = 1.0f - t0;
+      const float s1 = 1.0f - t1;
+
+      const int x0 = s0 * s0 * start.x + 2 * s0 * t0 * control.x + t0 * t0 * end.x;
+      const int y0 = s0 * s0 * start.y + 2 * s0 * t0 * control.y + t0 * t0 * end.y;
+
+      const int x1 = s1 * s1 * start.x + 2 * s1 * t1 * control.x + t1 * t1 * end.x;
+      const int y1 = s1 * s1 * start.y + 2 * s1 * t1 * control.y + t1 * t1 * end.y;
+
+      drawLine(style, { x0, y0 }, { x1, y1 });
+    }
+  }
+
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
     if(!m_canvas)

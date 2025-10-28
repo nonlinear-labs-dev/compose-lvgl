@@ -42,6 +42,7 @@ namespace Compose
     };
 
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
+    virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
@@ -59,6 +60,7 @@ namespace Compose
     explicit LVGLDrawContext(tCanvas ctx);
     ~LVGLDrawContext() override;
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
+    void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
