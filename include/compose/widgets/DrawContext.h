@@ -22,29 +22,6 @@ namespace Glib
 namespace Compose
 {
   class FreeTypeFont;
-  inline void drawFontPixel(lv_draw_buf_t *draw_buf, const Color &baseColor, int px, int py, unsigned char coverage)
-  {
-    if(!draw_buf)
-      return;
-
-    const int canvas_width = draw_buf->header.w;
-    const int canvas_height = draw_buf->header.h;
-    const int canvas_stride = draw_buf->header.stride;
-    auto *canvas_data = static_cast<uint8_t *>(draw_buf->data);
-
-    if(px < 0 || py < 0 || px >= canvas_width || py >= canvas_height)
-      return;
-
-    const auto final_a = static_cast<uint8_t>(coverage * baseColor.a);
-    if(final_a == 0)
-      return;
-
-    uint8_t *canvas_pixel = canvas_data + py * canvas_stride + px * 4;
-    canvas_pixel[0] = baseColor.b;
-    canvas_pixel[1] = baseColor.g;
-    canvas_pixel[2] = baseColor.r;
-    canvas_pixel[3] = final_a;
-  }
   class DrawContext
   {
    public:
@@ -102,6 +79,8 @@ namespace Compose
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
 
    private:
+    static void drawFontPixel(lv_draw_buf_t *draw_buf, const Color &baseColor, int px, int py, unsigned char coverage);
+
     lv_layer_t m_layer;
     tCanvas m_canvas;
   };
