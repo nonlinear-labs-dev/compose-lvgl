@@ -1,5 +1,6 @@
 #include <compose/widgets/MultiLineLabel.h>
 #include <compose/widgets/DrawContext.h>
+#include <compose/widgets/LabelShared.h>
 #include <compose/FreeTypeFont.h>
 
 #include <utility>
@@ -88,19 +89,7 @@ namespace Compose
           const auto lineHeight = font.getFontHeight();
           const auto totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
 
-          const auto startY = [h, totalTextHeight, lineHeight, capHeightPx = font.getCapHeightPx()](const VerticalAlign &a) -> int
-          {
-            switch(a.it)
-            {
-              case VerticalAlign::Top:
-                return 0;
-              case VerticalAlign::Bottom:
-                return h - totalTextHeight;
-              default:
-              case VerticalAlign::Center:
-                return (h - totalTextHeight) / 2 + capHeightPx / 2 - lineHeight;
-            }
-          }(vertAlign);
+          const auto startY = LabelShared::computeStartYBlock(h, totalTextHeight, lineHeight, font, vertAlign);
 
           const auto baseColor = cd.primaryColor.get();
 
@@ -108,20 +97,7 @@ namespace Compose
           for(const auto& line : lines)
           {
             const auto textWidth = font.getStringWidth(line);
-            const auto startX = [w, textWidth](const TextAlign &a) -> int
-            {
-              switch(a.it)
-              {
-                case LV_TEXT_ALIGN_LEFT:
-                  return 0;
-                case LV_TEXT_ALIGN_RIGHT:
-                  return w - textWidth;
-                default:
-                case LV_TEXT_ALIGN_CENTER:
-                case LV_TEXT_ALIGN_AUTO:
-                  return (w - textWidth) / 2;
-              }
-            }(textAlign);
+            const auto startX = LabelShared::computeStartX(w, textWidth, textAlign);
 
             font.draw(line, startX, y,
                       [&](auto x, auto yy, auto value)
@@ -139,73 +115,47 @@ namespace Compose
 
   void MultiLineLabel::setModifier(Text t) const
   {
-    getDataForKey<LabelData>(c_labelData).text = t;
+    LabelShared::setText(*this, t);
   }
 
   void MultiLineLabel::setModifier(PrimaryColor c) const
   {
-    getDataForKey<LabelData>(c_labelData).primaryColor = c;
+    LabelShared::setPrimaryColor(*this, c);
   }
 
   void MultiLineLabel::setModifier(BackgroundColor c) const
   {
-    getDataForKey<LabelData>(c_labelData).bgColor = c;
+    LabelShared::setBackgroundColor(*this, c);
   }
 
   void MultiLineLabel::setModifier(Font s) const
   {
-    getDataForKey<LabelData>(c_labelData).font = s;
+    LabelShared::setFont(*this, s);
   }
 
   void MultiLineLabel::setModifier(TextAlign a) const
   {
-    getDataForKey<LabelData>(c_labelData).align = a;
+    LabelShared::setTextAlign(*this, a);
   }
 
   void MultiLineLabel::setModifier(VerticalAlign v) const
   {
-    getDataForKey<LabelData>(c_labelData).verticalAlign = v;
+    LabelShared::setVerticalAlign(*this, v);
   }
 
   void MultiLineLabel::setDrawCall(CustomDrawingElement::tDrawCB &&draw) const
   {
-    nltools_detailedAssertAlways(!doesDataForKeyExist<LabelData>(),
-                                 "CanvasData should not exist, setting a new render callback is prohibited");
-    Widget(getHandle())
-        .doAutorun(
-            [draw = std::move(draw), handle = getHandle()]
-            {
-              const Widget widget(handle);
-
-              auto &canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(c_labelData, [handle, d = draw]
-                                                                                { return new LabelData(handle, d); });
-
-              const auto w = lv_obj_get_width(handle);
-              const auto h = lv_obj_get_height(handle);
-
-              auto &bufferUser = canvasData.buffer.get();
-
-              LVGLDrawContext drawContext(handle);
-              try
-              {
-                canvasData.drawCallback(drawContext, w, h);
-              }
-              catch(std::exception &)
-              {
-              }
-            });
+    LabelShared::setDrawCallCommon(*this, std::move(draw));
   }
 
   void MultiLineLabel::setModifier(Width w) const
   {
-    getDataForKey<LabelData>(c_labelData).width = w;
-    Widget::setModifier(w);
+    LabelShared::setWidth(*this, w);
   }
 
   void MultiLineLabel::setModifier(Height h) const
   {
-    getDataForKey<LabelData>(c_labelData).height = h;
-    Widget::setModifier(h);
+    LabelShared::setHeight(*this, h);
   }
 
   void MultiLineLabel::operator<<(AutorunStringCB &&cb) const
