@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include "compose/widgets/Label.h"
+#include <compose/FreeTypeFont.h>
 #include "src/widgets/canvas/lv_canvas_private.h"
 
 namespace Compose
@@ -220,13 +221,16 @@ namespace Compose
       }
     }();
 
+    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
+    auto *draw_buf = canvas->draw_buf;
+    if(!draw_buf)
+      return;
+
     font.draw(t.text, startX, r.pos.y,
-              [&](auto x, auto y, auto value)
+              [&](int px, int py, unsigned char coverage)
               {
-                const auto factor = value / 255.0;
-                auto pixelColor = c;
-                pixelColor.a = factor * c.a;
-                fillRect(pixelColor, { x, y, 1, 1 });
+                const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
+                drawFontPixel(draw_buf, c, px, py, mod_cov);
               });
   }
 
@@ -329,5 +333,23 @@ namespace Compose
     }
 
     lv_obj_invalidate(m_canvas);
+  }
+
+  void LVGLDrawContext::drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c)
+  {
+    if(!m_canvas || text.empty())
+      return;
+
+    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
+    auto *draw_buf = canvas->draw_buf;
+    if(!draw_buf)
+      return;
+
+    font.draw(text, x, y,
+              [&](int px, int py, unsigned char coverage)
+              {
+                const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
+                drawFontPixel(draw_buf, c, px, py, mod_cov);
+              });
   }
 }

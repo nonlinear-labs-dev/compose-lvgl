@@ -14,8 +14,37 @@
 #include <optional>
 #include <compose/state/FontStorage.h>
 
+namespace Glib
+{
+  class ustring;
+}
+
 namespace Compose
 {
+  class FreeTypeFont;
+  inline void drawFontPixel(lv_draw_buf_t *draw_buf, const Color &baseColor, int px, int py, unsigned char coverage)
+  {
+    if(!draw_buf)
+      return;
+
+    const int canvas_width = draw_buf->header.w;
+    const int canvas_height = draw_buf->header.h;
+    const int canvas_stride = draw_buf->header.stride;
+    auto *canvas_data = static_cast<uint8_t *>(draw_buf->data);
+
+    if(px < 0 || py < 0 || px >= canvas_width || py >= canvas_height)
+      return;
+
+    const auto final_a = static_cast<uint8_t>(coverage * baseColor.a);
+    if(final_a == 0)
+      return;
+
+    uint8_t *canvas_pixel = canvas_data + py * canvas_stride + px * 4;
+    canvas_pixel[0] = baseColor.b;
+    canvas_pixel[1] = baseColor.g;
+    canvas_pixel[2] = baseColor.r;
+    canvas_pixel[3] = final_a;
+  }
   class DrawContext
   {
    public:
@@ -50,6 +79,8 @@ namespace Compose
     virtual void fillArc(Color color, Point position, float radius, int width, double startAngle, double sweep) = 0;
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) = 0;
     virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
+
+    virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -68,6 +99,7 @@ namespace Compose
     void fillArc(Color color, Point position, float radius, int width, double startAngle, double sweep) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) override;
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
+    void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
 
    private:
     lv_layer_t m_layer;

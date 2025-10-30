@@ -31,14 +31,7 @@ namespace Compose
 
           const auto baseColor = cd.primaryColor.get();
 
-          font.draw(displayText, startX, startY,
-                    [&](auto x, auto y, auto value)
-                    {
-                      auto factor = value / 255.0;
-                      auto pixelColor = baseColor;
-                      pixelColor.a = factor;
-                      ctx.fillRect(pixelColor, { x, y, 1, 1 });
-                    });
+          ctx.drawText(displayText, startX, startY, font, baseColor);
         });
   }
 

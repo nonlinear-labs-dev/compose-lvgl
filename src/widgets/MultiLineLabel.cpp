@@ -9,7 +9,7 @@
 
 namespace Compose
 {
-  static std::vector<std::string> wrapText(const FreeTypeFont& font, const std::string& text, int maxWidth)
+  static std::vector<std::string> wrapText(const FreeTypeFont &font, const std::string &text, int maxWidth)
   {
     std::vector<std::string> words;
     {
@@ -23,7 +23,7 @@ namespace Compose
     std::string currentLine;
     const std::string space = " ";
 
-    for(const auto& word : words)
+    for(const auto &word : words)
     {
       const auto candidate = currentLine.empty() ? word : currentLine + space + word;
       const auto width = font.getStringWidth(candidate);
@@ -94,19 +94,12 @@ namespace Compose
           const auto baseColor = cd.primaryColor.get();
 
           int y = startY;
-          for(const auto& line : lines)
+          for(const auto &line : lines)
           {
             const auto textWidth = font.getStringWidth(line);
             const auto startX = LabelShared::computeStartX(w, textWidth, textAlign);
 
-            font.draw(line, startX, y,
-                      [&](auto x, auto yy, auto value)
-                      {
-                        auto factor = value / 255.0;
-                        auto pixelColor = baseColor;
-                        pixelColor.a = factor;
-                        ctx.fillRect(pixelColor, { x, yy, 1, 1 });
-                      });
+            ctx.drawText(line, startX, y, font, baseColor);
 
             y += lineHeight;
           }
@@ -163,5 +156,3 @@ namespace Compose
     doAutorun([cb = std::move(cb), label = getHandle()] { MultiLineLabel(label).setModifier(Text { cb() }); });
   }
 }
-
-
