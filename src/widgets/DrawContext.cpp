@@ -15,24 +15,21 @@ namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
 
-  LVGLDrawContext::LVGLDrawContext(tCanvas ctx)
+  LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
       : m_layer {}
       , m_canvas(ctx)
   {
-    lv_canvas_init_layer(m_canvas, &m_layer);
-    lv_canvas_fill_bg(m_canvas, lv_color_black(), LV_OPA_0);
+    lv_canvas_init_layer(&m_canvas, &m_layer);
+    lv_canvas_fill_bg(&m_canvas, lv_color_black(), LV_OPA_0);
   }
 
   LVGLDrawContext::~LVGLDrawContext()
   {
-    lv_canvas_finish_layer(m_canvas, &m_layer);
+    lv_canvas_finish_layer(&m_canvas, &m_layer);
   }
 
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
     line_dsc.p1.x = p1.x;
@@ -70,9 +67,6 @@ namespace Compose
 
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_opa = LV_OPA_TRANSP;
@@ -91,9 +85,6 @@ namespace Compose
 
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
@@ -111,9 +102,6 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
@@ -135,7 +123,7 @@ namespace Compose
 
   void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points)
   {
-    if(points.size() < 3 || !m_canvas)
+    if(points.size() < 3)
       return;
 
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
@@ -169,9 +157,6 @@ namespace Compose
 
   void LVGLDrawContext::fillArc(Color color, Point position, float radius, int width, double startAngle, double sweep)
   {
-    if(!m_canvas)
-      return;
-
     const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
       return;
@@ -197,7 +182,7 @@ namespace Compose
 
   void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
   {
-    if(!m_canvas || t.text.empty())
+    if(t.text.empty())
       return;
 
     if(!s_fontStorage)
@@ -221,8 +206,8 @@ namespace Compose
       }
     }();
 
-    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
-    auto *draw_buf = canvas->draw_buf;
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
     if(!draw_buf)
       return;
 
@@ -230,24 +215,24 @@ namespace Compose
               [&](int px, int py, unsigned char coverage)
               {
                 const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
-                drawFontPixel(draw_buf, c, px, py, mod_cov);
+                drawFontPixel(*draw_buf, c, px, py, mod_cov);
               });
   }
 
   void LVGLDrawContext::putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride)
   {
-    if(!m_canvas || !image.start || image.width <= 0 || image.height <= 0)
+    if(!image.start || image.width <= 0 || image.height <= 0)
       return;
 
-    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
-    auto *draw_buf = canvas->draw_buf;
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
 
     if(!draw_buf || draw_buf->header.cf != LV_COLOR_FORMAT_ARGB8888)
       return;
 
-    const int canvas_width = draw_buf->header.w;
-    const int canvas_height = draw_buf->header.h;
-    const int canvas_stride = draw_buf->header.stride;
+    const auto canvas_width = draw_buf->header.w;
+    const auto canvas_height = draw_buf->header.h;
+    const auto canvas_stride = draw_buf->header.stride;
 
     const int src_width = image.width;
     const int src_height = image.height;
@@ -259,15 +244,15 @@ namespace Compose
     if(start_x >= canvas_width || start_y >= canvas_height)
       return;
 
-    const int end_x = std::min(start_x + src_width, canvas_width);
-    const int end_y = std::min(start_y + src_height, canvas_height);
-    const int copy_width = end_x - start_x;
-    const int copy_height = end_y - start_y;
+    const auto end_x = std::min<int>(start_x + src_width, static_cast<int>(canvas_width));
+    const auto end_y = std::min<int>(start_y + src_height, static_cast<int>(canvas_height));
+    const auto copy_width = end_x - start_x;
+    const auto copy_height = end_y - start_y;
 
     if(copy_width <= 0 || copy_height <= 0)
       return;
 
-    auto canvas_data = (uint8_t *) draw_buf->data;
+    const auto canvas_data = static_cast<uint8_t *>(draw_buf->data);
     const uint8_t *src_data = image.start;
 
     for(int y = 0; y < copy_height; ++y)
@@ -293,7 +278,7 @@ namespace Compose
             final_r = static_cast<uint8_t>(override_color.r);
             final_g = static_cast<uint8_t>(override_color.g);
             final_b = static_cast<uint8_t>(override_color.b);
-            final_a = static_cast<uint8_t>(override_color.a * src_a);
+            final_a = static_cast<uint8_t>(src_a * override_color.a);
           }
           else
           {
@@ -332,16 +317,16 @@ namespace Compose
       }
     }
 
-    lv_obj_invalidate(m_canvas);
+    lv_obj_invalidate(&m_canvas);
   }
 
   void LVGLDrawContext::drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c)
   {
-    if(!m_canvas || text.empty())
+    if(text.empty())
       return;
 
-    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
-    auto *draw_buf = canvas->draw_buf;
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
     if(!draw_buf)
       return;
 
@@ -349,20 +334,17 @@ namespace Compose
               [&](int px, int py, unsigned char coverage)
               {
                 const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
-                drawFontPixel(draw_buf, c, px, py, mod_cov);
+                drawFontPixel(*draw_buf, c, px, py, mod_cov);
               });
   }
 
-  void LVGLDrawContext::drawFontPixel(lv_draw_buf_t *draw_buf, const Color &baseColor, int px, int py,
+  void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
                                       unsigned char coverage)
   {
-    if(!draw_buf)
-      return;
-
-    const int canvas_width = draw_buf->header.w;
-    const int canvas_height = draw_buf->header.h;
-    const int canvas_stride = draw_buf->header.stride;
-    auto *canvas_data = static_cast<uint8_t *>(draw_buf->data);
+    const auto canvas_width = draw_buf.header.w;
+    const auto canvas_height = draw_buf.header.h;
+    const auto canvas_stride = draw_buf.header.stride;
+    auto *canvas_data = draw_buf.data;
 
     if(px < 0 || py < 0 || px >= canvas_width || py >= canvas_height)
       return;

@@ -9,65 +9,6 @@
 
 namespace Compose
 {
-  static std::vector<std::string> wrapText(const FreeTypeFont &font, const std::string &text, int maxWidth)
-  {
-    std::vector<std::string> words;
-    {
-      std::stringstream ws(text);
-      std::string w;
-      while(ws >> w)
-        words.push_back(w);
-    }
-
-    std::vector<std::string> lines;
-    std::string currentLine;
-    const std::string space = " ";
-
-    for(const auto &word : words)
-    {
-      const auto candidate = currentLine.empty() ? word : currentLine + space + word;
-      const auto width = font.getStringWidth(candidate);
-
-      if(width <= maxWidth)
-      {
-        currentLine = candidate;
-      }
-      else
-      {
-        if(!currentLine.empty())
-          lines.push_back(currentLine);
-
-        if(font.getStringWidth(word) <= maxWidth)
-        {
-          currentLine = word;
-        }
-        else
-        {
-          std::string partial;
-          for(char c : word)
-          {
-            std::string next = partial;
-            next.push_back(c);
-            if(font.getStringWidth(next) > maxWidth && !partial.empty())
-            {
-              lines.push_back(partial);
-              partial.clear();
-            }
-            partial.push_back(c);
-          }
-          currentLine = partial;
-        }
-      }
-    }
-
-    if(!currentLine.empty())
-      lines.push_back(currentLine);
-
-    if(lines.empty())
-      lines.emplace_back("");
-
-    return lines;
-  }
 
   void MultiLineLabel::setLabelRenderingFunction() const
   {
@@ -85,7 +26,8 @@ namespace Compose
           const auto textAlign = cd.align.get();
           const auto vertAlign = cd.verticalAlign.get();
 
-          const auto lines = wrapText(font, displayText, w);
+          const auto lines
+              = nltools::text::wrapText(displayText, w, [&](auto &text) { return font.getStringWidth(text); });
           const auto lineHeight = font.getFontHeight();
           const auto totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
 
@@ -143,6 +85,7 @@ namespace Compose
 
   void MultiLineLabel::setModifier(Width w) const
   {
+    nltools_detailedAssertAlways(w.it != LV_SIZE_CONTENT, "Width::Fit_Content not allowed for Multi-LineLabels");
     LabelShared::setWidth(*this, w);
   }
 

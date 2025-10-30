@@ -6,6 +6,7 @@
 #include "compose/FreeTypeFont.h"
 #include <functional>
 #include <string>
+#include <nltools/TextWrap.h>
 
 namespace Compose
 {
@@ -36,23 +37,28 @@ namespace Compose
             const MultiLineLabel l(handle);
             const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
 
-            const auto [width] = labelData.width.get();
             const auto [height] = labelData.height.get();
+            const auto [width] = labelData.width.get();
 
             const auto &fontDesc = labelData.font.get();
             const auto &font = s_fontStorage->getFont(fontDesc);
             const auto text = labelData.text.get();
 
-            if(width == LV_SIZE_CONTENT)
-            {
-              const auto textWidth = font.getStringWidth(text.text);
-              lv_obj_set_width(handle, textWidth);
-            }
-
             if(height == LV_SIZE_CONTENT)
             {
-              const auto lineH = font.getFontHeight();
-              lv_obj_set_height(handle, lineH);
+              auto w = width;
+              if(w == 0)
+              {
+                w = lv_obj_get_width(handle);
+              }
+
+              auto maxW = 0;
+              for(auto line : nltools::text::wrapText(text.text, w, [&font](auto t) { return font.getStringWidth(t); }))
+              {
+                maxW = std::max(maxW, font.getStringWidth(line));
+              }
+
+              lv_obj_set_width(handle, maxW);
             }
           });
       (setModifier(args), ...);
@@ -77,6 +83,5 @@ namespace Compose
   };
 }
 
-#define MULTI_LINE_LABEL(...) it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel &&it)
-
-
+#define MULTI_LINE_LABEL(...)                                                                                          \
+  it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel &&it)

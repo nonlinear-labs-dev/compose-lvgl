@@ -63,9 +63,9 @@ namespace Compose
   class LVGLDrawContext : public DrawContext
   {
    public:
-    using tCanvas = lv_obj_t *;
+    using tCanvas = lv_obj_t;
 
-    explicit LVGLDrawContext(tCanvas ctx);
+    explicit LVGLDrawContext(tCanvas &ctx);
     ~LVGLDrawContext() override;
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
@@ -79,10 +79,11 @@ namespace Compose
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
 
    private:
-    static void drawFontPixel(lv_draw_buf_t *draw_buf, const Color &baseColor, int px, int py, unsigned char coverage);
+    static void drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
+                              unsigned char coverage);
 
     lv_layer_t m_layer;
-    tCanvas m_canvas;
+    tCanvas &m_canvas;
   };
 
   extern std::unique_ptr<FontStorage> s_fontStorage;

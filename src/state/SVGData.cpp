@@ -19,7 +19,7 @@ namespace Compose
           {
             const auto w = lv_obj_get_width(data->handle);
             const auto h = lv_obj_get_height(data->handle);
-            LVGLDrawContext drawContext(data->handle);
+            LVGLDrawContext drawContext(*data->handle);
             try
             {
               data->drawCallback(drawContext, w, h);
