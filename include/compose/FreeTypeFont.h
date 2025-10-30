@@ -31,13 +31,12 @@ namespace Compose
     [[nodiscard]] int getFontSize() const;
     [[nodiscard]] int getMaxBottomOffset(const Glib::ustring &str) const;
     [[nodiscard]] int getCapHeightPx() const;
+    [[nodiscard]] int getAscenderPx() const;
 
     void draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
     [[nodiscard]] const std::string &getFontPath() const;
 
    private:
-    int getAscenderPx() const;
-
     FT_Face m_face {};
     int m_fontSize;
     std::string m_fontPath;

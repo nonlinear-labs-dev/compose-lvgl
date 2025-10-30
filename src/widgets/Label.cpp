@@ -39,9 +39,8 @@ namespace Compose
             }
           }(textAlign);
 
-          const auto startY
-              = [h, maxBottomOffset = font.getMaxBottomOffset(displayText), fontSize = font.getFontHeight(),
-                 capHeightPx = font.getCapHeightPx()](const VerticalAlign &a) -> int
+          const auto startY = [h, maxBottomOffset = font.getMaxBottomOffset(displayText), fontSize = font.getFontSize(),
+                               capHeightPx = font.getCapHeightPx()](const VerticalAlign &a) -> int
           {
             switch(a.it)
             {
@@ -65,6 +64,8 @@ namespace Compose
                       pixelColor.a = factor;
                       ctx.fillRect(pixelColor, { x, y, 1, 1 });
                     });
+
+          ctx.drawLine({ 1, Color::RED() }, { 0, h / 2 }, { w, h / 2 });
         });
   }
 
