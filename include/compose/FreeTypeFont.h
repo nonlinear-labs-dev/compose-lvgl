@@ -26,14 +26,20 @@ namespace Compose
 
     using tSetPixelCB = std::function<void(int, int, unsigned char)>;
 
-    uint32_t getStringWidth(const Glib::ustring &str) const;
-    uint32_t draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
-    int getHeight() const;
-    const std::string &getFontPath() const;
+    [[nodiscard]] int getStringWidth(const Glib::ustring &str) const;
+    [[nodiscard]] int getFontHeight() const;
+    [[nodiscard]] int getFontSize() const;
+    [[nodiscard]] int getMaxBottomOffset(const Glib::ustring &str) const;
+    [[nodiscard]] int getCapHeightPx() const;
+
+    void draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
+    [[nodiscard]] const std::string &getFontPath() const;
 
    private:
+    int getAscenderPx() const;
+
     FT_Face m_face {};
-    int m_height;
+    int m_fontSize;
     std::string m_fontPath;
 
     tCoordinate drawLetter(FT_GlyphSlot slot, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;

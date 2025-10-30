@@ -20,7 +20,7 @@ namespace Compose
 
           const auto &font = s_fontStorage->getFont(cd.font);
           const auto displayText = cd.text.get().text;
-          const auto textWidth = static_cast<int32_t>(font.getStringWidth(displayText));
+          const auto textWidth = font.getStringWidth(displayText);
           const auto textAlign = cd.align.get();
           const auto vertAlign = cd.verticalAlign.get();
 
@@ -39,17 +39,19 @@ namespace Compose
             }
           }(textAlign);
 
-          const auto startY = [h, textHeight = font.getHeight()](const VerticalAlign &a) -> int
+          const auto startY
+              = [h, maxBottomOffset = font.getMaxBottomOffset(displayText), fontSize = font.getFontHeight(),
+                 capHeightPx = font.getCapHeightPx()](const VerticalAlign &a) -> int
           {
             switch(a.it)
             {
               case VerticalAlign::Top:
                 return 0;
               case VerticalAlign::Bottom:
-                return h - textHeight;
+                return h - maxBottomOffset;
               default:
               case VerticalAlign::Center:
-                return (h - textHeight) / 2;
+                return h / 2 - fontSize + capHeightPx / 2;
             }
           }(vertAlign);
 
@@ -123,6 +125,18 @@ namespace Compose
               {
               }
             });
+  }
+
+  void Label::setModifier(Width w) const
+  {
+    getDataForKey<LabelData>(c_labelData).width = w;
+    Widget::setModifier(w);
+  }
+
+  void Label::setModifier(Height h) const
+  {
+    getDataForKey<LabelData>(c_labelData).height = h;
+    Widget::setModifier(h);
   }
 
   void Label::operator<<(AutorunStringCB &&cb) const

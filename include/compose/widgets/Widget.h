@@ -284,7 +284,7 @@ namespace Compose
       lv_obj_update_layout(getHandle());
     }
 
-    void setModifier(Width w) const
+    virtual void setModifier(Width w) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
@@ -297,7 +297,7 @@ namespace Compose
       lv_obj_update_layout(getHandle());
     }
 
-    void setModifier(Height h) const
+    virtual void setModifier(Height h) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle());
          lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)

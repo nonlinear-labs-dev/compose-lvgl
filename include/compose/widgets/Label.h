@@ -1,10 +1,11 @@
 #pragma once
 #include "CustomDrawingElement.h"
-#include "compose/FreeTypeFont.h"
+#include "DrawContext.h"
 
+#include <compose/state/LabelData.h>
+#include "compose/FreeTypeFont.h"
 #include <functional>
 #include <string>
-#include <memory>
 
 namespace Compose
 {
@@ -28,8 +29,36 @@ namespace Compose
       setModifier(VerticalAlign::CENTER());
       setModifier(TextAlign::CENTER());
       setModifier(SizePercentage::FULL());
+
+      doAutorun(
+          [handle = getHandle()]
+          {
+            const Label l(handle);
+            const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
+            const auto [width] = labelData.width.get();
+            const auto [height] = labelData.height.get();
+
+            const auto &fontDesc = labelData.font.get();
+            const auto &font = s_fontStorage->getFont(fontDesc);
+            const auto text = labelData.text.get();
+
+            if(width == LV_SIZE_CONTENT)
+            {
+              const auto textWidth = font.getStringWidth(text.text);
+              lv_obj_set_width(handle, textWidth);
+            }
+
+            if(height == LV_SIZE_CONTENT)
+            {
+              const auto textHeight = font.getFontHeight();
+              lv_obj_set_height(handle, textHeight);
+            }
+          });
       (setModifier(args), ...);
     }
+
+    void setModifier(Width w) const override;
+    void setModifier(Height h) const override;
 
     void operator<<(AutorunStringCB &&cb) const;
 
@@ -44,33 +73,6 @@ namespace Compose
    private:
     void setLabelRenderingFunction() const;
     void setDrawCall(CustomDrawingElement::tDrawCB &&draw) const;
-  };
-
-  struct FontStorage
-  {
-    using tPathBuilder = std::function<std::string(Font)>;
-
-    explicit FontStorage(tPathBuilder builder)
-        : buildPath(std::move(builder))
-        , fonts()
-    {
-    }
-
-    FontStorage(const FontStorage &) = delete;
-    FontStorage &operator=(const FontStorage &) = delete;
-
-    FreeTypeFont &getFont(const Font &font)
-    {
-      auto it = fonts.find(font);
-      if(it == fonts.end())
-      {
-        it = fonts.emplace(font, std::make_unique<FreeTypeFont>(buildPath(font), font.size)).first;
-      }
-      return *it->second;
-    }
-
-    tPathBuilder buildPath;
-    std::unordered_map<Font, std::unique_ptr<FreeTypeFont>> fonts;
   };
 }
 

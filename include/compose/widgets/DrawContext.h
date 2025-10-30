@@ -12,7 +12,7 @@
 #include <vector>
 #include <memory>
 #include <optional>
-#include "compose/widgets/Label.h"
+#include <compose/state/FontStorage.h>
 
 namespace Compose
 {
