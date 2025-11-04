@@ -189,6 +189,48 @@ namespace Compose
     lv_draw_vector(dsc.get());
   }
 
+  void LVGLDrawContext::drawSegmentedArc(DrawContext &ctx, SegmentedArcDrawOptions props)
+  {
+    const auto segmentAngle = props.sweep / static_cast<float>(props.numSegments);
+    const auto numLines = props.numSegments + 1;
+    const auto lineAngle = static_cast<float>(props.dashWidth) * segmentAngle / 100.0f;
+
+    if(props.lineColor.a > 0)
+    {
+      for(int i = 0; i < numLines; i++)
+      {
+        const auto lineAnglePos = props.startAngle + i * segmentAngle;
+
+        const ArcDrawOptions lineArc = { .position = props.center,
+                                         .color = props.lineColor,
+                                         .radius = props.radius,
+                                         .strokeWidth = props.strokeWidth,
+                                         .startAngle = lineAnglePos,
+                                         .sweepAngle = lineAngle };
+
+        ctx.fillArc(lineArc);
+      }
+    }
+
+    if(props.spaceColor.a > 0)
+    {
+      for(int i = 0; i < props.numSegments; i++)
+      {
+        const auto spaceStartAngle = props.startAngle + i * segmentAngle + lineAngle;
+        const auto spaceSweepAngle = segmentAngle - lineAngle;
+
+        const ArcDrawOptions spaceArc = { .position = props.center,
+                                          .color = props.spaceColor,
+                                          .radius = props.radius,
+                                          .strokeWidth = props.strokeWidth,
+                                          .startAngle = spaceStartAngle,
+                                          .sweepAngle = spaceSweepAngle };
+
+        ctx.fillArc(spaceArc);
+      }
+    }
+  }
+
   void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
   {
     if(t.text.empty())

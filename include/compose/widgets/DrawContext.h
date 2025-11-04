@@ -59,6 +59,23 @@ namespace Compose
       std::optional<std::vector<float>> dashes = std::nullopt;
     };
 
+    struct SegmentedArcDrawOptions
+    {
+      Point center;
+      float radius;
+      int strokeWidth;
+
+      int numSegments;
+      int dashWidth;
+
+      float totalAngleAvailable;
+      float startAngle;
+      float sweep;
+
+      Color lineColor;
+      Color spaceColor;
+    };
+
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
@@ -66,6 +83,7 @@ namespace Compose
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
+    virtual void drawSegmentedArc(DrawContext &ctx, SegmentedArcDrawOptions props) = 0;
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) = 0;
     virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
 
@@ -86,6 +104,7 @@ namespace Compose
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
     void fillArc(const ArcDrawOptions &arcOptions) override;
+    void drawSegmentedArc(DrawContext &ctx, SegmentedArcDrawOptions props) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) override;
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
