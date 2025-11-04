@@ -155,7 +155,7 @@ namespace Compose
     lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::fillArc(Color color, Point position, float radius, int width, double startAngle, double sweep)
+  void LVGLDrawContext::fillArc(const ArcDrawOptions &arcOptions)
   {
     const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
@@ -165,15 +165,24 @@ namespace Compose
     if(!path)
       return;
 
-    const lv_fpoint_t center = { static_cast<float>(position.x), static_cast<float>(position.y) };
+    const lv_fpoint_t center = { static_cast<float>(arcOptions.position.x), static_cast<float>(arcOptions.position.y) };
 
-    lv_vector_path_append_arc(path.get(), &center, radius, startAngle, sweep, false);
+    lv_vector_path_append_arc(path.get(), &center, arcOptions.radius, arcOptions.startAngle, arcOptions.sweepAngle,
+                              false);
 
     lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
 
+    const auto &color = arcOptions.color;
+
     lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
     lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
-    lv_vector_dsc_set_stroke_width(dsc.get(), width);
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(arcOptions.strokeWidth));
+
+    if(arcOptions.dashes.has_value())
+    {
+      auto dashes = arcOptions.dashes.value();
+      lv_vector_dsc_set_stroke_dash(dsc.get(), dashes.data(), dashes.size());
+    }
 
     lv_vector_dsc_add_path(dsc.get(), path.get());
 
