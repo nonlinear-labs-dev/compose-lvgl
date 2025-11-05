@@ -4,8 +4,6 @@
 #include "compose/widgets/Window.h"
 #include "src/misc/lv_timer.h"
 #include "src/tick/lv_tick.h"
-
-#include <SDL_events.h>
 #include <lvgl.h>
 
 #include <chrono>
