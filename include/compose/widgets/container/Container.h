@@ -49,7 +49,9 @@ namespace Compose
 
   template <typename... tArgs> static Fixed _FIXED(tArgs... args)
   {
-#warning "this is a bit flawed we call LayoutType::none() last, this might render some modifiers from before invalid (for example FixedSize), sizes need refresh, so constructor args might go missing and you wont know why"
+//this is a bit flawed we call LayoutType::none() last,
+//this might render some modifiers from before invalid (for example FixedSize)
+//need refresh, so constructor args might go missing, and you won't know why
     return Fixed(args..., Orientation::VERTICAL(), LayoutType::none());
   }
 
