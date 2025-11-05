@@ -76,7 +76,14 @@ namespace Compose
       Color spaceColor;
     };
 
+    struct LineDashOptions
+    {
+      int dashWidth;
+      int dashGap;
+    };
+
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
+    virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
@@ -84,9 +91,9 @@ namespace Compose
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
     virtual void drawSegmentedArc(const SegmentedArcDrawOptions &props) = 0;
-    virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) = 0;
     virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
 
+    virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
   };
 
@@ -98,6 +105,7 @@ namespace Compose
     explicit LVGLDrawContext(tCanvas &ctx);
     ~LVGLDrawContext() override;
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
+    void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void fillRect(Color color, Rect rect) override;
@@ -105,7 +113,7 @@ namespace Compose
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
     void fillArc(const ArcDrawOptions &arcOptions) override;
     void drawSegmentedArc(const SegmentedArcDrawOptions &props) override;
-    void drawText(Text t, Font f, Rect r, Color c, TextAlign ta) override;
+    void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
 

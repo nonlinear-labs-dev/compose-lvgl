@@ -19,19 +19,7 @@ namespace Compose
           if(cd.bgColor.get().a > 0)
             ctx.fillRect(cd.bgColor, { 0, 0, w, h });
 
-          const auto &font = s_fontStorage->getFont(cd.font);
-          const auto displayText = cd.text.get().text;
-          const auto textWidth = font.getStringWidth(displayText);
-          const auto textAlign = cd.align.get();
-          const auto vertAlign = cd.verticalAlign.get();
-
-          const auto startX = LabelShared::computeStartX(w, textWidth, textAlign);
-
-          const auto startY = LabelShared::computeStartYSingle(h, font, displayText, vertAlign);
-
-          const auto baseColor = cd.primaryColor.get();
-
-          ctx.drawText(displayText, startX, startY, font, baseColor);
+          ctx.drawText(cd.text, cd.font, { 0, 0, w, h }, cd.primaryColor, cd.align, cd.verticalAlign);
         });
   }
 

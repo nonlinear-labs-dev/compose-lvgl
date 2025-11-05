@@ -10,6 +10,7 @@
 #include "compose/widgets/Label.h"
 #include <compose/FreeTypeFont.h>
 #include "src/widgets/canvas/lv_canvas_private.h"
+#include "compose/widgets/LabelShared.h"
 
 namespace Compose
 {
@@ -30,6 +31,11 @@ namespace Compose
 
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
+    drawLine(style, p1, p2, std::nullopt);
+  }
+
+  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash)
+  {
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
     line_dsc.p1.x = p1.x;
@@ -39,6 +45,11 @@ namespace Compose
     line_dsc.color = lv_color_make(style.color.r, style.color.g, style.color.b);
     line_dsc.width = style.width;
     line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+    if(dash.has_value())
+    {
+      line_dsc.dash_gap = dash.value().dashGap;
+      line_dsc.dash_width = dash.value().dashWidth;
+    }
 
     lv_draw_line(&m_layer, &line_dsc);
   }
@@ -231,43 +242,13 @@ namespace Compose
     }
   }
 
-  void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
+  void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va)
   {
-    if(t.text.empty())
-      return;
-
-    if(!s_fontStorage)
-      return;
-
-    auto &font = s_fontStorage->getFont(f);
-    const auto textWidth = static_cast<int32_t>(font.getStringWidth(t.text));
-
-    const auto startX = [&]() -> int
-    {
-      switch(ta.it)
-      {
-        case LV_TEXT_ALIGN_LEFT:
-          return r.pos.x;
-        case LV_TEXT_ALIGN_RIGHT:
-          return r.pos.x + r.size.w - textWidth;
-        default:
-        case LV_TEXT_ALIGN_CENTER:
-        case LV_TEXT_ALIGN_AUTO:
-          return r.pos.x + (r.size.w - textWidth) / 2;
-      }
-    }();
-
-    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
-    const auto *draw_buf = canvas->draw_buf;
-    if(!draw_buf)
-      return;
-
-    font.draw(t.text, startX, r.pos.y,
-              [&](int px, int py, unsigned char coverage)
-              {
-                const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
-                drawFontPixel(*draw_buf, c, px, py, mod_cov);
-              });
+    const auto &font = s_fontStorage->getFont(f);
+    const auto textWidth = font.getStringWidth(t.text);
+    const auto startX = LabelShared::computeStartX(r.size.w, textWidth, ta);
+    const auto startY = LabelShared::computeStartYSingle(r.size.h, font, t.text, va);
+    drawText(t.text, r.pos.x + startX, r.pos.y + startY, font, c);
   }
 
   void LVGLDrawContext::putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride)
@@ -384,8 +365,7 @@ namespace Compose
     font.draw(text, x, y,
               [&](int px, int py, unsigned char coverage)
               {
-                const auto mod_cov = static_cast<unsigned char>(static_cast<float>(coverage) * c.a);
-                drawFontPixel(*draw_buf, c, px, py, mod_cov);
+                drawFontPixel(*draw_buf, c, px, py, coverage);
               });
   }
 
@@ -400,14 +380,10 @@ namespace Compose
     if(px < 0 || py < 0 || px >= canvas_width || py >= canvas_height)
       return;
 
-    const auto final_a = static_cast<uint8_t>(coverage * baseColor.a);
-    if(final_a == 0)
-      return;
-
     uint8_t *canvas_pixel = canvas_data + py * canvas_stride + px * 4;
     canvas_pixel[0] = baseColor.b;
     canvas_pixel[1] = baseColor.g;
     canvas_pixel[2] = baseColor.r;
-    canvas_pixel[3] = final_a;
+    canvas_pixel[3] = coverage * baseColor.a;
   }
 }
