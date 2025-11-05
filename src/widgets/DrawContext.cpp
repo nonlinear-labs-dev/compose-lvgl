@@ -189,7 +189,7 @@ namespace Compose
     lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::drawSegmentedArc(DrawContext &ctx, SegmentedArcDrawOptions props)
+  void LVGLDrawContext::drawSegmentedArc(const SegmentedArcDrawOptions &props)
   {
     const auto segmentAngle = props.sweep / static_cast<float>(props.numSegments);
     const auto numLines = props.numSegments + 1;
@@ -208,7 +208,7 @@ namespace Compose
                                          .startAngle = lineAnglePos,
                                          .sweepAngle = lineAngle };
 
-        ctx.fillArc(lineArc);
+        fillArc(lineArc);
       }
     }
 
@@ -226,7 +226,7 @@ namespace Compose
                                           .startAngle = spaceStartAngle,
                                           .sweepAngle = spaceSweepAngle };
 
-        ctx.fillArc(spaceArc);
+        fillArc(spaceArc);
       }
     }
   }
