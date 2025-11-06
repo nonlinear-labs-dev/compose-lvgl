@@ -47,12 +47,9 @@ namespace Compose
     using Widget::Widget;
   };
 
-  template <typename... tArgs> static Fixed _FIXED(tArgs... args)
+  static Fixed _FIXED(Widget &it)
   {
-//this is a bit flawed we call LayoutType::none() last,
-//this might render some modifiers from before invalid (for example FixedSize)
-//need refresh, so constructor args might go missing, and you won't know why
-    return Fixed(args..., Orientation::VERTICAL(), LayoutType::none());
+    return Fixed(it, Orientation::VERTICAL(), LayoutType::none());
   }
 
   template <typename... tArgs> static Widget V_SPACER(tArgs... args)
@@ -68,8 +65,7 @@ namespace Compose
 
 #define ROW(...) it.add(std::move(Compose::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Row &&it)
 #define COLUMN(...) it.add(std::move(Compose::_COLUMN(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Column &&it)
-#define FIXED_CONTAINER(...)                                                                                           \
-  it.add(std::move(Compose::_FIXED(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Fixed &&it)
+#define FIXED_CONTAINER it.add(std::move(Compose::_FIXED(it))) << [=](Compose::Fixed &&it)
 
 #define VSPACER(...) ;
 #define HSPACER(...) ;
