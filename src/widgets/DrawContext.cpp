@@ -102,6 +102,26 @@ namespace Compose
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
+  void LVGLDrawContext::strokeRoundedRect(StrokeStyle style, Rect rect, RoundedCorner rc)
+  {
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_opa = LV_OPA_TRANSP;
+    rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
+    rect_dsc.border_width = style.width;
+    rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+
+    rect_dsc.radius = rc.radius;
+
+    lv_area_t area;
+    area.x1 = rect.pos.x;
+    area.y1 = rect.pos.y;
+    area.x2 = rect.pos.x + rect.size.w - 1;
+    area.y2 = rect.pos.y + rect.size.h - 1;
+
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
+  }
+
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
     lv_draw_rect_dsc_t rect_dsc;
