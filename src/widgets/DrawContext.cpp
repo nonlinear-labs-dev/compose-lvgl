@@ -31,10 +31,11 @@ namespace Compose
 
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
-    drawLine(style, p1, p2, std::nullopt);
+    drawLine(style, p1, p2, std::nullopt, std::nullopt);
   }
 
-  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash)
+  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
+                                 std::optional<RoundedEnds> ends)
   {
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
@@ -45,10 +46,17 @@ namespace Compose
     line_dsc.color = lv_color_make(style.color.r, style.color.g, style.color.b);
     line_dsc.width = style.width;
     line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+
     if(dash.has_value())
     {
       line_dsc.dash_gap = dash.value().dashGap;
       line_dsc.dash_width = dash.value().dashWidth;
+    }
+
+    if(ends.has_value())
+    {
+      line_dsc.round_end = ends.value().end;
+      line_dsc.round_start = ends.value().start;
     }
 
     lv_draw_line(&m_layer, &line_dsc);
@@ -363,10 +371,7 @@ namespace Compose
       return;
 
     font.draw(text, x, y,
-              [&](int px, int py, unsigned char coverage)
-              {
-                drawFontPixel(*draw_buf, c, px, py, coverage);
-              });
+              [&](int px, int py, unsigned char coverage) { drawFontPixel(*draw_buf, c, px, py, coverage); });
   }
 
   void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
