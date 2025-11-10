@@ -24,11 +24,6 @@ template <typename tOut, typename tIn> tOut to(tIn in)
 
 namespace Compose
 {
-  void setModifier(const auto &someWidget, auto someModifier)
-  {
-    someWidget.setModifier(someModifier);
-  }
-
   struct ListEntryID
   {
     std::string id;
