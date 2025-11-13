@@ -10,7 +10,10 @@
 #include "src/drivers/sdl/lv_sdl_mousewheel.h"
 #include "src/drivers/sdl/lv_sdl_window.h"
 #else
-
+#include <lvgl.h>
+#include "src/drivers/display/fb/lv_linux_fbdev.h"
+#include "src/drivers/libinput/lv_libinput.h"
+#include "src/drivers/evdev/lv_evdev.h"
 #endif
 
 #include <stdexcept>
@@ -34,14 +37,14 @@ namespace Compose
         break;
       case Backend::Framebuffer:
 #ifdef CROSS_BUILD
-        lv_display_t *disp = lv_display_create(size.w, size.h);
-        lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
+        lv_disp_t *disp = lv_linux_fbdev_create();
+        lv_linux_fbdev_set_file(disp, "/dev/fb");
 
-        uint32_t buf_size = size.w * size.h * lv_color_format_get_size(lv_display_get_color_format(disp));
-        lv_color_t *draw_buf = (lv_color_t *) malloc(buf_size);
-        lv_display_set_buffers(disp, draw_buf, NULL, buf_size, LV_DISPLAY_RENDER_MODE_FULL);
-        lv_display_set_flush_cb(disp, lv_display_flush_ready);
-        lv_display_set_default(disp);
+        lv_indev_t *indev = lv_evdev_create(LV_INDEV_TYPE_POINTER, "/dev/input/event0");
+        lv_indev_set_display(indev, disp);
+
+        m_display = disp;
+
 #else
         throw std::runtime_error("Not implemented");
 #endif
