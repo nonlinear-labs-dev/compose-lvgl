@@ -12,7 +12,8 @@
 
 namespace Compose
 {
-  Application::Application()
+  Application::Application(Size size)
+      : m_size(size)
   {
     lv_init();
     lv_fs_posix_init();
@@ -20,12 +21,8 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Size windowSize = Size::ScreenSize();
+    Window window {m_size };
 
-    if constexpr(DEV_PC)
-      windowSize = { 800, 600 };
-
-    Window window { windowSize };
     const Reactive::Computations c;
     c.add([&] { callback(window); });
 
@@ -35,7 +32,7 @@ namespace Compose
         [&]
         {
           const auto current = std::chrono::high_resolution_clock::now();
-          auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+          const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
           lv_timer_handler();
@@ -45,7 +42,5 @@ namespace Compose
 
     auto loop = Glib::MainLoop::create();
     loop->run();
-
-    [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
   }
 }

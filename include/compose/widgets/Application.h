@@ -14,14 +14,18 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application();
+    explicit Application(Size size);
+
     void runBlocking(const tCallback &callback) const;
 
     void operator<<(const tCallback &callback) const
     {
       runBlocking(callback);
     }
+
+   private:
+    Size m_size;
   };
 }
 
-#define APPLICATION() Compose::Application() << [=](Compose::Window & it)
+#define APPLICATION(...) Compose::Application(backend __VA_OPT__(, __VA_ARGS__)) << [=](Compose::Window & it)

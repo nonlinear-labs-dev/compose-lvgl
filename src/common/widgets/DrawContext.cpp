@@ -6,31 +6,37 @@
 #include "src/draw/lv_draw_vector.h"
 #include <memory>
 #include <algorithm>
+#include <cmath>
 #include "compose/widgets/Label.h"
+#include <compose/FreeTypeFont.h>
 #include "src/widgets/canvas/lv_canvas_private.h"
+#include "compose/widgets/LabelShared.h"
 
 namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
 
-  LVGLDrawContext::LVGLDrawContext(tCanvas ctx)
+  LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
       : m_layer {}
       , m_canvas(ctx)
   {
-    lv_canvas_init_layer(m_canvas, &m_layer);
-    lv_canvas_fill_bg(m_canvas, lv_color_black(), LV_OPA_0);
+    lv_canvas_init_layer(&m_canvas, &m_layer);
+    lv_canvas_fill_bg(&m_canvas, lv_color_black(), LV_OPA_0);
   }
 
   LVGLDrawContext::~LVGLDrawContext()
   {
-    lv_canvas_finish_layer(m_canvas, &m_layer);
+    lv_canvas_finish_layer(&m_canvas, &m_layer);
   }
 
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
-    if(!m_canvas)
-      return;
+    drawLine(style, p1, p2, std::nullopt, std::nullopt);
+  }
 
+  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
+                                 std::optional<RoundedEnds> ends)
+  {
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
     line_dsc.p1.x = p1.x;
@@ -41,14 +47,45 @@ namespace Compose
     line_dsc.width = style.width;
     line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
 
+    if(dash.has_value())
+    {
+      line_dsc.dash_gap = dash.value().dashGap;
+      line_dsc.dash_width = dash.value().dashWidth;
+    }
+
+    if(ends.has_value())
+    {
+      line_dsc.round_end = ends.value().end;
+      line_dsc.round_start = ends.value().start;
+    }
+
     lv_draw_line(&m_layer, &line_dsc);
+  }
+
+  void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control,
+                                            const Point end)
+  {
+    constexpr int segments = 20;
+    for(int i = 0; i < segments; ++i)
+    {
+      const float t0 = static_cast<float>(i) / segments;
+      const float t1 = static_cast<float>(i + 1) / segments;
+
+      const float s0 = 1.0f - t0;
+      const float s1 = 1.0f - t1;
+
+      const int x0 = s0 * s0 * start.x + 2 * s0 * t0 * control.x + t0 * t0 * end.x;
+      const int y0 = s0 * s0 * start.y + 2 * s0 * t0 * control.y + t0 * t0 * end.y;
+
+      const int x1 = s1 * s1 * start.x + 2 * s1 * t1 * control.x + t1 * t1 * end.x;
+      const int y1 = s1 * s1 * start.y + 2 * s1 * t1 * control.y + t1 * t1 * end.y;
+
+      drawLine(style, { x0, y0 }, { x1, y1 });
+    }
   }
 
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_opa = LV_OPA_TRANSP;
@@ -65,11 +102,28 @@ namespace Compose
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
+  void LVGLDrawContext::strokeRoundedRect(StrokeStyle style, Rect rect, RoundedCorner rc)
+  {
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_opa = LV_OPA_TRANSP;
+    rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
+    rect_dsc.border_width = style.width;
+    rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+
+    rect_dsc.radius = rc.radius;
+
+    lv_area_t area;
+    area.x1 = rect.pos.x;
+    area.y1 = rect.pos.y;
+    area.x2 = rect.pos.x + rect.size.w - 1;
+    area.y2 = rect.pos.y + rect.size.h - 1;
+
+    lv_draw_rect(&m_layer, &rect_dsc, &area);
+  }
+
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
@@ -87,9 +141,6 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-    if(!m_canvas)
-      return;
-
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
@@ -106,96 +157,142 @@ namespace Compose
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
+  using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+  using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
+
   void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points)
   {
-    if(points.size() < 3 || !m_canvas)
+    if(points.size() < 3)
       return;
 
-    lv_vector_dsc_t *dsc = lv_vector_dsc_create(&m_layer);
+    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
       return;
 
-    lv_vector_path_t *path = lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM);
+    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
     if(!path)
-    {
-      lv_vector_dsc_delete(dsc);
       return;
-    }
 
     lv_fpoint_t first_point = { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
-    lv_vector_path_move_to(path, &first_point);
+    lv_vector_path_move_to(path.get(), &first_point);
 
     for(size_t i = 1; i < points.size(); ++i)
     {
       lv_fpoint_t point = { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
-      lv_vector_path_line_to(path, &point);
+      lv_vector_path_line_to(path.get(), &point);
     }
 
-    lv_vector_path_close(path);
+    lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_fill_color(dsc, lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc, static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc, lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc, static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc, static_cast<float>(stroke.width));
-    lv_vector_dsc_add_path(dsc, path);
+    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    lv_vector_dsc_add_path(dsc.get(), path.get());
 
-    lv_draw_vector(dsc);
-
-    lv_vector_path_delete(path);
-    lv_vector_dsc_delete(dsc);
+    lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta)
+  void LVGLDrawContext::fillArc(const ArcDrawOptions &arcOptions)
   {
-    if(!m_canvas || t.text.empty())
+    const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    if(!dsc)
       return;
 
-    if(!s_fontStorage)
+    const auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+    if(!path)
       return;
 
-    auto &font = s_fontStorage->getFont(f);
-    const auto textWidth = static_cast<int32_t>(font.getStringWidth(t.text));
+    const lv_fpoint_t center = { static_cast<float>(arcOptions.position.x), static_cast<float>(arcOptions.position.y) };
 
-    const auto startX = [&]() -> int
+    lv_vector_path_append_arc(path.get(), &center, arcOptions.radius, arcOptions.startAngle, arcOptions.sweepAngle,
+                              false);
+
+    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
+
+    const auto &color = arcOptions.color;
+
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(arcOptions.strokeWidth));
+
+    if(arcOptions.dashes.has_value())
     {
-      switch(ta.it)
-      {
-        case LV_TEXT_ALIGN_LEFT:
-          return r.pos.x;
-        case LV_TEXT_ALIGN_RIGHT:
-          return r.pos.x + r.size.w - textWidth;
-        default:
-        case LV_TEXT_ALIGN_CENTER:
-        case LV_TEXT_ALIGN_AUTO:
-          return r.pos.x + (r.size.w - textWidth) / 2;
-      }
-    }();
+      auto dashes = arcOptions.dashes.value();
+      lv_vector_dsc_set_stroke_dash(dsc.get(), dashes.data(), dashes.size());
+    }
 
-    font.draw(t.text, startX, r.pos.y,
-              [&](auto x, auto y, auto value)
-              {
-                const auto factor = value / 255.0;
-                auto pixelColor = c;
-                pixelColor.a = factor * c.a;
-                fillRect(pixelColor, { x, y, 1, 1 });
-              });
+    lv_vector_dsc_add_path(dsc.get(), path.get());
+
+    lv_draw_vector(dsc.get());
+  }
+
+  void LVGLDrawContext::drawSegmentedArc(const SegmentedArcDrawOptions &props)
+  {
+    const auto segmentAngle = props.sweep / static_cast<float>(props.numSegments);
+    const auto numLines = props.numSegments + 1;
+    const auto lineAngle = static_cast<float>(props.dashWidth) * segmentAngle / 100.0f;
+
+    if(props.lineColor.a > 0)
+    {
+      for(int i = 0; i < numLines; i++)
+      {
+        const auto lineAnglePos = props.startAngle + i * segmentAngle;
+
+        const ArcDrawOptions lineArc = { .position = props.center,
+                                         .color = props.lineColor,
+                                         .radius = props.radius,
+                                         .strokeWidth = props.strokeWidth,
+                                         .startAngle = lineAnglePos,
+                                         .sweepAngle = lineAngle };
+
+        fillArc(lineArc);
+      }
+    }
+
+    if(props.spaceColor.a > 0)
+    {
+      for(int i = 0; i < props.numSegments; i++)
+      {
+        const auto spaceStartAngle = props.startAngle + i * segmentAngle + lineAngle;
+        const auto spaceSweepAngle = segmentAngle - lineAngle;
+
+        const ArcDrawOptions spaceArc = { .position = props.center,
+                                          .color = props.spaceColor,
+                                          .radius = props.radius,
+                                          .strokeWidth = props.strokeWidth,
+                                          .startAngle = spaceStartAngle,
+                                          .sweepAngle = spaceSweepAngle };
+
+        fillArc(spaceArc);
+      }
+    }
+  }
+
+  void LVGLDrawContext::drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va)
+  {
+    const auto &font = s_fontStorage->getFont(f);
+    const auto textWidth = font.getStringWidth(t.text);
+    const auto startX = LabelShared::computeStartX(r.size.w, textWidth, ta);
+    const auto startY = LabelShared::computeStartYSingle(r.size.h, font, t.text, va);
+    drawText(t.text, r.pos.x + startX, r.pos.y + startY, font, c);
   }
 
   void LVGLDrawContext::putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride)
   {
-    if(!m_canvas || !image.start || image.width <= 0 || image.height <= 0)
+    if(!image.start || image.width <= 0 || image.height <= 0)
       return;
 
-    auto *canvas = reinterpret_cast<lv_canvas_t *>(m_canvas);
-    auto *draw_buf = canvas->draw_buf;
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
 
     if(!draw_buf || draw_buf->header.cf != LV_COLOR_FORMAT_ARGB8888)
       return;
 
-    const int canvas_width = draw_buf->header.w;
-    const int canvas_height = draw_buf->header.h;
-    const int canvas_stride = draw_buf->header.stride;
+    const auto canvas_width = draw_buf->header.w;
+    const auto canvas_height = draw_buf->header.h;
+    const auto canvas_stride = draw_buf->header.stride;
 
     const int src_width = image.width;
     const int src_height = image.height;
@@ -207,15 +304,15 @@ namespace Compose
     if(start_x >= canvas_width || start_y >= canvas_height)
       return;
 
-    const int end_x = std::min(start_x + src_width, canvas_width);
-    const int end_y = std::min(start_y + src_height, canvas_height);
-    const int copy_width = end_x - start_x;
-    const int copy_height = end_y - start_y;
+    const auto end_x = std::min<int>(start_x + src_width, static_cast<int>(canvas_width));
+    const auto end_y = std::min<int>(start_y + src_height, static_cast<int>(canvas_height));
+    const auto copy_width = end_x - start_x;
+    const auto copy_height = end_y - start_y;
 
     if(copy_width <= 0 || copy_height <= 0)
       return;
 
-    auto canvas_data = (uint8_t *) draw_buf->data;
+    const auto canvas_data = static_cast<uint8_t *>(draw_buf->data);
     const uint8_t *src_data = image.start;
 
     for(int y = 0; y < copy_height; ++y)
@@ -241,7 +338,7 @@ namespace Compose
             final_r = static_cast<uint8_t>(override_color.r);
             final_g = static_cast<uint8_t>(override_color.g);
             final_b = static_cast<uint8_t>(override_color.b);
-            final_a = static_cast<uint8_t>(override_color.a * src_a);
+            final_a = static_cast<uint8_t>(src_a * override_color.a);
           }
           else
           {
@@ -280,6 +377,38 @@ namespace Compose
       }
     }
 
-    lv_obj_invalidate(m_canvas);
+    lv_obj_invalidate(&m_canvas);
+  }
+
+  void LVGLDrawContext::drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c)
+  {
+    if(text.empty())
+      return;
+
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
+    if(!draw_buf)
+      return;
+
+    font.draw(text, x, y,
+              [&](int px, int py, unsigned char coverage) { drawFontPixel(*draw_buf, c, px, py, coverage); });
+  }
+
+  void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
+                                      unsigned char coverage)
+  {
+    const auto canvas_width = draw_buf.header.w;
+    const auto canvas_height = draw_buf.header.h;
+    const auto canvas_stride = draw_buf.header.stride;
+    auto *canvas_data = draw_buf.data;
+
+    if(px < 0 || py < 0 || px >= canvas_width || py >= canvas_height)
+      return;
+
+    uint8_t *canvas_pixel = canvas_data + py * canvas_stride + px * 4;
+    canvas_pixel[0] = baseColor.b;
+    canvas_pixel[1] = baseColor.g;
+    canvas_pixel[2] = baseColor.r;
+    canvas_pixel[3] = coverage * baseColor.a;
   }
 }

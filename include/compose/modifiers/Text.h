@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <concepts>
+#include <format>
 
 template <typename T>
 concept tNumber = std::integral<T> || std::floating_point<T>;

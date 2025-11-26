@@ -6,10 +6,11 @@
 #include "compose/FreeTypeFont.h"
 #include <functional>
 #include <string>
+#include <nltools/TextWrap.h>
 
 namespace Compose
 {
-  class Label : public Widget
+  class MultiLineLabel : public Widget
   {
    public:
     using Widget::setModifier;
@@ -18,40 +19,46 @@ namespace Compose
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit Label(BaseWidget &parent, tArgs... args)
+    explicit MultiLineLabel(BaseWidget &parent, tArgs... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       setLabelRenderingFunction();
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
-      Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
-      Label::setModifier(PrimaryColor { Color::WHITE() });
-      setModifier(VerticalAlign::CENTER());
-      setModifier(TextAlign::CENTER());
+      MultiLineLabel::setModifier(BackgroundColor { Color::TRANSPARENT() });
+      MultiLineLabel::setModifier(PrimaryColor { Color::WHITE() });
+      setModifier(VerticalAlign::TOP());
+      setModifier(TextAlign::LEFT());
       setModifier(SizePercentage::FULL());
 
       doAutorun(
           [handle = getHandle()]
           {
-            const Label l(handle);
+            const MultiLineLabel l(handle);
             const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
-            const auto [width] = labelData.width.get();
+
             const auto [height] = labelData.height.get();
+            const auto [width] = labelData.width.get();
 
             const auto &fontDesc = labelData.font.get();
             const auto &font = s_fontStorage->getFont(fontDesc);
             const auto text = labelData.text.get();
 
-            if(width == LV_SIZE_CONTENT)
-            {
-              const auto textWidth = font.getStringWidth(text.text);
-              lv_obj_set_width(handle, textWidth);
-            }
-
             if(height == LV_SIZE_CONTENT)
             {
-              const auto textHeight = font.getFontHeight();
-              lv_obj_set_height(handle, textHeight);
+              auto w = width;
+              if(w == 0)
+              {
+                w = lv_obj_get_width(handle);
+              }
+
+              auto maxW = 0;
+              for(auto line : nltools::text::wrapText(text.text, w, [&font](auto t) { return font.getStringWidth(t); }))
+              {
+                maxW = std::max(maxW, font.getStringWidth(line));
+              }
+
+              lv_obj_set_width(handle, maxW);
             }
           });
       (setModifier(args), ...);
@@ -76,5 +83,5 @@ namespace Compose
   };
 }
 
-#define LABEL(...) it.add(Compose::Label(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Label &&it)
-#define USE_FONT_STORAGE(...) Compose::s_fontStorage = std::make_unique<Compose::FontStorage>(__VA_ARGS__);
+#define MULTI_LINE_LABEL(...)                                                                                          \
+  it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel &&it)

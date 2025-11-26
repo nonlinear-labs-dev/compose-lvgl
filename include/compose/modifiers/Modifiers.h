@@ -24,11 +24,6 @@ template <typename tOut, typename tIn> tOut to(tIn in)
 
 namespace Compose
 {
-  void setModifier(const auto &someWidget, auto someModifier)
-  {
-    someWidget.setModifier(someModifier);
-  }
-
   struct ListEntryID
   {
     std::string id;
@@ -42,6 +37,11 @@ namespace Compose
     static constexpr SizePercentage FULL()
     {
       return { 100, 100 };
+    }
+
+    static constexpr SizePercentage PERCENTAGE(int s)
+    {
+      return { s, s };
     }
 
     bool operator==(const SizePercentage &) const = default;
@@ -94,6 +94,11 @@ namespace Compose
   struct FlexGrow
   {
     int it;
+
+    static constexpr FlexGrow NONE()
+    {
+      return { 0 };
+    }
 
     bool operator==(const FlexGrow &) const = default;
   };
@@ -308,6 +313,7 @@ namespace Compose
 #define HEIGHT(...) it.doAutorun([=] { it.setModifier(Height { __VA_ARGS__ }); });
 #define POSITION(...) it.doAutorun([=] { it.setModifier(Position(__VA_ARGS__)); });
 #define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); });
+#define CLICKABLE(b) it.doAutorun([=] { it.setModifier(Clickable(b)); });
 #define NOT_SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::FIXED)); });
 #define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); });
 #define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); });

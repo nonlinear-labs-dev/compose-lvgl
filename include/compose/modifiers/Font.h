@@ -10,12 +10,12 @@ namespace Compose
     enum class FontWeight
     {
       Black,
-      Bold,
       ExtraBold,
-      Light,
+      Bold,
+      SemiBold,
       Medium,
       Regular,
-      SemiBold
+      Light,
     } weight
         = FontWeight::Regular;
 

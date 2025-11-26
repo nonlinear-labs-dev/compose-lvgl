@@ -1,3 +1,5 @@
+#include "compose/modifiers/Clickable.h"
+
 #include <cassert>
 #include <compose/widgets/Button.h>
 #include <compose/widgets/Label.h>
@@ -48,6 +50,8 @@ namespace Compose
     if(lv_obj_get_child_count(handle) == 0)
     {
       Label l(const_cast<Button &>(*this), Height::FULL());
+      l.setModifier(Clickable(false));
+      lv_obj_set_flag(l.getHandle(), LV_OBJ_FLAG_CLICKABLE, false);
     }
 
     auto childCount = lv_obj_get_child_count(handle);

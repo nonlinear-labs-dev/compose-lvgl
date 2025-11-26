@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseWidget.h"
+#include "compose/modifiers/Clickable.h"
 #include "compose/modifiers/Modifiers.h"
 #include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
@@ -67,6 +68,7 @@ namespace Compose
       lv_obj_add_style(w, &defaultStyle, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), 0, 0);
       lv_obj_add_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_add_flag(getHandle(), LV_OBJ_FLAG_EVENT_BUBBLE);
     }
 
     template <typename... tArgs>
@@ -91,7 +93,7 @@ namespace Compose
       using T = std::tuple<tArgs...>;
       if constexpr(requires {
                      std::get<SizePercentage>(T()) || std::get<Height>(T()) || std::get<Width>(T())
-                         || std::get<FixedSize>(T());
+                         || std::get<FixedSize>(T()) || std::get<SizeVariant>(T());
                    })
       {
       }
@@ -282,7 +284,7 @@ namespace Compose
       lv_obj_update_layout(getHandle());
     }
 
-    void setModifier(Width w) const
+    virtual void setModifier(Width w) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
@@ -295,7 +297,7 @@ namespace Compose
       lv_obj_update_layout(getHandle());
     }
 
-    void setModifier(Height h) const
+    virtual void setModifier(Height h) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle());
          lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
@@ -319,6 +321,11 @@ namespace Compose
     void setModifier(const Name &n) const
     {
       setID(n.name);
+    }
+
+    void setModifier(const Clickable &c) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE, static_cast<bool>(c));
     }
 
     LeftClick leftClick { *this, c_leftClickKey };

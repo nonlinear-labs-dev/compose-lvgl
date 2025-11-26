@@ -3,7 +3,7 @@
 
 namespace
 {
-  static FT_Library s_library = nullptr;
+  FT_Library s_library = nullptr;
 
   template <typename... Args> bool check(FT_Error err, Args... args)
   {
@@ -17,7 +17,7 @@ namespace
 namespace Compose
 {
   FreeTypeFont::FreeTypeFont(const std::string &fontPath, int height)
-      : m_height(height)
+      : m_fontSize(height)
       , m_fontPath(fontPath)
   {
     if(!s_library)
@@ -32,66 +32,92 @@ namespace Compose
     FT_Done_Face(m_face);
   }
 
-  uint32_t FreeTypeFont::getStringWidth(const Glib::ustring &text) const
+  int FreeTypeFont::getStringWidth(const Glib::ustring &text) const
   {
     uint32_t x = 0;
 
-    for(auto c : text)
+    for(const auto c : text)
       if(check(FT_Load_Char(m_face, c, FT_LOAD_NO_BITMAP), __LINE__, c))
         x += m_face->glyph->advance.x;
 
-    return x >> 6;
+    return static_cast<int>(x >> 6);
   }
 
-  uint32_t FreeTypeFont::draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const
+  int FreeTypeFont::getFontHeight() const
   {
-    y += m_height;
-    auto oldX = x;
+    return static_cast<int>(m_face->size->metrics.height >> 6);
+  }
+
+  int FreeTypeFont::getFontSize() const
+  {
+    return m_fontSize;
+  }
+
+  int FreeTypeFont::getMaxBottomOffset(const Glib::ustring &text) const
+  {
+    int maxBottom = 0;
+
+    for(const auto c : text)
+      if(check(FT_Load_Char(m_face, c, FT_LOAD_RENDER), __LINE__, c))
+      {
+        const auto glyph = m_face->glyph;
+        const auto bottomOffset = m_fontSize - glyph->bitmap_top + static_cast<int>(glyph->bitmap.rows);
+        maxBottom = std::max(maxBottom, bottomOffset);
+      }
+
+    return maxBottom;
+  }
+
+  void FreeTypeFont::draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const
+  {
+    y += m_fontSize;
     x <<= 6;
 
-    for(auto c : text)
+    for(const auto c : text)
       if(check(FT_Load_Char(m_face, c, FT_LOAD_RENDER), __LINE__, c))
         x += drawLetter(m_face->glyph, x, y, cb);
-
-    x >>= 6;
-    return x - oldX;
   }
 
   inline bool isPixelSet(FT_GlyphSlot slot, int srcX, int srcY)
   {
-    auto index = srcX + srcY * slot->bitmap.width;
+    const auto index = srcX + srcY * slot->bitmap.width;
     return slot->bitmap.buffer[index];
   }
 
   inline unsigned char getPixelValue(FT_GlyphSlot slot, int srcX, int srcY)
   {
-    auto index = srcX + srcY * slot->bitmap.width;
+    const auto index = srcX + srcY * slot->bitmap.width;
     return slot->bitmap.buffer[index];
   }
 
-  FreeTypeFont::tCoordinate FreeTypeFont::drawLetter(FT_GlyphSlot slot, FreeTypeFont::tCoordinate x,
-                                                     FreeTypeFont::tCoordinate y, const tSetPixelCB &cb) const
+  FreeTypeFont::tCoordinate FreeTypeFont::drawLetter(FT_GlyphSlot slot, tCoordinate x, tCoordinate y,
+                                                     const tSetPixelCB &cb) const
   {
     x >>= 6;
 
     for(int srcX = 0; srcX < slot->bitmap.width; srcX++)
       for(int srcY = 0; srcY < slot->bitmap.rows; srcY++)
-      // if(isPixelSet(slot, srcX, srcY))
-      {
-        cb(srcX + x + slot->bitmap_left, (m_height - slot->bitmap_top) + srcY + y - m_height,
+        cb(srcX + x + slot->bitmap_left, (m_fontSize - slot->bitmap_top) + srcY + y - m_fontSize,
            getPixelValue(slot, srcX, srcY));
-      }
 
-    return slot->advance.x;
-  }
-
-  int FreeTypeFont::getHeight() const
-  {
-    return m_height;
+    return static_cast<tCoordinate>(slot->advance.x);
   }
 
   const std::string &FreeTypeFont::getFontPath() const
   {
     return m_fontPath;
+  }
+
+  int FreeTypeFont::getAscenderPx() const
+  {
+    return static_cast<int>(m_face->size->metrics.ascender >> 6);
+  }
+
+  int FreeTypeFont::getCapHeightPx() const
+  {
+    // Approximate cap height using glyph 'H' top side bearing
+    if(check(FT_Load_Char(m_face, 'H', FT_LOAD_NO_BITMAP), __LINE__, 'H'))
+      return static_cast<int>(m_face->glyph->metrics.horiBearingY >> 6);
+    return getAscenderPx();
   }
 }
