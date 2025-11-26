@@ -8,16 +8,8 @@ namespace Compose
   class Window
   {
    public:
-    enum class Backend
-    {
-      SDL,
-      Framebuffer
-    };
-
-    explicit Window(Backend end, Size size);
+    explicit Window(Size size);
     ~Window();
-    void setFullScreen(bool f) const;
-    void setSize(int x, int y) const;
 
     template <typename T> static T&& add(T&& it)
     {

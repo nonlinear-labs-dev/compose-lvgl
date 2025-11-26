@@ -14,17 +14,14 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(Window::Backend backend);
+    explicit Application();
     void runBlocking(const tCallback &callback) const;
 
     void operator<<(const tCallback &callback) const
     {
       runBlocking(callback);
     }
-
-   private:
-    Window::Backend m_backend;
   };
 }
 
-#define APPLICATION(backend) Compose::Application(backend) << [=](Compose::Window & it)
+#define APPLICATION() Compose::Application() << [=](Compose::Window & it)

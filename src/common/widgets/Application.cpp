@@ -12,8 +12,7 @@
 
 namespace Compose
 {
-  Application::Application(Window::Backend backend)
-      : m_backend(backend)
+  Application::Application()
   {
     lv_init();
     lv_fs_posix_init();
@@ -26,7 +25,7 @@ namespace Compose
     if constexpr(DEV_PC)
       windowSize = { 800, 600 };
 
-    Window window { m_backend, windowSize };
+    Window window { windowSize };
     const Reactive::Computations c;
     c.add([&] { callback(window); });
 
