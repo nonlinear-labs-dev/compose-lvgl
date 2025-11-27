@@ -21,7 +21,7 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Window window {m_size };
+    Window window { m_size };
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });

@@ -1,5 +1,6 @@
 #include <compose/widgets/Window.h>
 #include <lvgl.h>
+
 #include "src/drivers/display/drm/lv_linux_drm.h"
 #include "src/drivers/evdev/lv_evdev.h"
 
@@ -16,4 +17,3 @@ namespace Compose
     m_display = disp;
   }
 }
-

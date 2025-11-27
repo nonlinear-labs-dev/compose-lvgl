@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5...3.30)
 
-project(nl-compose-lvgl)
+project(compose-lvgl)
 
 include(${CMAKE_BINARY_DIR}/cmake/NL.cmake)
 include(${CMAKE_BINARY_DIR}/cmake/mallinfo.cmake)
@@ -9,7 +9,6 @@ if (NOT CROSS_BUILD)
     set(LVGL_BACKEND_LIBS sdl2)
     set(LVGL_BACKEND_SPECIFIC_SOURCES "src/sdl/*.cpp")
 else ()
-    set(LV_BUILD_CONF_PATH "lv_conf.h")
     set(LVGL_BACKEND_SPECIFIC_SOURCES "src/drm/*.cpp")
 endif ()
 
@@ -24,5 +23,4 @@ addNLLibrary(
     INSTALL_HEADERS_DIR include
     IS_STATIC
     CPP_STANDARD 20
-    AUTO_YOCTO_RECIPE
 )
