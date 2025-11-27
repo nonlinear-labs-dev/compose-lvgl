@@ -28,4 +28,4 @@ namespace Compose
   };
 }
 
-#define APPLICATION(...) Compose::Application(backend __VA_OPT__(, __VA_ARGS__)) << [=](Compose::Window & it)
+#define APPLICATION(...) Compose::Application(__VA_ARGS__) << [=](Compose::Window & it)
