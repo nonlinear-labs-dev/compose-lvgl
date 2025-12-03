@@ -3,7 +3,7 @@
 #include "Margin.h"
 #include "Padding.h"
 #include "AttachOptions.h"
-#include "Orientation.h"
+#include "FlexFlow.h"
 #include "Expand.h"
 #include "Text.h"
 #include "Font.h"
@@ -108,6 +108,11 @@ namespace Compose
     explicit SizeVariant(auto it)
         : it(it)
     {
+    }
+
+    static SizeVariant FIT_CONTENT()
+    {
+      return SizeVariant { FixedSize { LV_SIZE_CONTENT, LV_SIZE_CONTENT } };
     }
 
     static SizeVariant FIXED(int w, int h)
@@ -282,6 +287,21 @@ namespace Compose
       return { Bottom };
     }
   };
+
+  struct FlowDirection
+  {
+    enum
+    {
+      LeftToRight,
+      RightToLeft
+    } it;
+  };
+
+  struct FlexGap
+  {
+    int row;
+    int column;
+  };
 }
 
 #define ALIGN(...) it.doAutorun([=] { it.setModifier(Align(__VA_ARGS__)); });
@@ -289,7 +309,7 @@ namespace Compose
 #define FLEX_ALIGN(...) it.doAutorun([=] { it.setModifier(FlexAlign { __VA_ARGS__ }); });
 #define MARGIN(...) it.doAutorun([=] { it.setModifier(Margin(__VA_ARGS__)); });
 #define ATTACH_OPTIONS(...) it.doAutorun([=] { it.setModifier(AttachOptions(__VA_ARGS__)); });
-#define ORIENTATION(...) it.doAutorun([=] { it.setModifier(Orientation(__VA_ARGS__)); });
+#define FLEX_FLOW(...) it.doAutorun([=] { it.setModifier(FlexFlow(__VA_ARGS__)); });
 #define EXPAND(...) it.doAutorun([=] { it.setModifier(Expand(__VA_ARGS__)); });
 #define STYLE_SHEET(...) it.doAutorun([=] { it.setModifier(StyleSheet(__VA_ARGS__)); });
 #define LIST_ID(...) it.doAutorun([=] { it.setModifier(ListEntryID(__VA_ARGS__)); });
@@ -322,3 +342,5 @@ namespace Compose
 #define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
 #define FLEX_GROW(...) it.doAutorun([=] { it.setModifier(FlexGrow { __VA_ARGS__ }); });
 #define VERTICAL_ALIGN(...) it.doAutorun([=] { it.setModifier(VerticalAlign(__VA_ARGS__)); });
+#define FLOW_DIRECTION(...) it.doAutorun([=] { it.setModifier(FlowDirection(__VA_ARGS__)); });
+#define FLEX_GAP(...) it.doAutorun([=] { it.setModifier(FlexGap { __VA_ARGS__ }); });

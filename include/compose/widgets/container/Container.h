@@ -30,14 +30,44 @@ namespace Compose
     using Flex::WidgetType;
   };
 
-  template <typename... tArgs> static Row _ROW(tArgs... args)
+  template <typename tWidget> static Row _ROW(tWidget &it)
   {
-    return Row(args..., Orientation::HORIZONTAL());
+    return Row(it, FlexFlow::HORIZONTAL());
   }
 
-  template <typename... tArgs> static Column _COLUMN(tArgs... args)
+  template <typename tWidget> static Row _ROW(const tWidget &it)
   {
-    return Column(args..., Orientation::VERTICAL());
+    return Row(const_cast<tWidget &>(it), FlexFlow::HORIZONTAL());
+  }
+
+  template <typename tWidget, typename... tArgs> static Row _ROW(tWidget &it, tArgs... args)
+  {
+    return Row(it, FlexFlow::HORIZONTAL(), args...);
+  }
+
+  template <typename tWidget, typename... tArgs> static Row _ROW(const tWidget &it, tArgs... args)
+  {
+    return Row(const_cast<tWidget &>(it), FlexFlow::HORIZONTAL(), args...);
+  }
+
+  template <typename tWidget> static Column _COLUMN(tWidget &it)
+  {
+    return Column(it, FlexFlow::VERTICAL());
+  }
+
+  template <typename tWidget> static Column _COLUMN(const tWidget &it)
+  {
+    return Column(const_cast<tWidget &>(it), FlexFlow::VERTICAL());
+  }
+
+  template <typename tWidget, typename... tArgs> static Column _COLUMN(tWidget &it, tArgs... args)
+  {
+    return Column(it, FlexFlow::VERTICAL(), args...);
+  }
+
+  template <typename tWidget, typename... tArgs> static Column _COLUMN(const tWidget &it, tArgs... args)
+  {
+    return Column(const_cast<tWidget &>(it), FlexFlow::VERTICAL(), args...);
   }
 
   class Fixed : public Widget
@@ -47,9 +77,24 @@ namespace Compose
     using Widget::Widget;
   };
 
-  static Fixed _FIXED(Widget &it)
+  template <typename tWidget> static Fixed _FIXED(tWidget &it)
   {
-    return Fixed(it, Orientation::VERTICAL(), LayoutType::none());
+    return Fixed(it, LayoutType::none());
+  }
+
+  template <typename tWidget> static Fixed _FIXED(const tWidget &it)
+  {
+    return Fixed(const_cast<tWidget &>(it), LayoutType::none());
+  }
+
+  template <typename tWidget, typename... tArgs> static Fixed _FIXED(tWidget &it, tArgs... args)
+  {
+    return Fixed(it, LayoutType::none(), args...);
+  }
+
+  template <typename tWidget, typename... tArgs> static Fixed _FIXED(const tWidget &it, tArgs... args)
+  {
+    return Fixed(const_cast<tWidget &>(it), LayoutType::none(), args...);
   }
 
   template <typename... tArgs> static Widget V_SPACER(tArgs... args)
@@ -65,7 +110,8 @@ namespace Compose
 
 #define ROW(...) it.add(std::move(Compose::_ROW(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Row &&it)
 #define COLUMN(...) it.add(std::move(Compose::_COLUMN(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Column &&it)
-#define FIXED_CONTAINER it.add(std::move(Compose::_FIXED(it))) << [=](Compose::Fixed &&it)
+#define FIXED_CONTAINER(...)                                                                                           \
+  it.add(std::move(Compose::_FIXED(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::Fixed &&it)
 
 #define VSPACER(...) ;
 #define HSPACER(...) ;

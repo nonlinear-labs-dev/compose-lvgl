@@ -1,10 +1,14 @@
 #pragma once
 #include "src/misc/lv_event_private.h"
+#include "src/misc/lv_area.h"
+#include "src/core/lv_obj_event.h"
+#include "src/core/lv_obj_pos.h"
 #include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
 #include <memory>
 #include <assert.h>
 #include <compose/widgets/BaseWidget.h>
+#include <compose/modifiers/Position.h>
 
 namespace Compose
 {
@@ -13,7 +17,7 @@ namespace Compose
   {
     const char *m_key;
     BaseWidget &self;
-    using CB = std::function<void()>;
+    using CB = std::function<bool(Position)>;
 
     ClickHandler(BaseWidget &w, auto key)
         : m_key { key }
@@ -33,7 +37,17 @@ namespace Compose
             {
               Reactive::Deferrer def;
               const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
-              user_data->m_callback();
+              const auto indev = lv_event_get_indev(e);
+              if(indev)
+              {
+                lv_point_t point = { 0, 0 };
+                lv_indev_get_point(indev, &point);
+                lv_area_t widget_coords;
+                lv_obj_get_coords(user_data->m_handle, &widget_coords);
+                const int rel_x = point.x - widget_coords.x1;
+                const int rel_y = point.y - widget_coords.y1;
+                e->stop_processing = user_data->m_callback({rel_x, rel_y});
+              }
             },
             FilterType, this);
       }

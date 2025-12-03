@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseWidget.h"
 #include "compose/modifiers/Clickable.h"
+#include "compose/modifiers/FlexFlow.h"
 #include "compose/modifiers/Modifiers.h"
 #include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
@@ -9,6 +10,8 @@
 #include "nltools/Assert.h"
 
 #include <cassert>
+#include <tuple>
+#include <type_traits>
 
 namespace Compose
 {
@@ -54,6 +57,21 @@ namespace Compose
     using super::getHandle;
     using AutorunCB = std::function<void(WidgetType &&)>;
 
+    void setDefaultWidthAndHeightAccordingToParent() const
+    {
+      if(const auto parent = lv_obj_get_parent(getHandle()))
+      {
+        if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
+        {
+          setModifier(Width::FULL());
+        }
+        else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+        {
+          setModifier(Height::FULL());
+        }
+      }
+    }
+
     void applyDefaultStyle(auto *w)
     {
       static lv_style_t defaultStyle;
@@ -81,26 +99,14 @@ namespace Compose
       (setModifier(args), ...);
     }
 
-    void setDefaultWidthAndHeightAccordingToParent() const;
     template <typename... tArgs>
     explicit Widget(BaseWidget &w, tArgs... args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
+      setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
       (setModifier(args), ...);
-
-      using T = std::tuple<tArgs...>;
-      if constexpr(requires {
-                     std::get<SizePercentage>(T()) || std::get<Height>(T()) || std::get<Width>(T())
-                         || std::get<FixedSize>(T()) || std::get<SizeVariant>(T());
-                   })
-      {
-      }
-      else
-      {
-        setDefaultWidthAndHeightAccordingToParent();
-      }
     }
 
     explicit Widget(WidgetType *w)
@@ -181,15 +187,33 @@ namespace Compose
       lv_obj_set_layout(getHandle(), r.it == LayoutType::FLEX ? LV_LAYOUT_FLEX : LV_LAYOUT_NONE);
     }
 
-    void setModifier(Orientation r) const
+    void setModifier(FlexFlow r) const
     {
       switch(r.it)
       {
-        case OrientationEnum::HORIZONTAL:
+        case FlexFlowEnum::HORIZONTAL:
           lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW);
           break;
-        case OrientationEnum::VERTICAL:
+        case FlexFlowEnum::HORIZONTAL_REVERSE:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW_REVERSE);
+          break;
+        case FlexFlowEnum::HORIZONTAL_WRAP:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW_WRAP);
+          break;
+        case FlexFlowEnum::HORIZONTAL_WRAP_REVERSE:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_ROW_WRAP_REVERSE);
+          break;
+        case FlexFlowEnum::VERTICAL:
           lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN);
+          break;
+        case FlexFlowEnum::VERTICAL_REVERSE:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN_REVERSE);
+          break;
+        case FlexFlowEnum::VERTICAL_WRAP:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN_WRAP);
+          break;
+        case FlexFlowEnum::VERTICAL_WRAP_REVERSE:
+          lv_obj_set_flex_flow(getHandle(), LV_FLEX_FLOW_COLUMN_WRAP_REVERSE);
           break;
       }
     }
@@ -284,11 +308,27 @@ namespace Compose
       lv_obj_update_layout(getHandle());
     }
 
+    template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)
+    {
+      return ((v == values) || ...);
+    }
+
+    static bool isRow(lv_flex_flow_t v)
+    {
+      return anyOf<LV_FLEX_FLOW_ROW, LV_FLEX_FLOW_ROW_REVERSE, LV_FLEX_FLOW_ROW_WRAP, LV_FLEX_FLOW_ROW_WRAP_REVERSE>(v);
+    }
+
+    static bool isColumn(lv_flex_flow_t v)
+    {
+      return anyOf<LV_FLEX_FLOW_COLUMN, LV_FLEX_FLOW_COLUMN_REVERSE, LV_FLEX_FLOW_COLUMN_WRAP,
+                   LV_FLEX_FLOW_COLUMN_WRAP_REVERSE>(v);
+    }
+
     virtual void setModifier(Width w) const
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
+        if(isRow(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
         {
           lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
         }
@@ -299,8 +339,7 @@ namespace Compose
 
     virtual void setModifier(Height h) const
     {
-      if(const auto parent = lv_obj_get_parent(getHandle());
-         lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
+      if(const auto parent = lv_obj_get_parent(getHandle()); isColumn(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
       {
         lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       }
@@ -311,6 +350,24 @@ namespace Compose
     void setModifier(FlexGrow g) const
     {
       lv_obj_set_style_flex_grow(getHandle(), g.it, LV_PART_MAIN);
+    }
+
+    void setModifier(FlowDirection d) const
+    {
+      if(d.it == FlowDirection::LeftToRight)
+      {
+        lv_obj_set_style_base_dir(getHandle(), LV_BASE_DIR_LTR, LV_PART_MAIN);
+      }
+      else
+      {
+        lv_obj_set_style_base_dir(getHandle(), LV_BASE_DIR_RTL, LV_PART_MAIN);
+      }
+    }
+
+    void setModifier(FlexGap gap) const
+    {
+      lv_obj_set_style_pad_row(getHandle(), gap.row, LV_PART_MAIN);
+      lv_obj_set_style_pad_column(getHandle(), gap.column, LV_PART_MAIN);
     }
 
     struct Name
@@ -333,21 +390,6 @@ namespace Compose
     StateChange stateChange { *this };
   };
 
-  inline void Widget::setDefaultWidthAndHeightAccordingToParent() const
-  {
-    if(auto parent = lv_obj_get_parent(getHandle()))
-    {
-      if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
-      {
-        setModifier(Width::FULL());
-      }
-      else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
-      {
-        setModifier(Height::FULL());
-      }
-    }
-  }
-
   template <typename T>
   concept IsWidget = requires { typename T::WidgetType; };
 
@@ -367,16 +409,22 @@ namespace Compose
   }
 }
 
-#define LEFT_CLICK() it.leftClick << [=]
-#define LONG_CLICK() it.longClick << [=]
+#define LEFT_CLICK it.leftClick << [=]
+#define SWALLOW_LEFT_CLICK()                                                                                           \
+  LEFT_CLICK(auto)                                                                                                     \
+  {                                                                                                                    \
+    return true;                                                                                                       \
+  };
+#define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
-  it.leftClick << [handle = it.getHandle()]                                                                            \
+  it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                        \
   {                                                                                                                    \
-    nltools::Log::error(std::format("Our ID: {}", BaseWidget(handle).getID()));                                        \
-    if(const auto parent = lv_obj_get_parent(handle))                                                                  \
-    {                                                                                                                  \
-      nltools::Log::error(std::format("Parent ID: {}", BaseWidget(parent).getID()));                                   \
-    }                                                                                                                  \
-    nltools::Log::error("width", lv_obj_get_width(handle), "height", lv_obj_get_height(handle));                       \
+    nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
+    return false;                                                                                                      \
   }
+
+#define WITH_STATE(type, name, factory)                                                                                \
+  auto &_state_ref_##name = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>(                                      \
+      "WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });  \
+  if(auto *name = &_state_ref_##name)

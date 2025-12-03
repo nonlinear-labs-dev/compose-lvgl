@@ -13,7 +13,7 @@ namespace Compose
   {
     Point pos;
     Size size {};
-    Rect biggerBy(int i) const;
+    [[nodiscard]] Rect biggerBy(int i) const;
   };
 
   inline Rect Rect::biggerBy(int i) const

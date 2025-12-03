@@ -1,0 +1,1 @@
+#include <compose/widgets/Widget.h>
