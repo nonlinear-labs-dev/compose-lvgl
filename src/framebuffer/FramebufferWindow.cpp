@@ -13,8 +13,8 @@ namespace Compose
     lv_indev_t *indev = lv_evdev_create(LV_INDEV_TYPE_POINTER, "/dev/input/event0");
     lv_indev_set_display(indev, disp);
 
-    lv_display_set_offset(disp, 15, 124);
-    lv_display_set_resolution(disp, 480, 128);
+    lv_display_set_offset(disp, COMPOSE_FRAMEBUFFER_OFFSET_X, COMPOSE_FRAMEBUFFER_OFFSET_Y);
+    lv_display_set_resolution(disp, size.w, size.h);
 
     m_display = disp;
   }
