@@ -9,7 +9,7 @@ if (NOT CROSS_BUILD)
     set(LVGL_BACKEND_LIBS sdl2)
     set(LVGL_BACKEND_SPECIFIC_SOURCES "src/sdl/*.cpp")
 else ()
-    set(LVGL_BACKEND_SPECIFIC_SOURCES "src/drm/*.cpp")
+    set(LVGL_BACKEND_SPECIFIC_SOURCES "src/framebuffer/*.cpp")
 endif ()
 
 addNLLibrary(
