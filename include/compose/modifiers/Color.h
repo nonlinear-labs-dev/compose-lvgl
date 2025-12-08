@@ -38,11 +38,11 @@ namespace Compose
     {
     }
 
-    Color() = default;
-    Color(Color&& c) = default;
-    Color(const Color& c) = default;
-    Color& operator=(const Color&) = default;
-    bool operator==(const Color&) const = default;
+    constexpr Color() = default;
+    constexpr Color(Color&& c) = default;
+    constexpr Color(const Color& c) = default;
+    constexpr Color& operator=(const Color&) = default;
+    constexpr bool operator==(const Color&) const = default;
 
     [[nodiscard]] std::string toHEXString() const
     {

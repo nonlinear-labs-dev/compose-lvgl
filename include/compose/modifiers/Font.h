@@ -21,7 +21,7 @@ namespace Compose
 
     std::string baseName = "Nonlegible-Rubik";
 
-    bool operator==(const Font &o) const noexcept
+    constexpr bool operator==(const Font &o) const noexcept
     {
       return size == o.size && baseName == o.baseName && weight == o.weight;
     }
