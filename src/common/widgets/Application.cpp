@@ -12,8 +12,8 @@
 
 namespace Compose
 {
-  Application::Application(Size size)
-      : m_size(size)
+  Application::Application(Rect position)
+      : m_position(position)
   {
     lv_init();
     lv_fs_posix_init();
@@ -21,7 +21,7 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Window window { m_size };
+    Window window { m_position };
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });
@@ -29,8 +29,7 @@ namespace Compose
     auto lastTick = std::chrono::high_resolution_clock::now();
 
     Glib::signal_timeout().connect(
-        [&]
-        {
+        [&] {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
