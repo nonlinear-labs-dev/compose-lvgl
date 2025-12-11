@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5...3.30)
 
-project(nl-compose-lvgl)
+project(compose-lvgl)
 
 include(${CMAKE_BINARY_DIR}/cmake/NL.cmake)
 include(${CMAKE_BINARY_DIR}/cmake/mallinfo.cmake)
@@ -23,5 +23,4 @@ addNLLibrary(
     INSTALL_HEADERS_DIR include
     IS_STATIC
     CPP_STANDARD 20
-    AUTO_YOCTO_RECIPE
 )

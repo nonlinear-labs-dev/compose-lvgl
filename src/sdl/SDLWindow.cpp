@@ -7,10 +7,10 @@
 
 namespace Compose
 {
-  Window::Window(Size size)
+  Window::Window(Rect position)
   {
     SDL_Init(SDL_INIT_EVERYTHING);
-    m_display = lv_sdl_window_create(size.w, size.h);
+    m_display = lv_sdl_window_create(position.size.w, position.size.h);
     lv_sdl_mouse_create();
     lv_sdl_mousewheel_create();
     lv_sdl_keyboard_create();

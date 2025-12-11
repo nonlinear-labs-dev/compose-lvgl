@@ -14,7 +14,7 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(Size size);
+    explicit Application(Rect position);
 
     void runBlocking(const tCallback &callback) const;
 
@@ -24,7 +24,7 @@ namespace Compose
     }
 
    private:
-    Size m_size;
+    Rect m_position;
   };
 }
 
