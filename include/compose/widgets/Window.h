@@ -1,4 +1,5 @@
 #pragma once
+#include "compose/modifiers/Rect.h"
 #include "container/Container.h"
 #include "src/misc/lv_types.h"
 
@@ -8,7 +9,7 @@ namespace Compose
   class Window
   {
    public:
-    explicit Window(Size size);
+    explicit Window(Rect position);
     ~Window();
 
     template <typename T> static T&& add(T&& it)
