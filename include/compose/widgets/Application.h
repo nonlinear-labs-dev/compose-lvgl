@@ -14,7 +14,7 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(Rect position);
+    explicit Application(Rect position, Rotation rotation = Rotation::None);
 
     void runBlocking(const tCallback &callback) const;
 
@@ -25,7 +25,8 @@ namespace Compose
 
    private:
     Rect m_position;
+    Rotation m_rotation;
   };
 }
 
-#define APPLICATION(...) Compose::Application(__VA_ARGS__) << [=](Compose::Window & it)
+#define APPLICATION(rect, ...) Compose::Application(rect __VA_OPT__(,) __VA_ARGS__) << [=](Compose::Window & it)

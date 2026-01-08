@@ -7,7 +7,7 @@
 
 namespace Compose
 {
-  Window::Window(Rect position)
+  Window::Window(Rect position, [[maybe_unused]] Rotation rotation)
   {
     SDL_Init(SDL_INIT_EVERYTHING);
     m_display = lv_sdl_window_create(position.size.w, position.size.h);
