@@ -29,4 +29,4 @@ namespace Compose
   };
 }
 
-#define APPLICATION(rect, ...) Compose::Application(rect __VA_OPT__(,) __VA_ARGS__) << [=](Compose::Window & it)
+#define APPLICATION(rect, ...) Compose::Application(rect __VA_OPT__(, ) __VA_ARGS__) << [=](Compose::Window & it)

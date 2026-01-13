@@ -10,7 +10,7 @@ namespace Compose
   class Window
   {
    public:
-    explicit Window(Rect position, Rotation rotation);
+    explicit Window(Rect position, Rotation rotation = Rotation::None);
     ~Window();
 
     template <typename T> static T&& add(T&& it)

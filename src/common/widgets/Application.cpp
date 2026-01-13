@@ -30,7 +30,8 @@ namespace Compose
     auto lastTick = std::chrono::high_resolution_clock::now();
 
     Glib::signal_timeout().connect(
-        [&] {
+        [&]
+        {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());

@@ -98,7 +98,7 @@ namespace Compose
 
     static constexpr Color BACKGROUND()
     {
-      return { 24, 24, 24, 1 };
+      return { 0, 0, 0, 1 };
     }
 
     template <IntegralOrChar tFixed> static constexpr Color RGB(tFixed r, tFixed g, tFixed b)
