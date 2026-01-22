@@ -66,6 +66,11 @@ namespace Compose
       return { LV_SIZE_CONTENT };
     }
 
+    static constexpr Width PX(int i)
+    {
+      return { i };
+    }
+
     bool operator==(const Width &) const = default;
   };
 
@@ -86,6 +91,11 @@ namespace Compose
     static constexpr Height FIT_CONTENT()
     {
       return { LV_SIZE_CONTENT };
+    }
+
+    static constexpr Height PX(int i)
+    {
+      return { i };
     }
 
     bool operator==(const Height &) const = default;
@@ -299,6 +309,15 @@ namespace Compose
 
   struct FlexGap
   {
+    static constexpr FlexGap VERTICAL(int row)
+    {
+      return { row, 0 };
+    }
+    static constexpr FlexGap HORIZONTAL(int column)
+    {
+      return { 0, column };
+    }
+
     int row;
     int column;
   };
