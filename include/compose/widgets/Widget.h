@@ -409,6 +409,16 @@ namespace Compose
   }
 }
 
+#define SCROLL_INTO_VIEW_WHEN(condition)                                                                               \
+  it.doAutorun(                                                                                                        \
+      [=, handle = it.getHandle()]                                                                                     \
+      {                                                                                                                \
+        if(condition)                                                                                                  \
+        {                                                                                                              \
+          lv_obj_scroll_to_view(handle, false);                                                                        \
+        }                                                                                                              \
+      });
+
 #define LEFT_CLICK it.leftClick << [=]
 #define SWALLOW_LEFT_CLICK()                                                                                           \
   LEFT_CLICK(auto)                                                                                                     \
