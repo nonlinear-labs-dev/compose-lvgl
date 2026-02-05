@@ -65,22 +65,39 @@ namespace Compose
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control,
                                             const Point end)
   {
-    constexpr int segments = 20;
-    for(int i = 0; i < segments; ++i)
+    const int segments = (style.width > 4) ? 40 : 20;
+
+    Point lastPoint = start;
+
+    for(int i = 1; i <= segments; ++i)
     {
-      const float t0 = static_cast<float>(i) / segments;
-      const float t1 = static_cast<float>(i + 1) / segments;
+      Point nextPoint;
 
-      const float s0 = 1.0f - t0;
-      const float s1 = 1.0f - t1;
+      if (i == segments) {
+        nextPoint = end;
+      } else {
+        const float t = static_cast<float>(i) / segments;
+        const float s = 1.0f - t;
+        nextPoint.x = std::round(s * s * start.x + 2 * s * t * control.x + t * t * end.x);
+        nextPoint.y = std::round(s * s * start.y + 2 * s * t * control.y + t * t * end.y);
+      }
 
-      const int x0 = s0 * s0 * start.x + 2 * s0 * t0 * control.x + t0 * t0 * end.x;
-      const int y0 = s0 * s0 * start.y + 2 * s0 * t0 * control.y + t0 * t0 * end.y;
+      if (style.width > 2) {
+        float dx = nextPoint.x - lastPoint.x;
+        float dy = nextPoint.y - lastPoint.y;
+        float len = std::sqrt(dx*dx + dy*dy);
+        if (len > 0) {
+          Point extendedNext = {
+            nextPoint.x + (int)std::round(dx / len),
+            nextPoint.y + (int)std::round(dy / len)
+        };
+          drawLine(style, lastPoint, extendedNext);
+        }
+      } else {
+        drawLine(style, lastPoint, nextPoint);
+      }
 
-      const int x1 = s1 * s1 * start.x + 2 * s1 * t1 * control.x + t1 * t1 * end.x;
-      const int y1 = s1 * s1 * start.y + 2 * s1 * t1 * control.y + t1 * t1 * end.y;
-
-      drawLine(style, { x0, y0 }, { x1, y1 });
+      lastPoint = nextPoint;
     }
   }
 
