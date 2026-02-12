@@ -102,6 +102,8 @@ namespace Compose
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
+    virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
+                                         int bottomRight) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
@@ -129,10 +131,11 @@ namespace Compose
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
+    void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
+                                         int bottomRight) override;
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
-    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight,
-                                              int bottomLeft, int bottomRight);
+    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight);
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
     void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc);
     void fillArc(const ArcDrawOptions &arcOptions) override;
