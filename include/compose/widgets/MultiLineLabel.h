@@ -39,29 +39,37 @@ namespace Compose
 
             const auto [height] = labelData.height.get();
             const auto [width] = labelData.width.get();
-
             const auto &fontDesc = labelData.font.get();
             const auto &font = s_fontStorage->getFont(fontDesc);
             const auto text = labelData.text.get();
 
-            if(height == LV_SIZE_CONTENT)
-            {
-              auto w = width;
-              if(w == 0)
-              {
-                w = lv_obj_get_width(handle);
-              }
-
-              auto maxW = 0;
-              for(auto line : nltools::text::wrapText(text.text, w, [&font](auto t) { return font.getStringWidth(t); }))
-              {
-                maxW = std::max(maxW, font.getStringWidth(line));
-              }
-
-              lv_obj_set_width(handle, maxW);
+            auto wrapWidth = width;
+            if(wrapWidth <= 0 || wrapWidth == LV_SIZE_CONTENT) {
+                wrapWidth = lv_obj_get_width(handle);
             }
-          });
-      (setModifier(args), ...);
+
+            if(wrapWidth > 0) {
+              auto wrappedLines = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) {
+                  return font.getStringWidth(t);
+              });
+
+              if(height == LV_SIZE_CONTENT) {
+                const auto lineCount = wrappedLines.size();
+                const auto lineHeight = font.getFontHeight();
+                const auto totalHeight = static_cast<int>(lineCount * lineHeight);
+
+                lv_obj_set_height(handle, totalHeight);
+              }
+
+              if(width == LV_SIZE_CONTENT) {
+                auto maxW = 0;
+                for(const auto& line : wrappedLines) {
+                  maxW = std::max(maxW, font.getStringWidth(line));
+                }
+                lv_obj_set_width(handle, maxW);
+              }
+            }
+          });      (setModifier(args), ...);
     }
 
     void setModifier(Width w) const override;
