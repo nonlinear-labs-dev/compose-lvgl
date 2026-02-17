@@ -24,5 +24,3 @@ addNLLibrary(
         IS_STATIC
         CPP_STANDARD 20
 )
-
-#target_include_directories(compose-lvgl PUBLIC ${CMAKE_SOURCE_DIR}/package/lvgl/src/)
