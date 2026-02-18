@@ -10,6 +10,11 @@ namespace Compose
       FIXED
     } it;
 
+    static constexpr Scrollable fromBool(bool b)
+    {
+      return { b ? SCROLLABLE : FIXED };
+    }
+
     static constexpr Scrollable NO_SCROLL()
     {
       return { FIXED };
