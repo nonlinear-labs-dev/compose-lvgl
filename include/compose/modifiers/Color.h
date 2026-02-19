@@ -84,6 +84,11 @@ namespace Compose
       return packedColor;
     }
 
+    [[nodiscard]] uint32_t pack_without_alpha() const
+    {
+      return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+    }
+
     [[nodiscard]] std::tuple<float, float, float, float> normalized() const
     {
       constexpr auto factor = static_cast<float>(maxTFixed);
