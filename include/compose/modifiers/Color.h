@@ -84,6 +84,11 @@ namespace Compose
       return packedColor;
     }
 
+    [[nodiscard]] uint32_t pack_without_alpha() const
+    {
+      return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+    }
+
     [[nodiscard]] std::tuple<float, float, float, float> normalized() const
     {
       constexpr auto factor = static_cast<float>(maxTFixed);
@@ -98,7 +103,7 @@ namespace Compose
 
     static constexpr Color BACKGROUND()
     {
-      return { 24, 24, 24, 1 };
+      return { 0, 0, 0, 1 };
     }
 
     template <IntegralOrChar tFixed> static constexpr Color RGB(tFixed r, tFixed g, tFixed b)

@@ -13,8 +13,9 @@
 
 namespace Compose
 {
-  Application::Application(Rect position)
+  Application::Application(Rect position, Rotation rotation)
       : m_position(position)
+      , m_rotation(rotation)
   {
     lv_init();
     lv_fs_posix_init();
@@ -22,7 +23,7 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Window window { m_position };
+    Window window { m_position, m_rotation };
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });
