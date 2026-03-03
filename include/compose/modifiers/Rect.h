@@ -14,6 +14,7 @@ namespace Compose
     Point pos;
     Size size {};
     [[nodiscard]] Rect biggerBy(int i) const;
+    [[nodiscard]] Rect expanded(int horizontal, int vertical) const;
   };
 
   inline Rect Rect::biggerBy(int i) const
@@ -23,6 +24,15 @@ namespace Compose
     ret.size.h += (i * 2);
     ret.pos.x -= i;
     ret.pos.y -= i;
+    return ret;
+  }
+  inline Rect Rect::expanded(int horizontal, int vertical) const
+  {
+    Rect ret = *this;
+    ret.size.w += (horizontal * 2);
+    ret.size.h += (vertical * 2);
+    ret.pos.x -= horizontal;
+    ret.pos.y -= vertical;
     return ret;
   }
 }
