@@ -46,7 +46,7 @@ namespace Compose
                 lv_obj_get_coords(user_data->m_handle, &widget_coords);
                 const int rel_x = point.x - widget_coords.x1;
                 const int rel_y = point.y - widget_coords.y1;
-                e->stop_processing = user_data->m_callback({rel_x, rel_y});
+                e->stop_processing = user_data->m_callback({ rel_x, rel_y });
               }
             },
             FilterType, this);
@@ -108,8 +108,8 @@ namespace Compose
     void operator<<(const CB &cb) const
     {
       assert(!self.getData<StateChangeData>(BaseWidget::c_stateChangeKey));
-      self.ensureDataForKeyExistsOwning<StateChangeData>(BaseWidget::c_stateChangeKey, [this, cb]
-                                                         { return new StateChangeData(self.getHandle(), cb); });
+      self.ensureDataForKeyExistsOwning<StateChangeData>(
+          BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
     }
   };
 }

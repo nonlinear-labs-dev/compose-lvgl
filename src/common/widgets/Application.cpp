@@ -9,11 +9,13 @@
 #include <chrono>
 #include <thread>
 #include <reactive/Computations.h>
+#include <reactive/Deferrer.h>
 
 namespace Compose
 {
-  Application::Application(Rect position)
+  Application::Application(Rect position, Rotation rotation)
       : m_position(position)
+      , m_rotation(rotation)
   {
     lv_init();
     lv_fs_posix_init();
@@ -21,7 +23,7 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
-    Window window { m_position };
+    Window window { m_position, m_rotation };
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });
@@ -29,17 +31,19 @@ namespace Compose
     auto lastTick = std::chrono::high_resolution_clock::now();
 
     Glib::signal_timeout().connect(
-        [&] {
+        [&]
+        {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
+          Reactive::Deferrer frameDeferrer;
           lv_timer_handler();
           return true;
         },
         5);
 
-    auto loop = Glib::MainLoop::create();
+    const auto loop = Glib::MainLoop::create();
     loop->run();
   }
 }
