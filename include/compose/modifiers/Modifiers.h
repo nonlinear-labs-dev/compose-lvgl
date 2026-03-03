@@ -352,6 +352,7 @@ namespace Compose
 #define HEIGHT(...) it.doAutorun([=] { it.setModifier(Height { __VA_ARGS__ }); });
 #define POSITION(...) it.doAutorun([=] { it.setModifier(Position(__VA_ARGS__)); });
 #define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); });
+#define SCROLLABLE_V(...) it.doAutorun([=] { it.setModifier(Scrollable::fromBool(__VA_ARGS__)); });
 #define CLICKABLE(b) it.doAutorun([=] { it.setModifier(Clickable(b)); });
 #define NOT_SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::FIXED)); });
 #define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); });
