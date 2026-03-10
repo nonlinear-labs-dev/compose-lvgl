@@ -1,4 +1,6 @@
 #include <compose/widgets/DrawContext.h>
+
+#include "../../../../c16-hwui/src/ui/components/Colors.h"
 #include "src/draw/lv_draw.h"
 #include "src/misc/lv_color.h"
 #include "src/misc/lv_area.h"

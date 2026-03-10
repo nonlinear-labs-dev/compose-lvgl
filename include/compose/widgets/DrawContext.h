@@ -55,6 +55,7 @@ namespace Compose
       int strokeWidth;
       float startAngle;
       float sweepAngle;
+      float cornerRadius;
 
       std::optional<std::vector<float>> dashes = std::nullopt;
     };
