@@ -19,12 +19,7 @@ namespace Compose
 
   inline Rect Rect::biggerBy(int i) const
   {
-    Rect ret = *this;
-    ret.size.w += (i * 2);
-    ret.size.h += (i * 2);
-    ret.pos.x -= i;
-    ret.pos.y -= i;
-    return ret;
+    return expanded(i, i);
   }
   inline Rect Rect::expanded(int horizontal, int vertical) const
   {
