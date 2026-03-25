@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <concepts>
 #include <cstdint>
 #include <iomanip>
@@ -97,8 +98,8 @@ namespace Compose
 
     [[nodiscard]] Color multiply(float f) const
     {
-      return Color { static_cast<tColorValueType>(r * f), static_cast<tColorValueType>(g * f),
-                     static_cast<tColorValueType>(b * f), a };
+      return Color { static_cast<tColorValueType>(std::round(r * f)), static_cast<tColorValueType>(std::round(g * f)),
+                     static_cast<tColorValueType>(std::round(b * f)), a };
     }
 
     static constexpr Color BACKGROUND()
