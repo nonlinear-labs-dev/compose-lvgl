@@ -29,8 +29,9 @@ namespace Compose
       buffer.modify(
           [=, this](auto& f)
           {
-            f.reset(b);
+            lv_draw_buf_clear(b, nullptr);
             lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+            f.reset(b);
           });
     }
   }
