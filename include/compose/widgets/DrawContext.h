@@ -101,6 +101,7 @@ namespace Compose
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
+    virtual void drawRoundedElbowLine(StrokeStyle style, Point start, Point corner1, Point corner2, Point end, int radius) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
     virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
@@ -130,6 +131,7 @@ namespace Compose
     void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
+    void drawRoundedElbowLine(StrokeStyle style, Point start, Point corner1, Point corner2, Point end, int radius);
     void strokeRect(StrokeStyle style, Rect rect) override;
     void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
     void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
