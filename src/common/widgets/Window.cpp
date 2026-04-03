@@ -6,7 +6,14 @@
 
 namespace Compose
 {
-  Window::~Window() = default;
+  Window::~Window()
+  {
+    if(m_backendCleanup)
+    {
+      m_backendCleanup();
+      m_backendCleanup = nullptr;
+    }
+  }
 
   //void Window::setFullScreen(const bool f) const
   //{

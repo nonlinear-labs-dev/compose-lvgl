@@ -3,6 +3,7 @@
 #include "compose/modifiers/Clickable.h"
 #include "compose/modifiers/FlexFlow.h"
 #include "compose/modifiers/Modifiers.h"
+#include "handler/DragDrop.h"
 #include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
@@ -381,7 +382,15 @@ namespace Compose
 
     LeftClick leftClick { *this, c_leftClickKey };
     LongClick longClick { *this, c_longClickKey };
+    Touch touch { *this };
     StateChange stateChange { *this };
+    Drag drag { *this };
+    DragDrop dragDrop { *this };
+
+    [[nodiscard]] bool isCurrentDropTarget() const
+    {
+      return DragDropContext::get().isCurrentTarget(getHandle());
+    }
   };
 
   template <typename T> concept IsWidget = requires
@@ -410,6 +419,7 @@ namespace Compose
   });
 
 #define LEFT_CLICK it.leftClick << [=]
+#define TOUCH() it.touch << [=](Compose::Touch * it)
 #define SWALLOW_LEFT_CLICK()                                                                                                                                                       \
   LEFT_CLICK(auto)                                                                                                                                                                 \
   {                                                                                                                                                                                \
