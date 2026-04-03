@@ -7,10 +7,6 @@
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
-#include "nltools/Assert.h"
-
-#include <cassert>
-#include <tuple>
 #include <type_traits>
 
 namespace Compose
@@ -224,8 +220,7 @@ namespace Compose
       {
         try
         {
-          nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
-                                       "position only works with LAYOUT_TYPE NONE");
+          assert(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE);  // position only works with LAYOUT_TYPE NONE
         }
         catch([[maybe_unused]] std::exception &e)
         {
@@ -320,8 +315,7 @@ namespace Compose
 
     static bool isColumn(lv_flex_flow_t v)
     {
-      return anyOf<LV_FLEX_FLOW_COLUMN, LV_FLEX_FLOW_COLUMN_REVERSE, LV_FLEX_FLOW_COLUMN_WRAP,
-                   LV_FLEX_FLOW_COLUMN_WRAP_REVERSE>(v);
+      return anyOf<LV_FLEX_FLOW_COLUMN, LV_FLEX_FLOW_COLUMN_REVERSE, LV_FLEX_FLOW_COLUMN_WRAP, LV_FLEX_FLOW_COLUMN_WRAP_REVERSE>(v);
     }
 
     virtual void setModifier(Width w) const
@@ -390,51 +384,46 @@ namespace Compose
     StateChange stateChange { *this };
   };
 
-  template <typename T>
-  concept IsWidget = requires { typename T::WidgetType; };
+  template <typename T> concept IsWidget = requires
+  {
+    typename T::WidgetType;
+  };
 
-  template <typename ComposeWidget, typename tCB>
-    requires IsWidget<ComposeWidget>
-  void operator<<(ComposeWidget &&lhs, tCB &&cb)
+  template <typename ComposeWidget, typename tCB> requires IsWidget<ComposeWidget> void operator<<(ComposeWidget &&lhs, tCB &&cb)
   {
     using tComposeWidgetDecayed = std::remove_reference_t<ComposeWidget>;
 
-    lhs.doAutorun(
-        [cb = std::forward<tCB>(cb), w = lhs.getHandle()]
-        {
-          tComposeWidgetDecayed wrapper(w);
-          wrapper.clear();
-          cb(tComposeWidgetDecayed(w));
-        });
+    lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
+      tComposeWidgetDecayed wrapper(w);
+      wrapper.clear();
+      cb(tComposeWidgetDecayed(w));
+    });
   }
 }
 
-#define SCROLL_INTO_VIEW_WHEN(condition)                                                                               \
-  it.doAutorun(                                                                                                        \
-      [=, handle = it.getHandle()]                                                                                     \
-      {                                                                                                                \
-        if(condition)                                                                                                  \
-        {                                                                                                              \
-          lv_obj_scroll_to_view(handle, false);                                                                        \
-        }                                                                                                              \
-      });
+#define SCROLL_INTO_VIEW_WHEN(condition)                                                                                                                                           \
+  it.doAutorun([=, handle = it.getHandle()] {                                                                                                                                      \
+    if(condition)                                                                                                                                                                  \
+    {                                                                                                                                                                              \
+      lv_obj_scroll_to_view(handle, false);                                                                                                                                        \
+    }                                                                                                                                                                              \
+  });
 
 #define LEFT_CLICK it.leftClick << [=]
-#define SWALLOW_LEFT_CLICK()                                                                                           \
-  LEFT_CLICK(auto)                                                                                                     \
-  {                                                                                                                    \
-    return true;                                                                                                       \
+#define SWALLOW_LEFT_CLICK()                                                                                                                                                       \
+  LEFT_CLICK(auto)                                                                                                                                                                 \
+  {                                                                                                                                                                                \
+    return true;                                                                                                                                                                   \
   };
 #define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
-#define CLICK_TRACE()                                                                                                  \
-  it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                        \
-  {                                                                                                                    \
-    nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
-    return false;                                                                                                      \
+#define CLICK_TRACE()                                                                                                                                                              \
+  it.leftClick << [handle = it.getHandle()](Position p) -> bool {                                                                                                                  \
+    nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                                                                                 \
+    return false;                                                                                                                                                                  \
   }
 
-#define WITH_STATE(type, name, factory)                                                                                \
-  auto &_state_ref_##name = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>(                                      \
-      "WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });  \
+#define WITH_STATE(type, name, factory)                                                                                                                                            \
+  auto &_state_ref_##name                                                                                                                                                          \
+      = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>("WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });       \
   if(auto *name = &_state_ref_##name)

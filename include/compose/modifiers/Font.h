@@ -19,7 +19,7 @@ namespace Compose
     } weight
         = FontWeight::Regular;
 
-    std::string baseName = "Nonlegible-Rubik";
+    std::string baseName = "AlteHaas";
 
     constexpr bool operator==(const Font &o) const noexcept
     {

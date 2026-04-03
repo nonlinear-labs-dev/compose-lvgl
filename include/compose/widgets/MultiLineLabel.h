@@ -1,4 +1,6 @@
 #pragma once
+
+#if 0
 #include "CustomDrawingElement.h"
 #include "DrawContext.h"
 
@@ -91,5 +93,5 @@ namespace Compose
   };
 }
 
-#define MULTI_LINE_LABEL(...)                                                                                          \
-  it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel &&it)
+#define MULTI_LINE_LABEL(...) it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel && it)
+#endif

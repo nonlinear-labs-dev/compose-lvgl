@@ -3,9 +3,7 @@
 #include "src/misc/lv_area.h"
 #include "src/core/lv_obj_event.h"
 #include "src/core/lv_obj_pos.h"
-#include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
-#include <memory>
 #include <assert.h>
 #include <compose/widgets/BaseWidget.h>
 #include <compose/modifiers/Position.h>
@@ -33,8 +31,7 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e)
-            {
+            [](lv_event_t *e) {
               Reactive::Deferrer def;
               const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
               const auto indev = lv_event_get_indev(e);
@@ -85,8 +82,7 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e)
-            {
+            [](lv_event_t *e) {
               Reactive::Deferrer def;
               const auto user_data = static_cast<StateChangeData *>(lv_event_get_user_data(e));
               const auto checked = lv_obj_has_state(user_data->m_handle, LV_STATE_CHECKED);
@@ -108,8 +104,7 @@ namespace Compose
     void operator<<(const CB &cb) const
     {
       assert(!self.getData<StateChangeData>(BaseWidget::c_stateChangeKey));
-      self.ensureDataForKeyExistsOwning<StateChangeData>(
-          BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
+      self.ensureDataForKeyExistsOwning<StateChangeData>(BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
     }
   };
 }

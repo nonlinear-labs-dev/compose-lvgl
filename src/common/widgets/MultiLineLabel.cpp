@@ -1,3 +1,5 @@
+#if 0
+
 #include <compose/widgets/MultiLineLabel.h>
 #include <compose/widgets/DrawContext.h>
 #include <compose/widgets/LabelShared.h>
@@ -99,3 +101,4 @@ namespace Compose
     doAutorun([cb = std::move(cb), label = getHandle()] { MultiLineLabel(label).setModifier(Text { cb() }); });
   }
 }
+#endif
