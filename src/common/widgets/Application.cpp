@@ -29,9 +29,10 @@ namespace Compose
     c.add([&] { callback(window); });
 
     auto lastTick = std::chrono::high_resolution_clock::now();
+    const auto loop = Glib::MainLoop::create();
 
     Glib::signal_timeout().connect(
-        [&]
+        [&, loop]
         {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
@@ -39,11 +40,17 @@ namespace Compose
           lastTick = current;
           Reactive::Deferrer frameDeferrer;
           lv_timer_handler();
-          return true;
+
+          auto keepRunning = lv_display_get_next(nullptr) != nullptr;
+          if(!keepRunning)
+          {
+            loop->quit();
+          }
+
+          return keepRunning;
         },
         5);
 
-    const auto loop = Glib::MainLoop::create();
     loop->run();
   }
 }
