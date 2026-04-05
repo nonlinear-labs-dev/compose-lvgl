@@ -599,6 +599,9 @@ namespace Compose
   void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
                                       unsigned char coverage)
   {
+    if(coverage == 0)
+      return;
+
     const auto canvas_width = draw_buf.header.w;
     const auto canvas_height = draw_buf.header.h;
     const auto canvas_stride = draw_buf.header.stride;

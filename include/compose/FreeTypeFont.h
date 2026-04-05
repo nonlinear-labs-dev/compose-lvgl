@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <glibmm/ustring.h>
 #include <ft2build.h>
 #include <freetype/freetype.h>
@@ -37,10 +39,23 @@ namespace Compose
     [[nodiscard]] const std::string &getFontPath() const;
 
    private:
+    struct CachedGlyph
+    {
+      FT_Fixed advance_x {};
+      int bitmap_left {};
+      int bitmap_top {};
+      unsigned int width {};
+      unsigned int rows {};
+      FT_Pos hori_bearing_y {};
+      std::vector<uint8_t> pixels {};
+    };
+
     FT_Face m_face {};
     int m_fontSize;
     std::string m_fontPath;
+    mutable std::unordered_map<std::uint32_t, CachedGlyph> m_glyphCache;
 
-    tCoordinate drawLetter(FT_GlyphSlot slot, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
+    const CachedGlyph &glyphFor(std::uint32_t codepoint) const;
+    tCoordinate drawLetterFromCache(const CachedGlyph &g, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
   };
 }

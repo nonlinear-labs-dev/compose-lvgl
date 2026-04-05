@@ -1,4 +1,5 @@
 #include "compose/FreeTypeFont.h"
+#include <algorithm>
 #include <glib.h>
 
 namespace
@@ -32,13 +33,34 @@ namespace Compose
     FT_Done_Face(m_face);
   }
 
+  const FreeTypeFont::CachedGlyph &FreeTypeFont::glyphFor(const std::uint32_t codepoint) const
+  {
+    const auto found = m_glyphCache.find(codepoint);
+    if(found != m_glyphCache.end())
+      return found->second;
+
+    check(FT_Load_Char(m_face, codepoint, FT_LOAD_RENDER), __LINE__, codepoint);
+
+    const FT_GlyphSlot slot = m_face->glyph;
+    CachedGlyph g;
+    g.advance_x = slot->advance.x;
+    g.bitmap_left = slot->bitmap_left;
+    g.bitmap_top = slot->bitmap_top;
+    g.width = slot->bitmap.width;
+    g.rows = slot->bitmap.rows;
+    g.hori_bearing_y = slot->metrics.horiBearingY;
+    if(slot->bitmap.buffer != nullptr && g.width > 0 && g.rows > 0)
+      g.pixels.assign(slot->bitmap.buffer, slot->bitmap.buffer + g.width * g.rows);
+
+    return m_glyphCache.emplace(codepoint, std::move(g)).first->second;
+  }
+
   int FreeTypeFont::getStringWidth(const Glib::ustring &text) const
   {
-    uint32_t x = 0;
+    std::uint32_t x = 0;
 
     for(const auto c : text)
-      if(check(FT_Load_Char(m_face, c, FT_LOAD_NO_BITMAP), __LINE__, c))
-        x += m_face->glyph->advance.x;
+      x += glyphFor(c).advance_x;
 
     return static_cast<int>(x >> 6);
   }
@@ -58,12 +80,11 @@ namespace Compose
     int maxBottom = 0;
 
     for(const auto c : text)
-      if(check(FT_Load_Char(m_face, c, FT_LOAD_RENDER), __LINE__, c))
-      {
-        const auto glyph = m_face->glyph;
-        const auto bottomOffset = m_fontSize - glyph->bitmap_top + static_cast<int>(glyph->bitmap.rows);
-        maxBottom = std::max(maxBottom, bottomOffset);
-      }
+    {
+      const auto &g = glyphFor(c);
+      const auto bottomOffset = m_fontSize - g.bitmap_top + static_cast<int>(g.rows);
+      maxBottom = std::max(maxBottom, bottomOffset);
+    }
 
     return maxBottom;
   }
@@ -74,33 +95,24 @@ namespace Compose
     x <<= 6;
 
     for(const auto c : text)
-      if(check(FT_Load_Char(m_face, c, FT_LOAD_RENDER), __LINE__, c))
-        x += drawLetter(m_face->glyph, x, y, cb);
+      x += drawLetterFromCache(glyphFor(c), x, y, cb);
   }
 
-  inline bool isPixelSet(FT_GlyphSlot slot, int srcX, int srcY)
-  {
-    const auto index = srcX + srcY * slot->bitmap.width;
-    return slot->bitmap.buffer[index];
-  }
-
-  inline unsigned char getPixelValue(FT_GlyphSlot slot, int srcX, int srcY)
-  {
-    const auto index = srcX + srcY * slot->bitmap.width;
-    return slot->bitmap.buffer[index];
-  }
-
-  FreeTypeFont::tCoordinate FreeTypeFont::drawLetter(FT_GlyphSlot slot, tCoordinate x, tCoordinate y,
-                                                     const tSetPixelCB &cb) const
+  FreeTypeFont::tCoordinate FreeTypeFont::drawLetterFromCache(const CachedGlyph &g, tCoordinate x, tCoordinate y,
+                                                             const tSetPixelCB &cb) const
   {
     x >>= 6;
 
-    for(int srcX = 0; srcX < slot->bitmap.width; srcX++)
-      for(int srcY = 0; srcY < slot->bitmap.rows; srcY++)
-        cb(srcX + x + slot->bitmap_left, (m_fontSize - slot->bitmap_top) + srcY + y - m_fontSize,
-           getPixelValue(slot, srcX, srcY));
+    for(unsigned int srcY = 0; srcY < g.rows; ++srcY)
+    {
+      const unsigned int rowOff = srcY * g.width;
+      for(unsigned int srcX = 0; srcX < g.width; ++srcX)
+        cb(static_cast<int>(srcX) + x + g.bitmap_left,
+           (m_fontSize - g.bitmap_top) + static_cast<int>(srcY) + y - m_fontSize,
+           g.pixels[rowOff + srcX]);
+    }
 
-    return static_cast<tCoordinate>(slot->advance.x);
+    return static_cast<tCoordinate>(g.advance_x);
   }
 
   const std::string &FreeTypeFont::getFontPath() const
@@ -115,9 +127,6 @@ namespace Compose
 
   int FreeTypeFont::getCapHeightPx() const
   {
-    // Approximate cap height using glyph 'H' top side bearing
-    if(check(FT_Load_Char(m_face, 'H', FT_LOAD_NO_BITMAP), __LINE__, 'H'))
-      return static_cast<int>(m_face->glyph->metrics.horiBearingY >> 6);
-    return getAscenderPx();
+    return static_cast<int>(glyphFor(static_cast<std::uint32_t>('H')).hori_bearing_y >> 6);
   }
 }
