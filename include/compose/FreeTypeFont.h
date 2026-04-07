@@ -41,6 +41,7 @@ namespace Compose
    private:
     struct CachedGlyph
     {
+      CachedGlyph(FT_GlyphSlot slot);
       FT_Fixed advance_x {};
       int bitmap_left {};
       int bitmap_top {};

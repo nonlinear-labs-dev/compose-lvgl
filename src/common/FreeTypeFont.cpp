@@ -33,26 +33,24 @@ namespace Compose
     FT_Done_Face(m_face);
   }
 
+  FreeTypeFont::CachedGlyph::CachedGlyph(const FT_GlyphSlot slot)
+  {
+    advance_x = slot->advance.x;
+    bitmap_left = slot->bitmap_left;
+    bitmap_top = slot->bitmap_top;
+    width = slot->bitmap.width;
+    rows = slot->bitmap.rows;
+    hori_bearing_y = slot->metrics.horiBearingY;
+    if(slot->bitmap.buffer != nullptr && width > 0 && rows > 0)
+      pixels.assign(slot->bitmap.buffer, slot->bitmap.buffer + width * rows);
+  }
+
   const FreeTypeFont::CachedGlyph &FreeTypeFont::glyphFor(const std::uint32_t codepoint) const
   {
-    const auto found = m_glyphCache.find(codepoint);
-    if(found != m_glyphCache.end())
+    if(const auto found = m_glyphCache.find(codepoint); found != m_glyphCache.end())
       return found->second;
-
     check(FT_Load_Char(m_face, codepoint, FT_LOAD_RENDER), __LINE__, codepoint);
-
-    const FT_GlyphSlot slot = m_face->glyph;
-    CachedGlyph g;
-    g.advance_x = slot->advance.x;
-    g.bitmap_left = slot->bitmap_left;
-    g.bitmap_top = slot->bitmap_top;
-    g.width = slot->bitmap.width;
-    g.rows = slot->bitmap.rows;
-    g.hori_bearing_y = slot->metrics.horiBearingY;
-    if(slot->bitmap.buffer != nullptr && g.width > 0 && g.rows > 0)
-      g.pixels.assign(slot->bitmap.buffer, slot->bitmap.buffer + g.width * g.rows);
-
-    return m_glyphCache.emplace(codepoint, std::move(g)).first->second;
+    return m_glyphCache.emplace(codepoint, std::move(CachedGlyph(m_face->glyph))).first->second;
   }
 
   int FreeTypeFont::getStringWidth(const Glib::ustring &text) const
@@ -99,17 +97,19 @@ namespace Compose
   }
 
   FreeTypeFont::tCoordinate FreeTypeFont::drawLetterFromCache(const CachedGlyph &g, tCoordinate x, tCoordinate y,
-                                                             const tSetPixelCB &cb) const
+                                                              const tSetPixelCB &cb) const
   {
     x >>= 6;
 
-    for(unsigned int srcY = 0; srcY < g.rows; ++srcY)
+    for(unsigned int glyphY = 0; glyphY < g.rows; glyphY++)
     {
-      const unsigned int rowOff = srcY * g.width;
-      for(unsigned int srcX = 0; srcX < g.width; ++srcX)
-        cb(static_cast<int>(srcX) + x + g.bitmap_left,
-           (m_fontSize - g.bitmap_top) + static_cast<int>(srcY) + y - m_fontSize,
-           g.pixels[rowOff + srcX]);
+      const unsigned int rowOff = glyphY * g.width;
+      for(unsigned int glyphX = 0; glyphX < g.width; glyphX++)
+      {
+        const auto globalX = static_cast<int>(glyphX) + x + g.bitmap_left;
+        const auto globalY = (m_fontSize - g.bitmap_top) + static_cast<int>(glyphY) + y - m_fontSize;
+        cb(globalX, globalY, g.pixels[rowOff + glyphX]);
+      }
     }
 
     return static_cast<tCoordinate>(g.advance_x);
