@@ -105,48 +105,6 @@ namespace Compose
     }
   }
 
-  void LVGLDrawContext::drawRoundedElbowLine(
-    StrokeStyle style,
-    Point start,
-    Point corner1,
-    Point corner2,
-    Point end,
-    int radius)
-  {
-    auto offsetPoint = [&](Point from, Point to, int dist) {
-      float dx = to.x - from.x;
-      float dy = to.y - from.y;
-      float len = std::sqrt(dx * dx + dy * dy);
-      if(len == 0) return from;
-
-      float ux = dx / len;
-      float uy = dy / len;
-
-      return Point{
-        (int)std::round(from.x + ux * dist),
-        (int)std::round(from.y + uy * dist)
-    };
-    };
-
-    Point c1_in  = offsetPoint(corner1, start, radius);
-    Point c1_out = offsetPoint(corner1, corner2, radius);
-
-    Point c2_in  = offsetPoint(corner2, corner1, radius);
-    Point c2_out = offsetPoint(corner2, end, radius);
-
-
-    drawLine(style, start, c1_in);
-
-    drawQuadraticBezier(style, c1_in, corner1, c1_out);
-
-    drawLine(style, c1_out, c2_in);
-
-    drawQuadraticBezier(style, c2_in, corner2, c2_out);
-
-    drawLine(style, c2_out, end);
-  }
-
-
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
     lv_draw_rect_dsc_t rect_dsc;
