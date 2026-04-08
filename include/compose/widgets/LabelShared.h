@@ -94,15 +94,18 @@ namespace Compose::LabelShared
   inline int computeStartYSingle(int availableHeight, const FreeTypeFont& font, const Glib::ustring& text,
                                  const VerticalAlign& a)
   {
+    const auto bounds = font.getTextBounds(text);
+    const auto textHeight = bounds.height();
+
     switch(a.it)
     {
       case VerticalAlign::Top:
-        return 0;
+        return -bounds.top;
       case VerticalAlign::Bottom:
-        return availableHeight - font.getMaxBottomOffset(text);
+        return availableHeight - bounds.bottom;
       default:
       case VerticalAlign::Center:
-        return availableHeight / 2 - font.getFontSize() + font.getCapHeightPx() / 2;
+        return (availableHeight - textHeight) / 2 - bounds.top;
     }
   }
 

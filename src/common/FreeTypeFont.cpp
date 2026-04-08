@@ -87,6 +87,34 @@ namespace Compose
     return maxBottom;
   }
 
+  FreeTypeFont::TextBounds FreeTypeFont::getTextBounds(const Glib::ustring &text) const
+  {
+    TextBounds bounds;
+    bool hasGlyph = false;
+
+    for(const auto c : text)
+      if(check(FT_Load_Char(m_face, c, FT_LOAD_RENDER), __LINE__, c))
+      {
+        const auto glyph = m_face->glyph;
+        const auto top = m_fontSize - glyph->bitmap_top;
+        const auto bottom = top + static_cast<int>(glyph->bitmap.rows);
+
+        if(!hasGlyph)
+        {
+          bounds.top = top;
+          bounds.bottom = bottom;
+          hasGlyph = true;
+        }
+        else
+        {
+          bounds.top = std::min(bounds.top, top);
+          bounds.bottom = std::max(bounds.bottom, bottom);
+        }
+      }
+
+    return bounds;
+  }
+
   void FreeTypeFont::draw(const Glib::ustring &text, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const
   {
     y += m_fontSize;
