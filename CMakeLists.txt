@@ -24,3 +24,18 @@ addNLLibrary(
         IS_STATIC
         CPP_STANDARD 20
 )
+
+if (NOT CROSS_BUILD)
+    addNLExecutable(
+            NAME compose-lvgl-virtual-list-demo
+            DESCRIPTION "compose-lvgl virtual list demo"
+            VERSION 0.0.1
+            EXTERNAL_LIBS sdl2
+            OUR_LIBS compose-lvgl
+            SUBMODULE_LIBS reactive
+            LIB_SOURCES tests/manual/VirtualListDemoApp.h tests/manual/VirtualListDemoApp.cpp
+            EXECUTABLE_SOURCES tests/manual/VirtualListDemoMain.cpp
+            CPP_STANDARD 20
+            USE_PTHREADS
+    )
+endif ()
