@@ -14,6 +14,8 @@ namespace Compose
     CustomDrawingElement::tDrawCB drawCallback;
     lv_event_dsc_t* resizeHandler = nullptr;
     lv_obj_t* handle = nullptr;
+    int lastBufferWidth = -1;
+    int lastBufferHeight = -1;
 
     CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
     ~CanvasData();

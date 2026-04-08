@@ -1,4 +1,5 @@
 #include "compose/state/CanvasData.h"
+#include "compose/widgets/DrawContext.h"
 
 namespace Compose
 {
@@ -10,8 +11,7 @@ namespace Compose
 
     resizeHandler = lv_obj_add_event_cb(
         handle,
-        [](lv_event_t* e)
-        {
+        [](lv_event_t* e) {
           const auto data = static_cast<CanvasData*>(lv_event_get_user_data(e));
           data->ensureBuffer();
         },
@@ -25,13 +25,29 @@ namespace Compose
 
     if(width > 0 && height > 0)
     {
+      if(width == lastBufferWidth && height == lastBufferHeight)
+      {
+        return;
+      }
+
       auto b = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
-      buffer.modify(
-          [=, this](auto& f)
-          {
-            f.reset(b);
-            lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
-          });
+      lv_draw_buf_clear(b, nullptr);
+
+      buffer.modify([=, this](auto& f) {
+        f.reset(b);
+        lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+        lastBufferWidth = width;
+        lastBufferHeight = height;
+      });
+
+      try
+      {
+        LVGLDrawContext drawContext(*handle);
+        drawCallback(drawContext, width, height);
+      }
+      catch(...)
+      {
+      }
     }
   }
 

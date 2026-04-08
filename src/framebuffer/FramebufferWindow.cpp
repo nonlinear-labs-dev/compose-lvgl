@@ -7,8 +7,11 @@
 
 #include <array>
 #include <chrono>
+#include <cstdio>
 #include <fcntl.h>
 #include <linux/input.h>
+#include <optional>
+#include <string>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -17,7 +20,41 @@ namespace Compose
   namespace
   {
     constexpr int c_maxTouchPoints = 5;
-    constexpr auto c_touchDevice = "/dev/input/event5";
+    constexpr int c_maxEventNodes = 64;
+
+    std::optional<std::string> discoverTouchEvdevPath()
+    {
+      constexpr uint64_t kAbsXyMask = (1ULL << ABS_X) | (1ULL << ABS_Y);
+      constexpr uint64_t kMtXyMask = (1ULL << ABS_MT_POSITION_X) | (1ULL << ABS_MT_POSITION_Y);
+
+      for(int i = 0; i < c_maxEventNodes; i++)
+      {
+        char path[48];
+        std::snprintf(path, sizeof(path), "/dev/input/event%d", i);
+        const int fd = open(path, O_RDONLY | O_NONBLOCK);
+        if(fd < 0)
+        {
+          continue;
+        }
+
+        uint64_t absBits = 0;
+        if(ioctl(fd, EVIOCGBIT(EV_ABS, static_cast<int>(sizeof(absBits))), &absBits) < 0)
+        {
+          close(fd);
+          continue;
+        }
+        close(fd);
+
+        const bool hasClassicXy = (absBits & kAbsXyMask) == kAbsXyMask;
+        const bool hasMtXy = (absBits & kMtXyMask) == kMtXyMask;
+        if(hasClassicXy || hasMtXy)
+        {
+          return std::string(path);
+        }
+      }
+
+      return std::nullopt;
+    }
 
     struct SlotState
     {
@@ -203,7 +240,14 @@ namespace Compose
 
     auto *mtState = new MultiTouchState {};
     mtState->display = disp;
-    mtState->fd = open(c_touchDevice, O_RDONLY | O_NONBLOCK);
+
+    const auto touchPath = discoverTouchEvdevPath();
+    const char *touchDevice = touchPath ? touchPath->c_str() : nullptr;
+
+    if(touchDevice)
+    {
+      mtState->fd = open(touchDevice, O_RDONLY | O_NONBLOCK);
+    }
 
     if(mtState->fd >= 0)
     {
@@ -234,15 +278,15 @@ namespace Compose
         }
       }
 
-      if(m_touchIndevs.empty())
+      if(m_touchIndevs.empty() && touchDevice)
       {
-        m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, c_touchDevice);
+        m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, touchDevice);
         lv_indev_set_display(m_mouse, disp);
       }
     }
-    else
+    else if(touchDevice)
     {
-      m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, c_touchDevice);
+      m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, touchDevice);
       lv_indev_set_display(m_mouse, disp);
     }
 

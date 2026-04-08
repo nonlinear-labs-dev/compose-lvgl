@@ -39,4 +39,56 @@ namespace Compose
 
     bool operator==(const Margin &) const = default;
   };
+
+  struct MarginLeft
+  {
+    MarginLeft() = default;
+
+    constexpr explicit MarginLeft(int m = 0)
+        : margin { m }
+    {
+    }
+
+    int margin;
+    bool operator==(const MarginLeft &) const = default;
+  };
+
+  struct MarginRight
+  {
+    MarginRight() = default;
+
+    constexpr explicit MarginRight(int m = 0)
+        : margin { m }
+    {
+    }
+
+    int margin;
+    bool operator==(const MarginRight &) const = default;
+  };
+
+  struct MarginTop
+  {
+    MarginTop() = default;
+
+    constexpr explicit MarginTop(int m = 0)
+        : margin { m }
+    {
+    }
+
+    int margin;
+    bool operator==(const MarginTop &) const = default;
+  };
+
+  struct MarginBottom
+  {
+    MarginBottom() = default;
+
+    constexpr explicit MarginBottom(int m = 0)
+        : margin { m }
+    {
+    }
+
+    int margin;
+    bool operator==(const MarginBottom &) const = default;
+  };
 }

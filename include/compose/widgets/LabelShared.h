@@ -58,8 +58,6 @@ namespace Compose::LabelShared
       const auto w = lv_obj_get_width(handle);
       const auto h = lv_obj_get_height(handle);
 
-      auto& bufferUser = canvasData.buffer.get();
-
       LVGLDrawContext drawContext(*handle);
       try
       {

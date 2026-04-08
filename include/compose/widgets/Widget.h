@@ -8,6 +8,8 @@
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
+#include "compose/modifiers/StyleSheets.h"
+
 #include <type_traits>
 
 namespace Compose
@@ -33,14 +35,6 @@ namespace Compose
     }
 
     bool operator==(const LayoutType &) const = default;
-  };
-
-  struct Border
-  {
-    int width;
-    Color color;
-
-    bool operator==(const Border &) const = default;
   };
 
   class Widget : public BaseWidget
@@ -257,6 +251,26 @@ namespace Compose
       lv_obj_set_style_margin_bottom(getHandle(), margin.bottom, LV_PART_MAIN);
     }
 
+    void setModifier(MarginLeft m) const
+    {
+      lv_obj_set_style_margin_left(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginTop m) const
+    {
+      lv_obj_set_style_margin_top(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginRight m) const
+    {
+      lv_obj_set_style_margin_right(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginBottom m) const
+    {
+      lv_obj_set_style_margin_bottom(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
     void setModifier(Border border) const
     {
       lv_obj_set_style_border_width(getHandle(), border.width, LV_PART_MAIN);
@@ -268,6 +282,31 @@ namespace Compose
                                     },
                                     LV_PART_MAIN);
       lv_obj_set_style_border_opa(getHandle(), static_cast<unsigned short>(border.color.a * 255), LV_PART_MAIN);
+    }
+
+    void setModifier(const BorderSides &sides) const
+    {
+      int value = LV_BORDER_SIDE_NONE;
+
+      for(auto s : sides.sides)
+      {
+        switch(s)
+        {
+          case BorderSides::TOP:
+            value |= (int) LV_BORDER_SIDE_TOP;
+            break;
+          case BorderSides::BOTTOM:
+            value |= (int) LV_BORDER_SIDE_BOTTOM;
+            break;
+          case BorderSides::LEFT:
+            value |= (int) LV_BORDER_SIDE_LEFT;
+            break;
+          case BorderSides::RIGHT:
+            value |= (int) LV_BORDER_SIDE_RIGHT;
+            break;
+        }
+      }
+      lv_obj_set_style_border_side(getHandle(), static_cast<lv_border_side_t>(value), LV_PART_MAIN);
     }
 
     void setModifier(RoundedCorner corner) const
@@ -301,7 +340,24 @@ namespace Compose
     {
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
-      lv_obj_update_layout(getHandle());
+    }
+
+    virtual void setModifier(Font s) const
+    {
+    }
+
+    virtual void setModifier(TextAlign a) const
+    {
+    }
+
+    virtual void setModifier(VerticalAlign v) const
+    {
+    }
+
+    void setModifier(const Style &style) const
+    {
+      auto doNothing = [] {};
+      std::apply([&](const auto &... a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); }, style.properties);
     }
 
     template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)
@@ -329,7 +385,6 @@ namespace Compose
         }
       }
       lv_obj_set_width(getHandle(), w.it);
-      lv_obj_update_layout(getHandle());
     }
 
     virtual void setModifier(Height h) const
@@ -339,7 +394,6 @@ namespace Compose
         lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       }
       lv_obj_set_height(getHandle(), h.it);
-      lv_obj_update_layout(getHandle());
     }
 
     void setModifier(FlexGrow g) const

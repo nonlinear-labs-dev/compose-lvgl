@@ -10,17 +10,18 @@ namespace Compose
 {
   void Label::setLabelRenderingFunction() const
   {
-    setDrawCall(
-        [handle = getHandle()](DrawContext &ctx, int w, int h)
-        {
-          const Label labelWidget(handle);
-          const auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
+    setDrawCall([handle = getHandle()](DrawContext &ctx, int w, int h) {
+      const Label labelWidget(handle);
+      const auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
 
-          if(cd.bgColor.get().a > 0)
-            ctx.fillRect(cd.bgColor, { 0, 0, w, h });
+      if(cd.bgColor.get().a > 0)
+      {
+        ctx.fillRect(cd.bgColor, { 0, 0, w, h });
+        ctx.flushLayer();
+      }
 
-          ctx.drawText(cd.text, cd.font, { 0, 0, w, h }, cd.primaryColor, cd.align, cd.verticalAlign);
-        });
+      ctx.drawText(cd.text, cd.font, { 0, 0, w, h }, cd.primaryColor, cd.align, cd.verticalAlign);
+    });
   }
 
   void Label::setModifier(Text t) const

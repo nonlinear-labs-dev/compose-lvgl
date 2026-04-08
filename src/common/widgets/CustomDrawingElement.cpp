@@ -16,8 +16,6 @@ namespace Compose
 
       auto &canvasData = widget.ensureDataForKeyExistsOwning<CanvasData>(c_canvasData, [handle, d = draw] { return new CanvasData(handle, d); });
 
-      auto &bufferUser = canvasData.buffer.get();
-
       const auto w = lv_obj_get_width(handle);
       const auto h = lv_obj_get_height(handle);
 
