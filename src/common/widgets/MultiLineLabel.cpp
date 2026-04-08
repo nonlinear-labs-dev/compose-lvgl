@@ -3,6 +3,7 @@
 #include <compose/widgets/LabelShared.h>
 #include <compose/FreeTypeFont.h>
 
+#include <algorithm>
 #include <utility>
 #include <sstream>
 #include <vector>
@@ -29,21 +30,52 @@ namespace Compose
           const auto lines
               = nltools::text::wrapText(displayText, w, [&](auto &text) { return font.getStringWidth(text); });
           const auto lineHeight = font.getFontHeight();
-          const auto totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
+          auto boundsTop = 0;
+          auto boundsBottom = 0;
+          auto hasBounds = false;
+          for(size_t i = 0; i < lines.size(); i++)
+          {
+            const auto lineBounds = font.getTextBounds(lines[i]);
+            const auto lineTop = static_cast<int>(i) * lineHeight + lineBounds.top;
+            const auto lineBottom = static_cast<int>(i) * lineHeight + lineBounds.bottom;
 
-          const auto startY = LabelShared::computeStartYBlock(h, totalTextHeight, lineHeight, font, vertAlign);
+            if(!hasBounds)
+            {
+              boundsTop = lineTop;
+              boundsBottom = lineBottom;
+              hasBounds = true;
+            }
+            else
+            {
+              boundsTop = std::min(boundsTop, lineTop);
+              boundsBottom = std::max(boundsBottom, lineBottom);
+            }
+          }
+          const auto blockHeight = std::max(boundsBottom - boundsTop, 0);
+          int startY = 0;
+          switch(vertAlign.it)
+          {
+            case VerticalAlign::Top:
+              startY = 0;
+              break;
+            case VerticalAlign::Bottom:
+              startY = h - blockHeight;
+              break;
+            default:
+            case VerticalAlign::Center:
+              startY = (h - blockHeight) / 2;
+              break;
+          }
 
           const auto baseColor = cd.primaryColor.get();
-
-          int y = startY;
-          for(const auto &line : lines)
+          for(size_t i = 0; i < lines.size(); i++)
           {
+            const auto &line = lines[i];
             const auto textWidth = font.getStringWidth(line);
             const auto startX = LabelShared::computeStartX(w, textWidth, textAlign);
+            const auto y = startY - boundsTop + static_cast<int>(i) * lineHeight;
 
             ctx.drawText(line, startX, y, font, baseColor);
-
-            y += lineHeight;
           }
         });
   }
@@ -85,7 +117,7 @@ namespace Compose
 
   void MultiLineLabel::setModifier(Width w) const
   {
-    nltools_detailedAssertAlways(w.it != LV_SIZE_CONTENT, "Width::Fit_Content not allowed for Multi-LineLabels");
+    nltools_detailedAssertAlways(w.it != LV_SIZE_CONTENT, "Width::FIT_CONTENT not allowed for MultiLineLabels");
     LabelShared::setWidth(*this, w);
   }
 

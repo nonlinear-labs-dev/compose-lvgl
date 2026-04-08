@@ -42,34 +42,53 @@ namespace Compose
             const auto &fontDesc = labelData.font.get();
             const auto &font = s_fontStorage->getFont(fontDesc);
             const auto text = labelData.text.get();
+            auto updateLayout = false;
 
             auto wrapWidth = width;
-            if(wrapWidth <= 0 || wrapWidth == LV_SIZE_CONTENT) {
-                wrapWidth = lv_obj_get_width(handle);
-            }
+            if(wrapWidth <= 0)
+              wrapWidth = lv_obj_get_width(handle);
 
-            if(wrapWidth > 0) {
-              auto wrappedLines = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) {
-                  return font.getStringWidth(t);
+            if(wrapWidth > 0)
+            {
+              const auto wrappedLines = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) {
+                return font.getStringWidth(t);
               });
 
-              if(height == LV_SIZE_CONTENT) {
-                const auto lineCount = wrappedLines.size();
+              if(height == LV_SIZE_CONTENT)
+              {
                 const auto lineHeight = font.getFontHeight();
-                const auto totalHeight = static_cast<int>(lineCount * lineHeight);
+                auto top = 0;
+                auto bottom = 0;
+                auto first = true;
 
-                lv_obj_set_height(handle, totalHeight);
-              }
+                for(size_t i = 0; i < wrappedLines.size(); i++)
+                {
+                  const auto lineBounds = font.getTextBounds(wrappedLines[i]);
+                  const auto lineTop = static_cast<int>(i) * lineHeight + lineBounds.top;
+                  const auto lineBottom = static_cast<int>(i) * lineHeight + lineBounds.bottom;
 
-              if(width == LV_SIZE_CONTENT) {
-                auto maxW = 0;
-                for(const auto& line : wrappedLines) {
-                  maxW = std::max(maxW, font.getStringWidth(line));
+                  if(first)
+                  {
+                    top = lineTop;
+                    bottom = lineBottom;
+                    first = false;
+                  }
+                  else
+                  {
+                    top = std::min(top, lineTop);
+                    bottom = std::max(bottom, lineBottom);
+                  }
                 }
-                lv_obj_set_width(handle, maxW);
+
+                lv_obj_set_height(handle, std::max(bottom - top, 0));
+                updateLayout = true;
               }
+
+              if(updateLayout)
+                lv_obj_update_layout(handle);
             }
-          });      (setModifier(args), ...);
+          });
+      (setModifier(args), ...);
     }
 
     void setModifier(Width w) const override;
