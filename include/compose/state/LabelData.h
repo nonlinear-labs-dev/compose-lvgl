@@ -13,7 +13,7 @@ namespace Compose
     Reactive::Var<TextAlign> align;
     Reactive::Var<VerticalAlign> verticalAlign = VerticalAlign::CENTER();
     Reactive::Var<PrimaryColor> primaryColor;
-    Reactive::Var<Width> width = Width::FULL();
-    Reactive::Var<Height> height = Height::FULL();
+    Reactive::Var<Width> width;
+    Reactive::Var<Height> height;
   };
 }

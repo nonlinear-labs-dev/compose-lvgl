@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -15,17 +14,6 @@ namespace Compose
   class FreeTypeFont
   {
    public:
-    struct TextBounds
-    {
-      int top {};
-      int bottom {};
-
-      [[nodiscard]] int height() const
-      {
-        return std::max(bottom - top, 0);
-      }
-    };
-
     FreeTypeFont(const std::string &fontPath, int height);
     virtual ~FreeTypeFont();
 
@@ -44,7 +32,6 @@ namespace Compose
     [[nodiscard]] int getFontHeight() const;
     [[nodiscard]] int getFontSize() const;
     [[nodiscard]] int getMaxBottomOffset(const Glib::ustring &str) const;
-    [[nodiscard]] TextBounds getTextBounds(const Glib::ustring &str) const;
     [[nodiscard]] int getCapHeightPx() const;
     [[nodiscard]] int getAscenderPx() const;
 

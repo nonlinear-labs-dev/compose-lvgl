@@ -37,7 +37,6 @@ namespace Compose
             const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
             const auto [width] = labelData.width.get();
             const auto [height] = labelData.height.get();
-            auto updateLayout = false;
 
             const auto &fontDesc = labelData.font.get();
             const auto &font = s_fontStorage->getFont(fontDesc);
@@ -47,19 +46,12 @@ namespace Compose
             {
               const auto textWidth = font.getStringWidth(text.text);
               lv_obj_set_width(handle, textWidth);
-              updateLayout = true;
             }
 
             if(height == LV_SIZE_CONTENT)
             {
-              const auto textBounds = font.getTextBounds(text.text);
-              lv_obj_set_height(handle, textBounds.height());
-              updateLayout = true;
-            }
-
-            if(updateLayout)
-            {
-              lv_obj_update_layout(handle);
+              const auto textHeight = font.getFontHeight();
+              lv_obj_set_height(handle, textHeight);
             }
           });
       (setModifier(args), ...);
