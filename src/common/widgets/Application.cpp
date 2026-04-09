@@ -41,7 +41,7 @@ namespace Compose
           lv_timer_handler();
           return true;
         },
-        5);
+        16);
 
     const auto loop = Glib::MainLoop::create();
     loop->run();
