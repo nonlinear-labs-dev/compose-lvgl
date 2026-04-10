@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <vector>
 #include <glibmm/ustring.h>
 #include <ft2build.h>
 #include <freetype/freetype.h>
@@ -13,6 +14,7 @@ namespace Compose
   {
    public:
     FreeTypeFont(const std::string &fontPath, int height);
+    FreeTypeFont(std::vector<std::string> fontPaths, int height);
     virtual ~FreeTypeFont();
 
     typedef int32_t tCoordinate;
@@ -37,10 +39,11 @@ namespace Compose
     [[nodiscard]] const std::string &getFontPath() const;
 
    private:
-    FT_Face m_face {};
+    std::vector<FT_Face> m_faces;
     int m_fontSize;
-    std::string m_fontPath;
+    std::vector<std::string> m_fontPaths;
 
     tCoordinate drawLetter(FT_GlyphSlot slot, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
+    [[nodiscard]] FT_Face findFaceForChar(char32_t c) const;
   };
 }

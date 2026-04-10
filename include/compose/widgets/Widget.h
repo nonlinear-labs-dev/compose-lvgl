@@ -10,6 +10,7 @@
 #include "compose/modifiers/Scrollable.h"
 #include "compose/modifiers/StyleSheets.h"
 
+#include <stdexcept>
 #include <type_traits>
 
 namespace Compose
@@ -54,11 +55,23 @@ namespace Compose
       {
         if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
         {
-          setModifier(Width::FULL());
+          auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
+          auto defaultWidth = Width::FULL();
+          if(parentWidth == LV_SIZE_CONTENT)
+          {
+            defaultWidth = Width::FIT_CONTENT();
+          }
+          setModifier(defaultWidth);
         }
         else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
         {
-          setModifier(Height::FULL());
+          auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
+          auto defaultHeight = Height::FULL();
+          if(parentHeight == LV_SIZE_CONTENT)
+          {
+            defaultHeight = Height::FIT_CONTENT();
+          }
+          setModifier(defaultHeight);
         }
       }
     }
@@ -338,6 +351,23 @@ namespace Compose
 
     void setModifier(SizePercentage s) const
     {
+      if(auto parent = lv_obj_get_parent(getHandle()))
+      {
+        auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
+        if(parentWidth == LV_SIZE_CONTENT)
+        {
+          LV_ASSERT_MSG(false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+          throw std::logic_error("Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+        }
+
+        auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
+        if(parentHeight == LV_SIZE_CONTENT)
+        {
+          LV_ASSERT_MSG(false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+          throw std::logic_error("Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+        }
+      }
+
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
     }
@@ -379,6 +409,16 @@ namespace Compose
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
+        if(LV_COORD_IS_PCT(w.it))
+        {
+          auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
+          if(parentWidth == LV_SIZE_CONTENT)
+          {
+            LV_ASSERT_MSG(false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+            throw std::logic_error("Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+          }
+        }
+
         if(isRow(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
         {
           lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
@@ -389,9 +429,22 @@ namespace Compose
 
     virtual void setModifier(Height h) const
     {
-      if(const auto parent = lv_obj_get_parent(getHandle()); isColumn(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
+      if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        if(LV_COORD_IS_PCT(h.it))
+        {
+          auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
+          if(parentHeight == LV_SIZE_CONTENT)
+          {
+            LV_ASSERT_MSG(false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+            throw std::logic_error("Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+          }
+        }
+
+        if(isColumn(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
+        {
+          lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        }
       }
       lv_obj_set_height(getHandle(), h.it);
     }

@@ -23,6 +23,8 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
+    constexpr auto c_frameIntervalInMs = 16;
+
     Window window { m_position, m_rotation };
 
     const Reactive::Computations c;
@@ -49,7 +51,7 @@ namespace Compose
 
           return keepRunning;
         },
-        5);
+        c_frameIntervalInMs);
 
     loop->run();
   }

@@ -27,8 +27,10 @@ namespace Compose
 
   struct Style
   {
-    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom, Padding,
+    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom, Padding,
                                   Border, BorderSides, RoundedCorner, Scrollable>;
+    using InheritableProperties = std::tuple<PrimaryColor, Font, TextAlign>;
+
     MakeOptional<Properties>::type properties;
     std::vector<const StyleSheet*> sheets;
 
@@ -37,7 +39,17 @@ namespace Compose
       std::get<std::optional<P>>(properties) = p;
     }
 
-    Style applyClasses(auto... names) const;
+    template <typename... P> void copyFrom(const Style& other, std::tuple<P...>)
+    {
+      ((std::get<std::optional<P>>(properties) = std::get<std::optional<P>>(other.properties)), ...);
+    }
+
+    Style inherit(auto... names) const;
+    Style add(auto... names) const;
+    [[nodiscard]] std::string dump(bool onlyNonNullOptProperties = true) const;
+
+   private:
+    void processNames(auto... names);
   };
 
   struct StyleSheet
@@ -69,27 +81,48 @@ namespace Compose
     return StyleSheet { name, p... };
   }
 
-  Style Style::applyClasses(auto... names) const
+  void Style::processNames(auto... names)
   {
     auto doNothing = [] {};
-    Style ret = *this;
-
     for(const auto& name : { names... })
     {
+      std::vector<const StyleSheet*> nestedSheets;
+
       for(auto* sheet : sheets)
       {
         for(const auto& nestedSheet : sheet->children)
         {
-          if(std::count(ret.sheets.begin(), ret.sheets.end(), &nestedSheet) == 0)
-            ret.sheets.push_back(&nestedSheet);
-
           if(nestedSheet.name == name)
           {
-            std::apply([&](const auto&... a) { ((a.has_value() ? ret.set(a.value()) : doNothing()), ...); }, nestedSheet.styles);
+            if(std::count(sheets.begin(), sheets.end(), &nestedSheet) == 0)
+              nestedSheets.push_back(&nestedSheet);
+
+            std::apply([&](const auto&... a) { ((a.has_value() ? set(a.value()) : doNothing()), ...); }, nestedSheet.styles);
           }
         }
       }
+
+      for(auto* sheet : nestedSheets)
+        if(std::count(sheets.begin(), sheets.end(), sheet) == 0)
+          sheets.push_back(sheet);
     }
+  }
+
+  Style Style::inherit(auto... names) const
+  {
+    auto doNothing = [] {};
+    Style ret;
+    ret.sheets = sheets;
+    ret.copyFrom(*this, InheritableProperties {});
+    ret.processNames(names...);
+    return ret;
+  }
+
+  Style Style::add(auto... names) const
+  {
+    auto doNothing = [] {};
+    Style ret = *this;
+    ret.processNames(names...);
     return ret;
   }
 }

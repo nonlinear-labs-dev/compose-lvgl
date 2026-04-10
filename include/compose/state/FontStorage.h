@@ -2,13 +2,35 @@
 #include "compose/FreeTypeFont.h"
 #include <functional>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 #include <compose/modifiers/Font.h>
 
 namespace Compose
 {
   struct FontStorage
   {
-    using tPathBuilder = std::function<std::string(Font)>;
+    using tSinglePathBuilder = std::function<std::string(const Font &)>;
+    using tPathBuilder = std::function<std::vector<std::string>(const Font &)>;
+
+    explicit FontStorage(tSinglePathBuilder builder)
+        : FontStorage([builder = std::move(builder)](const Font &font) {
+            std::vector<std::string> paths;
+            paths.reserve(1 + font.fallbackBaseNames.size());
+            paths.push_back(builder(font));
+
+            for(const auto &fallbackName : font.fallbackBaseNames)
+            {
+              auto fallbackFont = font;
+              fallbackFont.baseName = fallbackName;
+              fallbackFont.fallbackBaseNames.clear();
+              paths.push_back(builder(fallbackFont));
+            }
+
+            return paths;
+          })
+    {
+    }
 
     explicit FontStorage(tPathBuilder builder)
         : buildPath(std::move(builder))
