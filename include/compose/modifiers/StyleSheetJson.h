@@ -32,6 +32,9 @@ namespace Compose
   void to_json(nlohmann::json& j, const Border& in);
   void from_json(const nlohmann::json& j, Border& out);
 
+  void to_json(nlohmann::json& j, const BorderWidth& in);
+  void to_json(nlohmann::json& j, const BorderColor& in);
+
   void to_json(nlohmann::json& j, const BorderSides& in);
   void from_json(const nlohmann::json& j, BorderSides& out);
 

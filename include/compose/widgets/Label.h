@@ -18,7 +18,7 @@ namespace Compose
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit Label(BaseWidget &parent, tArgs... args)
+    explicit Label(BaseWidget &parent, tArgs &&... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       setLabelRenderingFunction();
@@ -52,7 +52,7 @@ namespace Compose
           lv_obj_set_height(handle, textHeight);
         }
       });
-      (setModifier(args), ...);
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     void setModifier(Width w) const override;

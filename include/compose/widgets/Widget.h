@@ -94,23 +94,23 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(Window &it, tArgs... args)
+    explicit Widget(Window &it, tArgs &&... args)
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
       applyDefaultStyle(BaseWidget::getHandle());
       Widget::setModifier(BackgroundColor::TRANSPARENT());
-      (setModifier(args), ...);
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     template <typename... tArgs>
-    explicit Widget(BaseWidget &w, tArgs... args)
+    explicit Widget(BaseWidget &w, tArgs &&... args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
-      (setModifier(args), ...);
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     explicit Widget(WidgetType *w)
@@ -286,7 +286,17 @@ namespace Compose
 
     void setModifier(Border border) const
     {
+      setModifier(BorderWidth { border.width });
+      setModifier(BorderColor { border.color });
+    }
+
+    void setModifier(BorderWidth border) const
+    {
       lv_obj_set_style_border_width(getHandle(), border.width, LV_PART_MAIN);
+    }
+
+    void setModifier(BorderColor border) const
+    {
       lv_obj_set_style_border_color(getHandle(),
                                     lv_color_t {
                                         .blue = border.color.b,

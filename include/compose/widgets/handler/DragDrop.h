@@ -168,12 +168,22 @@ namespace Compose
         using Setter = std::function<void(const nlohmann::json &)>;
 
         explicit Target(DragDropForContent *self);
-        ~Target();
+
+        struct Data
+        {
+          Data(lv_obj_t *handle, std::string type);
+          ~Data();
+
+          void setSetter(const Setter &setter);
+
+          lv_obj_t *m_handle;
+          std::string m_type;
+          Setter m_setter = [](const nlohmann::json &) {};
+        };
 
         void operator<<(const Setter &cb);
 
         DragDropForContent *self;
-        bool m_registered = false;
       };
 
       struct BuildDragWidget

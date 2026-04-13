@@ -11,9 +11,11 @@
 #include "Scrollable.h"
 
 #include <optional>
+#include <string_view>
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <functional>
 
 namespace Compose
 {
@@ -27,9 +29,8 @@ namespace Compose
 
   struct Style
   {
-    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom, Padding,
-                                  Border, BorderSides, RoundedCorner, Scrollable>;
-    using InheritableProperties = std::tuple<PrimaryColor, Font, TextAlign>;
+    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom,
+                                  Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
     MakeOptional<Properties>::type properties;
     std::vector<const StyleSheet*> sheets;
@@ -44,19 +45,27 @@ namespace Compose
       ((std::get<std::optional<P>>(properties) = std::get<std::optional<P>>(other.properties)), ...);
     }
 
-    Style inherit(auto... names) const;
+    Style& add(auto... names);
     Style add(auto... names) const;
+    Style inherit(auto... names) const;
+    Style inherit() const;
     [[nodiscard]] std::string dump(bool onlyNonNullOptProperties = true) const;
 
    private:
-    void processNames(auto... names);
+    void processClasses(auto... names);
   };
 
   struct StyleSheet
   {
+    static std::size_t calcNameHash(std::string_view value)
+    {
+      return std::hash<std::string_view> {}(value);
+    }
+
     template <typename... Args>
     StyleSheet(const std::string& name, Args&&... args)
         : name(name)
+        , nameHash(calcNameHash(this->name))
     {
       (apply(std::move(args)), ...);
     }
@@ -72,6 +81,7 @@ namespace Compose
     }
 
     std::string name;
+    std::size_t nameHash;
     MakeOptional<Style::Properties>::type styles;
     std::vector<StyleSheet> children;
   };
@@ -81,18 +91,21 @@ namespace Compose
     return StyleSheet { name, p... };
   }
 
-  void Style::processNames(auto... names)
+  void Style::processClasses(auto... classes)
   {
+    std::vector<const StyleSheet*> nestedSheets;
+
     auto doNothing = [] {};
-    for(const auto& name : { names... })
+    for(const auto& name : { std::string_view { classes }... })
     {
-      std::vector<const StyleSheet*> nestedSheets;
+      const std::string_view requestedName = name;
+      const auto requestedHash = StyleSheet::calcNameHash(requestedName);
 
       for(auto* sheet : sheets)
       {
         for(const auto& nestedSheet : sheet->children)
         {
-          if(nestedSheet.name == name)
+          if(nestedSheet.nameHash == requestedHash && nestedSheet.name == requestedName)
           {
             if(std::count(sheets.begin(), sheets.end(), &nestedSheet) == 0)
               nestedSheets.push_back(&nestedSheet);
@@ -101,28 +114,34 @@ namespace Compose
           }
         }
       }
-
-      for(auto* sheet : nestedSheets)
-        if(std::count(sheets.begin(), sheets.end(), sheet) == 0)
-          sheets.push_back(sheet);
     }
+
+    for(auto* sheet : nestedSheets)
+      if(std::count(sheets.begin(), sheets.end(), sheet) == 0)
+        sheets.push_back(sheet);
   }
 
-  Style Style::inherit(auto... names) const
+  Style& Style::add(auto... classes)
   {
-    auto doNothing = [] {};
-    Style ret;
-    ret.sheets = sheets;
-    ret.copyFrom(*this, InheritableProperties {});
-    ret.processNames(names...);
-    return ret;
+    processClasses(classes...);
+    return *this;
   }
-
-  Style Style::add(auto... names) const
+  Style Style::add(auto... classes) const
   {
-    auto doNothing = [] {};
     Style ret = *this;
-    ret.processNames(names...);
+    ret.processClasses(classes...);
     return ret;
+  }
+
+  Style Style::inherit(auto... classes) const
+  {
+    Style ret { .sheets = sheets };
+    ret.processClasses(classes...);
+    return ret;
+  }
+
+  inline Style Style::inherit() const
+  {
+    return { .sheets = sheets };
   }
 }

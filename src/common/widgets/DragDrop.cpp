@@ -55,6 +55,11 @@ namespace Compose
     {
       return std::string("DragDropSource_") + type;
     }
+
+    std::string targetKeyForType(const std::string &type)
+    {
+      return std::string("DragDropTarget_") + type;
+    }
   }
 
   DragDropContext &DragDropContext::get()
@@ -443,22 +448,30 @@ namespace Compose
   {
   }
 
-  DragDrop::DragDropForContent::Target::~Target()
+  DragDrop::DragDropForContent::Target::Data::Data(lv_obj_t *handle, std::string type)
+      : m_handle(handle)
+      , m_type(std::move(type))
   {
-    if(m_registered)
-    {
-      DragDropContext::get().removeTarget(self->ownerHandle, self->type);
-      m_registered = false;
-    }
+    DragDropContext::get().addTarget(
+        m_handle, m_type, [this](const nlohmann::json &content) { m_setter(content); });
+  }
+
+  DragDrop::DragDropForContent::Target::Data::~Data()
+  {
+    DragDropContext::get().removeTarget(m_handle, m_type);
+  }
+
+  void DragDrop::DragDropForContent::Target::Data::setSetter(const Setter &setter)
+  {
+    m_setter = setter;
   }
 
   void DragDrop::DragDropForContent::Target::operator<<(const Setter &cb)
   {
-    if(!m_registered)
-    {
-      DragDropContext::get().addTarget(self->ownerHandle, self->type, cb);
-      m_registered = true;
-    }
+    const auto key = targetKeyForType(self->type);
+    BaseWidget owner(self->ownerHandle);
+    auto &data = owner.ensureDataForKeyExistsOwning<Data>(key, [this] { return new Data(self->ownerHandle, self->type); });
+    data.setSetter(cb);
   }
 
   DragDrop::DragDropForContent::BuildDragWidget::BuildDragWidget(DragDropForContent *self)

@@ -6,8 +6,11 @@
 #include "tools/json.h"
 
 #include <fstream>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <unordered_map>
+#include <unordered_set>
 #include <variant>
 
 namespace
@@ -76,6 +79,8 @@ namespace
       return Compose::FlexAlign::END_START();
     if(value == "SPACE_EVENLY")
       return Compose::FlexAlign::SPACE_EVENLY();
+    if(value == "SPACE_BETWEEN")
+      return Compose::FlexAlign::SPACE_BETWEEEN();
 
     throw std::invalid_argument("invalid FlexAlign: " + value);
   }
@@ -83,6 +88,74 @@ namespace
 
 namespace Compose
 {
+  using OrderedJson = nlohmann::ordered_json;
+  using ValueAssignments = std::unordered_map<std::string, OrderedJson>;
+
+  static bool isClassName(const std::string& key)
+  {
+    return !key.empty() && key.front() == '.';
+  }
+
+  static bool isValueAssignment(const std::string& key)
+  {
+    return !key.empty() && key.front() == '@';
+  }
+
+  static bool isMergedClassName(const std::string& key)
+  {
+    return key.size() > 2 && key[0] == '&' && key[1] == '.';
+  }
+
+  static std::string removePrefix(const std::string& key)
+  {
+    return key.substr(1);
+  }
+
+  static void logStyleSheetError(const std::string& styleName, const std::string& key, const std::string& reason)
+  {
+    std::cerr << "StyleSheetJson error in '" << styleName << "' for key '" << key << "': " << reason << std::endl;
+  }
+
+  static OrderedJson resolveAssignedValue(const OrderedJson& value, const ValueAssignments& assignments, std::unordered_set<std::string>& resolutionPath)
+  {
+    if(value.is_string())
+    {
+      const auto asString = value.get<std::string>();
+      if(isValueAssignment(asString))
+      {
+        const auto assignmentName = removePrefix(asString);
+        if(const auto it = assignments.find(assignmentName); it != assignments.end())
+        {
+          if(resolutionPath.contains(assignmentName))
+            throw std::invalid_argument("cyclic value assignment detected for @" + assignmentName);
+
+          resolutionPath.insert(assignmentName);
+          auto resolved = resolveAssignedValue(it->second, assignments, resolutionPath);
+          resolutionPath.erase(assignmentName);
+          return resolved;
+        }
+      }
+    }
+
+    if(value.is_object())
+    {
+      auto resolved = value;
+      for(auto& [nestedKey, nestedValue] : resolved.items())
+        nestedValue = resolveAssignedValue(nestedValue, assignments, resolutionPath);
+      return resolved;
+    }
+
+    if(value.is_array())
+    {
+      auto resolved = value;
+      for(auto& nestedValue : resolved)
+        nestedValue = resolveAssignedValue(nestedValue, assignments, resolutionPath);
+      return resolved;
+    }
+
+    return value;
+  }
+
   void to_json(nlohmann::json& j, const Color& in)
   {
     j = "#" + in.toHEXString();
@@ -247,6 +320,16 @@ namespace Compose
     out = Border { .width = j.at("width").get<int>(), .color = j.at("color").get<Color>() };
   }
 
+  void to_json(nlohmann::json& j, const BorderWidth& in)
+  {
+    j = in.width;
+  }
+
+  void to_json(nlohmann::json& j, const BorderColor& in)
+  {
+    j = in.color;
+  }
+
   void to_json(nlohmann::json& j, const BorderSides& in)
   {
     j = nlohmann::json::array();
@@ -360,6 +443,8 @@ namespace Compose
       j = "END_START";
     else if(in == FlexAlign::SPACE_EVENLY())
       j = "SPACE_EVENLY";
+    else if(in == FlexAlign::SPACE_BETWEEEN())
+      j = "SPACE_BETWEEN";
     else
       j = nlohmann::json { { "main", in.main }, { "cross", in.cross }, { "track_cross", in.track_cross } };
   }
@@ -432,6 +517,8 @@ namespace Compose
     addProperty(ret, "margin-bottom", std::get<std::optional<MarginBottom>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "padding", std::get<std::optional<Padding>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "border", std::get<std::optional<Border>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "border-width", std::get<std::optional<BorderWidth>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "border-color", std::get<std::optional<BorderColor>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "border-sides", std::get<std::optional<BorderSides>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "rounded-corner", std::get<std::optional<RoundedCorner>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "scrollable", std::get<std::optional<Scrollable>>(properties), onlyNonNullOptProperties);
@@ -439,8 +526,8 @@ namespace Compose
     return ret.dump();
   }
 
-  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom,
-                                    Padding, Border, BorderSides, RoundedCorner, Scrollable>;
+  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
+                                    MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
   {
@@ -489,6 +576,12 @@ namespace Compose
     if(key == "border")
       return value.get<Border>();
 
+    if(key == "border-width")
+      return BorderWidth { value.get<int>() };
+
+    if(key == "border-color")
+      return BorderColor { value.get<Color>() };
+
     if(key == "border-sides")
       return value.get<BorderSides>();
 
@@ -501,22 +594,55 @@ namespace Compose
     return {};
   }
 
-  static StyleSheet parseStyleSheet(const std::string& name, const nlohmann::json& definition)
+  static StyleSheet parseStyleSheet(const std::string& name, const OrderedJson& definition, const ValueAssignments& inheritedAssignments = {},
+                                    std::vector<StyleSheet>* sameContextSheets = nullptr)
   {
     if(!definition.is_object())
       throw std::invalid_argument("Style definition for '" + name + "' must be an object");
 
     StyleSheet ret { name };
+    auto assignments = inheritedAssignments;
 
     for(const auto& [key, value] : definition.items())
     {
-      if(auto modifier = parseModifier(key, value))
+      if(isValueAssignment(key))
       {
-        std::visit([&](auto&& m) { ret.apply(std::forward<decltype(m)>(m)); }, modifier.value());
+        const auto assignmentName = removePrefix(key);
+        if(assignmentName.empty())
+          logStyleSheetError(name, key, "value assignment name cannot be empty");
+        else
+          assignments[assignmentName] = value;
       }
-      else
+    }
+
+    for(const auto& [key, value] : definition.items())
+    {
+      if(isMergedClassName(key))
       {
-        ret.apply(parseStyleSheet(key, value));
+        const auto mergedClassName = removePrefix(key.substr(1));
+        if(mergedClassName.empty())
+          logStyleSheetError(name, key, "class name cannot be empty");
+        else if(sameContextSheets)
+          sameContextSheets->emplace_back(parseStyleSheet(name + "-" + mergedClassName, value, assignments, sameContextSheets));
+        else
+          logStyleSheetError(name, key, "cannot resolve merged class without context");
+      }
+      else if(!isValueAssignment(key) && isClassName(key))
+      {
+        const auto className = removePrefix(key);
+        if(className.empty())
+          logStyleSheetError(name, key, "class name cannot be empty");
+        else
+          ret.apply(parseStyleSheet(className, value, assignments, &ret.children));
+      }
+      else if(!isValueAssignment(key))
+      {
+        std::unordered_set<std::string> resolutionPath;
+        const auto resolvedValue = resolveAssignedValue(value, assignments, resolutionPath);
+        if(auto modifier = parseModifier(key, nlohmann::json(resolvedValue)))
+          std::visit([&](auto&& m) { ret.apply(std::forward<decltype(m)>(m)); }, modifier.value());
+        else
+          logStyleSheetError(name, key, "unknown property");
       }
     }
 
@@ -533,7 +659,7 @@ namespace Compose
       if(!stream.is_open())
         throw std::invalid_argument("Could not open style sheet file: " + file.string());
 
-      nlohmann::json root;
+      OrderedJson root;
       stream >> root;
 
       if(!root.is_object())
@@ -541,7 +667,12 @@ namespace Compose
 
       for(const auto& [styleName, styleDef] : root.items())
       {
-        ret.emplace_back(parseStyleSheet(styleName, styleDef));
+        if(styleName == ".")
+          logStyleSheetError("root", styleName, "class name cannot be empty");
+        else if(isClassName(styleName))
+          ret.emplace_back(parseStyleSheet(removePrefix(styleName), styleDef, {}, &ret));
+        else
+          ret.emplace_back(parseStyleSheet(styleName, styleDef, {}, &ret));
       }
     }
 
