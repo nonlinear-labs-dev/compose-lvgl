@@ -375,7 +375,7 @@ namespace Compose
       // Ensure content extent is up-to-date before deciding how many rows to materialize.
       lv_obj_update_layout(listHandle);
       const auto window = buildRenderWindow(listHandle);
-      if(!forceRebuildAll && firstMappedIndex == window.first)
+      if(!forceRebuildAll && firstMappedIndex == window.first && hasValidStructure(listHandle, window.renderedItems))
         return;
       refreshRowsAndSpacing(listHandle, forceRebuildAll, window);
       updateListLayout(listHandle);
