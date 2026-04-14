@@ -5,6 +5,7 @@
 #include "src/core/lv_obj_pos.h"
 
 #include <algorithm>
+#include <cassert>
 
 namespace Compose
 {
@@ -199,8 +200,16 @@ namespace Compose
       const auto width = coords.x2 - coords.x1 + 1;
       const auto height = coords.y2 - coords.y1 + 1;
       lv_obj_set_size(m_dragWidget, width, height);
-      lv_obj_set_style_bg_color(m_dragWidget, lv_obj_get_style_bg_color(widget, LV_PART_MAIN), LV_PART_MAIN);
-      lv_obj_set_style_bg_opa(m_dragWidget, std::min(lv_obj_get_style_bg_opa(widget, LV_PART_MAIN), static_cast<lv_opa_t>(LV_OPA_70)), LV_PART_MAIN);
+#if !LV_USE_SNAPSHOT
+#error "LV_USE_SNAPSHOT must be enabled for default drag proxy rendering"
+#else
+      m_snapshot = lv_snapshot_take(widget, LV_COLOR_FORMAT_ARGB8888);
+      assert(m_snapshot != nullptr);
+      auto *image = lv_image_create(m_dragWidget);
+      lv_image_set_src(image, m_snapshot);
+      lv_obj_center(image);
+      lv_obj_set_style_bg_opa(m_dragWidget, LV_OPA_TRANSP, LV_PART_MAIN);
+#endif
     }
 
     lv_obj_set_pos(m_dragWidget, rootX - offsetX, rootY - offsetY);
@@ -212,6 +221,12 @@ namespace Compose
     {
       lv_obj_del(m_dragWidget);
       m_dragWidget = nullptr;
+    }
+
+    if(m_snapshot)
+    {
+      lv_draw_buf_destroy(m_snapshot);
+      m_snapshot = nullptr;
     }
   }
 

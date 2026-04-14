@@ -44,6 +44,7 @@ namespace Compose
       DragWidgetBuilder m_dragWidgetBuilder;
       lv_obj_t *m_currentTarget = nullptr;
       lv_obj_t *m_dragWidget = nullptr;
+      lv_draw_buf_t *m_snapshot = nullptr;
       lv_point_t m_dragPosition;
       std::pair<int, int> m_dragWidgetOffset;
     };
