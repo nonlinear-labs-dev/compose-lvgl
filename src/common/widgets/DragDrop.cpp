@@ -12,6 +12,7 @@ namespace Compose
   namespace
   {
     constexpr int c_dragDetectionHysteresis = 20;
+    constexpr int c_dragAxisDecisionHysteresis = 4;
 
     bool isPointInside(lv_obj_t *widget, const lv_point_t &point)
     {
@@ -60,6 +61,56 @@ namespace Compose
     std::string targetKeyForType(const std::string &type)
     {
       return std::string("DragDropTarget_") + type;
+    }
+
+    bool isDragStartAxisMatching(const DragDrop::DragDropForContent::Source::StartAxis::Direction axis, int xDiff, int yDiff)
+    {
+      const auto absX = std::abs(xDiff);
+      const auto absY = std::abs(yDiff);
+      auto isMatching = true;
+      if(axis == DragDrop::DragDropForContent::Source::StartAxis::Horizontal)
+      {
+        isMatching = absX > absY;
+      }
+      else if(axis == DragDrop::DragDropForContent::Source::StartAxis::Vertical)
+      {
+        isMatching = absY > absX;
+      }
+      return isMatching;
+    }
+
+    void suppressScrollableAncestors(DragDrop::DragDropForContent::Source::Data *self)
+    {
+      if(!self->m_suppressedScrollables.empty())
+      {
+        return;
+      }
+
+      auto *candidate = lv_obj_get_parent(self->m_handle);
+      while(candidate)
+      {
+        if(lv_obj_has_flag(candidate, LV_OBJ_FLAG_SCROLLABLE))
+        {
+          lv_obj_stop_scroll_anim(candidate);
+          lv_obj_remove_flag(candidate, LV_OBJ_FLAG_SCROLLABLE);
+          self->m_suppressedScrollables.push_back(candidate);
+        }
+
+        candidate = lv_obj_get_parent(candidate);
+      }
+    }
+
+    void restoreScrollableAncestors(DragDrop::DragDropForContent::Source::Data *self)
+    {
+      for(auto *suppressed : self->m_suppressedScrollables)
+      {
+        if(suppressed && lv_obj_is_valid(suppressed))
+        {
+          lv_obj_add_flag(suppressed, LV_OBJ_FLAG_SCROLLABLE);
+        }
+      }
+
+      self->m_suppressedScrollables.clear();
     }
   }
 
@@ -358,11 +409,12 @@ namespace Compose
   }
 
   DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter,
-                                                   const DragDropContext::DragWidgetBuilder &dragWidgetBuilder)
+                                                   const DragDropContext::DragWidgetBuilder &dragWidgetBuilder, StartAxis::Direction startAxis)
       : m_handle(handle)
       , m_type(std::move(type))
       , m_getter(getter)
       , m_dragWidgetBuilder(dragWidgetBuilder)
+      , m_startAxis(startAxis)
       , m_offset { 0, 0 }
   {
     m_pressHandler = lv_obj_add_event_cb(
@@ -377,6 +429,8 @@ namespace Compose
               lv_point_t point;
               lv_indev_get_point(indev, &point);
               self->m_startPos = point;
+              self->m_startDecision = StartDecision::Undecided;
+              restoreScrollableAncestors(self);
 
               lv_area_t widgetCoords;
               lv_obj_get_coords(self->m_handle, &widgetCoords);
@@ -404,8 +458,17 @@ namespace Compose
                 const auto yDiff = point.y - self->m_startPos->y;
                 const auto distance = std::sqrt(xDiff * xDiff + yDiff * yDiff);
                 const auto isDragging = DragDropContext::get().isDragging();
+                if(!isDragging && self->m_startDecision == StartDecision::Undecided && distance > c_dragAxisDecisionHysteresis)
+                {
+                  const auto hasMatchingStartAxis = isDragStartAxisMatching(self->m_startAxis, xDiff, yDiff);
+                  self->m_startDecision = hasMatchingStartAxis ? StartDecision::AllowDrag : StartDecision::BlockDrag;
+                  if(self->m_startDecision == StartDecision::AllowDrag && self->m_startAxis != StartAxis::Any)
+                  {
+                    suppressScrollableAncestors(self);
+                  }
+                }
 
-                if(!isDragging && distance > c_dragDetectionHysteresis)
+                if(!isDragging && self->m_startDecision == StartDecision::AllowDrag && distance > c_dragDetectionHysteresis)
                 {
                   DragDropContext::get().setSource(self->m_handle, self->m_type, self->m_offset.x, self->m_offset.y, point.x, point.y, self->m_getter, self->m_dragWidgetBuilder);
                 }
@@ -426,8 +489,10 @@ namespace Compose
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
+        restoreScrollableAncestors(self);
         DragDropContext::get().resetSource(self->m_handle);
         self->m_startPos.reset();
+        self->m_startDecision = StartDecision::Undecided;
       }
     };
 
@@ -437,6 +502,8 @@ namespace Compose
 
   DragDrop::DragDropForContent::Source::Data::~Data()
   {
+    restoreScrollableAncestors(this);
+
     if(lv_obj_is_valid(m_handle))
     {
       lv_obj_remove_event_dsc(m_handle, m_pressHandler);
@@ -451,11 +518,24 @@ namespace Compose
   {
   }
 
+  void DragDrop::DragDropForContent::Source::setModifier(StartAxis axis)
+  {
+    m_startAxis = axis.it;
+
+    const auto key = sourceKeyForType(self->type);
+    BaseWidget owner(self->ownerHandle);
+    if(auto *source = owner.getData<Data>(key))
+    {
+      source->m_startAxis = axis.it;
+    }
+  }
+
   void DragDrop::DragDropForContent::Source::operator<<(const Getter &cb) const
   {
     const auto key = sourceKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
-    owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get()); });
+    owner.ensureDataForKeyExistsOwning<Data>(
+        key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
   }
 
   DragDrop::DragDropForContent::Target::Target(DragDropForContent *self)
@@ -522,6 +602,7 @@ namespace Compose
   {
     source = std::make_unique<Source>(this);
     target = std::make_unique<Target>(this);
+    source->setModifier(m_startAxis);
     cb(this);
   }
 
@@ -530,13 +611,19 @@ namespace Compose
   {
   }
 
-  DragDrop::DragDropForContent &DragDrop::operator()(const std::string &type)
+  DragDrop::DragDropForContent &DragDrop::operator()(const std::string &type, DragDropForContent::Source::StartAxis startAxis)
   {
     if(!m_dragDropForContent->contains(type))
     {
       (*m_dragDropForContent)[type] = std::make_unique<DragDropForContent>(self.getHandle(), type);
     }
 
-    return *m_dragDropForContent->at(type);
+    auto &entry = *m_dragDropForContent->at(type);
+    entry.m_startAxis = startAxis;
+    if(entry.source)
+    {
+      entry.source->setModifier(startAxis);
+    }
+    return entry;
   }
 }

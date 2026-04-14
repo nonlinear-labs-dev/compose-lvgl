@@ -140,28 +140,65 @@ namespace Compose
       {
         using Getter = std::function<std::optional<nlohmann::json>()>;
 
+        struct StartAxis
+        {
+          enum Direction
+          {
+            Any,
+            Horizontal,
+            Vertical
+          } it;
+
+          static constexpr StartAxis ANY()
+          {
+            return { Any };
+          }
+
+          static constexpr StartAxis HORIZONTAL()
+          {
+            return { Horizontal };
+          }
+
+          static constexpr StartAxis VERTICAL()
+          {
+            return { Vertical };
+          }
+        };
+
         explicit Source(DragDropForContent *self);
 
         struct Data
         {
-          Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder);
+          enum class StartDecision
+          {
+            Undecided,
+            AllowDrag,
+            BlockDrag
+          };
+
+          Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder, StartAxis::Direction startAxis);
           ~Data();
 
           lv_obj_t *m_handle;
           std::string m_type;
           Getter m_getter;
           DragDropContext::DragWidgetBuilder m_dragWidgetBuilder;
+          StartAxis::Direction m_startAxis = StartAxis::Any;
+          StartDecision m_startDecision = StartDecision::Undecided;
           std::optional<lv_point_t> m_startPos;
           lv_point_t m_offset;
+          std::vector<lv_obj_t *> m_suppressedScrollables;
           lv_event_dsc_t *m_pressHandler = nullptr;
           lv_event_dsc_t *m_pressingHandler = nullptr;
           lv_event_dsc_t *m_releaseHandler = nullptr;
           lv_event_dsc_t *m_pressLostHandler = nullptr;
         };
 
+        void setModifier(StartAxis axis);
         void operator<<(const Getter &cb) const;
 
         DragDropForContent *self;
+        StartAxis::Direction m_startAxis = StartAxis::Any;
       };
 
       struct Target
@@ -204,9 +241,10 @@ namespace Compose
 
       std::unique_ptr<Source> source;
       std::unique_ptr<Target> target;
+      Source::StartAxis m_startAxis = Source::StartAxis::ANY();
     };
 
-    DragDropForContent &operator()(const std::string &type);
+    DragDropForContent &operator()(const std::string &type, DragDropForContent::Source::StartAxis startAxis = DragDropForContent::Source::StartAxis::ANY());
 
     using tContentMap = std::map<std::string, std::unique_ptr<DragDropForContent>>;
 
@@ -220,6 +258,7 @@ namespace Compose
 #define DRAG_UPDATE it->update << [=]
 #define DRAG_END() it->end << [=]
 #define DRAG_DROP(type) it.dragDrop(type) << [=](Compose::DragDrop::DragDropForContent * it)
+#define DRAG_DROP_VERTICAL(type) it.dragDrop(type, Compose::DragDrop::DragDropForContent::Source::StartAxis::VERTICAL()) << [=](Compose::DragDrop::DragDropForContent * it)
 #define DRAG_SOURCE() (*it->source) << [=]
 #define DROP_TARGET (*it->target) << [=]
 #define DRAG_PROXY_WIDGET() it->buildDragWidget << [=](Compose::Widget & it)
