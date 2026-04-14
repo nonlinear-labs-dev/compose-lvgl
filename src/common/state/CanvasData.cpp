@@ -1,5 +1,6 @@
 #include "compose/state/CanvasData.h"
 #include "compose/widgets/DrawContext.h"
+#include "reactive/Computation.h"
 
 namespace Compose
 {
@@ -42,8 +43,10 @@ namespace Compose
 
       try
       {
-        LVGLDrawContext drawContext(*handle);
-        drawCallback(drawContext, width, height);
+        Reactive::Computation::untracked([&] {
+          LVGLDrawContext drawContext(*handle);
+          drawCallback(drawContext, width, height);
+        });
       }
       catch(...)
       {

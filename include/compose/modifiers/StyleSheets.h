@@ -45,6 +45,11 @@ namespace Compose
       ((std::get<std::optional<P>>(properties) = std::get<std::optional<P>>(other.properties)), ...);
     }
 
+    template <typename T> T get(const T& def) const
+    {
+      return std::get<std::optional<T>>(properties).value_or(def);
+    }
+
     Style& add(auto... names);
     Style add(auto... names) const;
     Style inherit(auto... names) const;

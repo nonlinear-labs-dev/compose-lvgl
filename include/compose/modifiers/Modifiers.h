@@ -30,6 +30,27 @@ namespace Compose
     std::string id;
   };
 
+  struct ItemCount
+  {
+    int it;
+
+    bool operator==(const ItemCount &) const = default;
+  };
+
+  struct ItemHeight
+  {
+    int it;
+
+    bool operator==(const ItemHeight &) const = default;
+  };
+
+  struct ItemWidth
+  {
+    int it;
+
+    bool operator==(const ItemWidth &) const = default;
+  };
+
   struct SizePercentage
   {
     int w;
@@ -338,6 +359,9 @@ namespace Compose
 #define EXPAND(...) it.doAutorun([=] { it.setModifier(Expand(__VA_ARGS__)); });
 #define STYLE_SHEET(...) it.doAutorun([=] { it.setModifier(StyleSheet(__VA_ARGS__)); });
 #define LIST_ID(...) it.doAutorun([=] { it.setModifier(ListEntryID(__VA_ARGS__)); });
+#define ITEM_COUNT(...) it.doAutorun([=] { it.setModifier(ItemCount { __VA_ARGS__ }); });
+#define ITEM_HEIGHT(...) it.doAutorun([=] { it.setModifier(ItemHeight { __VA_ARGS__ }); });
+#define ITEM_WIDTH(...) it.doAutorun([=] { it.setModifier(ItemWidth { __VA_ARGS__ }); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
 #define STYLE(...) it.doAutorun([=] { it.setModifier(__VA_ARGS__); });
 #define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });
