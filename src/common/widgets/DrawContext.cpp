@@ -705,4 +705,76 @@ namespace Compose
     canvas_pixel[2] = baseColor.r;
     canvas_pixel[3] = coverage * baseColor.a;
   }
+
+  void LVGLDrawContext::fillEnvelopeArea(
+    Color color,
+    Point start,
+    Point attackCtrl, Point attackEnd,
+    Point decay1End,
+    Point decay2Ctrl, Point decay2End,
+    Point sustainEnd,
+    Point releaseCtrl, Point releaseEnd,
+    int bottomY)
+{
+    using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+    using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
+
+    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+
+    if(!dsc || !path)
+        return;
+
+    // Start at bottom-left
+    lv_fpoint_t p = { (float) start.x, (float) bottomY };
+    lv_vector_path_move_to(path.get(), &p);
+
+    // Go up to start of envelope
+    p = { (float) start.x, (float) start.y };
+    lv_vector_path_line_to(path.get(), &p);
+
+    // Attack (quad)
+    lv_fpoint_t cp = { (float) attackCtrl.x, (float) attackCtrl.y };
+    lv_fpoint_t ep = { (float) attackEnd.x, (float) attackEnd.y };
+    lv_vector_path_quad_to(path.get(), &cp, &ep);
+
+    // Decay1 (line)
+    p = { (float) decay1End.x, (float) decay1End.y };
+    lv_vector_path_line_to(path.get(), &p);
+
+    // Decay2 (quad)
+    cp = { (float) decay2Ctrl.x, (float) decay2Ctrl.y };
+    ep = { (float) decay2End.x, (float) decay2End.y };
+    lv_vector_path_quad_to(path.get(), &cp, &ep);
+
+    // Sustain (line)
+    p = { (float) sustainEnd.x, (float) sustainEnd.y };
+    lv_vector_path_line_to(path.get(), &p);
+
+    // Release (quad)
+    cp = { (float) releaseCtrl.x, (float) releaseCtrl.y };
+    ep = { (float) releaseEnd.x, (float) releaseEnd.y };
+    lv_vector_path_quad_to(path.get(), &cp, &ep);
+
+    // Go down to baseline
+    p = { (float) releaseEnd.x, (float) bottomY };
+    lv_vector_path_line_to(path.get(), &p);
+
+    // Close back to start
+    lv_vector_path_close(path.get());
+
+    // Fill
+    lv_vector_dsc_set_fill_color(dsc.get(),
+        lv_color_make(color.r, color.g, color.b));
+
+    lv_vector_dsc_set_fill_opa(dsc.get(),
+        static_cast<lv_opa_t>(color.a * 255.0f));
+
+    // No stroke
+    lv_vector_dsc_set_stroke_opa(dsc.get(), LV_OPA_TRANSP);
+
+    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector(dsc.get());
+}
+
 }

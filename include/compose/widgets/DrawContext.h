@@ -118,6 +118,9 @@ namespace Compose
 
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
+    virtual void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
+                          Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
+                          int bottomY) = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -146,6 +149,9 @@ namespace Compose
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
+    void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
+                              Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
+                              int bottomY) override;
 
    private:
     static void drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
