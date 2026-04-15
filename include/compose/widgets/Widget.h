@@ -387,6 +387,9 @@ namespace Compose
 
     LeftClick leftClick { *this, c_leftClickKey };
     LongClick longClick { *this, c_longClickKey };
+    Pressed pressed { *this, c_pressedKey };
+    Pressing pressing { *this, c_pressingKey };
+    Released released { *this, c_releasedKey };
     StateChange stateChange { *this };
   };
 
@@ -426,6 +429,9 @@ namespace Compose
     return true;                                                                                                       \
   };
 #define LONG_CLICK it.longClick << [=]
+#define PRESSED it.pressed << [=]
+#define PRESSING it.pressing << [=]
+#define RELEASED it.released << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
   it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                        \
