@@ -29,20 +29,20 @@ namespace Compose
 
     struct StrokeStyle
     {
-      int width { };
-      Color color { };
+      int width {};
+      Color color {};
     };
 
     struct FillStyle
     {
-      Color color { };
+      Color color {};
     };
 
     struct Bitmap
     {
-      int width { };
-      int height { };
-      int stride { };
+      int width {};
+      int height {};
+      int stride {};
 
       const uint8_t *start;
     };
@@ -99,17 +99,20 @@ namespace Compose
 
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
-                          std::optional<RoundedEnds> ends) = 0;
+                          std::optional<RoundedEnds> ends)
+        = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end, std::optional<RoundedEnds> ends) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
     virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
-                                         int bottomRight) = 0;
+                                         int bottomRight)
+        = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
-                                       int bottomRight) = 0;
+                                       int bottomRight)
+        = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
@@ -121,6 +124,7 @@ namespace Compose
     virtual void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
                           Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
                           int bottomY) = 0;
+    virtual void flushLayer() = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -138,7 +142,7 @@ namespace Compose
     void strokeRect(StrokeStyle style, Rect rect) override;
     void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
     void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
-                                         int bottomRight) override;
+                                 int bottomRight) override;
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
     void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight);
@@ -152,6 +156,7 @@ namespace Compose
     void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
                               Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
                               int bottomY) override;
+    void flushLayer() override;
 
    private:
     static void drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,

@@ -681,6 +681,7 @@ namespace Compose
     if(!draw_buf)
       return;
 
+    flushLayer();
     font.draw(text, x, y,
               [&](int px, int py, unsigned char coverage) { drawFontPixel(*draw_buf, c, px, py, coverage); });
   }
@@ -688,9 +689,6 @@ namespace Compose
   void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
                                       unsigned char coverage)
   {
-    if(coverage == 0)
-      return;
-
     const auto canvas_width = draw_buf.header.w;
     const auto canvas_height = draw_buf.header.h;
     const auto canvas_stride = draw_buf.header.stride;
@@ -700,10 +698,41 @@ namespace Compose
       return;
 
     uint8_t *canvas_pixel = canvas_data + py * canvas_stride + px * 4;
-    canvas_pixel[0] = baseColor.b;
-    canvas_pixel[1] = baseColor.g;
-    canvas_pixel[2] = baseColor.r;
-    canvas_pixel[3] = coverage * baseColor.a;
+    const uint8_t src_r = baseColor.r;
+    const uint8_t src_g = baseColor.g;
+    const uint8_t src_b = baseColor.b;
+    const uint8_t src_a = static_cast<uint8_t>(static_cast<float>(coverage) * baseColor.a);
+
+    if(src_a == 0)
+      return;
+
+    const uint8_t dst_b = canvas_pixel[0];
+    const uint8_t dst_g = canvas_pixel[1];
+    const uint8_t dst_r = canvas_pixel[2];
+    const uint8_t dst_a = canvas_pixel[3];
+
+    const uint16_t src_a_u16 = src_a;
+    const uint16_t dst_a_u16 = dst_a;
+    const uint16_t inv_src_a = 255 - src_a_u16;
+
+    const uint16_t out_a_u16 = src_a_u16 + (dst_a_u16 * inv_src_a + 127) / 255;
+    if(out_a_u16 == 0)
+      return;
+
+    const uint32_t out_a_x255 = static_cast<uint32_t>(out_a_u16) * 255;
+    const uint32_t src_factor = static_cast<uint32_t>(src_a_u16) * 255;
+    const uint32_t dst_factor = static_cast<uint32_t>(dst_a_u16) * inv_src_a;
+
+    canvas_pixel[2] = static_cast<uint8_t>((src_r * src_factor + dst_r * dst_factor + out_a_x255 / 2) / out_a_x255);
+    canvas_pixel[1] = static_cast<uint8_t>((src_g * src_factor + dst_g * dst_factor + out_a_x255 / 2) / out_a_x255);
+    canvas_pixel[0] = static_cast<uint8_t>((src_b * src_factor + dst_b * dst_factor + out_a_x255 / 2) / out_a_x255);
+    canvas_pixel[3] = static_cast<uint8_t>(out_a_u16);
+  }
+
+  void LVGLDrawContext::flushLayer()
+  {
+    lv_canvas_finish_layer(&m_canvas, &m_layer);
+    lv_canvas_init_layer(&m_canvas, &m_layer);
   }
 
   void LVGLDrawContext::fillEnvelopeArea(
