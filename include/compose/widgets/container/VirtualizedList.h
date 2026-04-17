@@ -21,9 +21,7 @@ namespace Compose
 
     template <typename... tArgs>
     explicit VirtualizedList(Widget &parent, Axis axis, tArgs... args)
-        : Widget(parent,
-                 axis == Axis::Vertical ? FlexFlow::VERTICAL() : FlexFlow::HORIZONTAL(),
-                 Scrollable::SCROLL())
+        : Widget(parent, axis == Axis::Vertical ? FlexFlow::VERTICAL() : FlexFlow::HORIZONTAL(), Scrollable::SCROLL())
         , m_axis(axis)
     {
       ensureState();
@@ -36,6 +34,8 @@ namespace Compose
     void setModifier(ItemCount count) const;
     void setOverscan(int overscanItems) const;
     void setItemBuilder(ItemBuilder cb) const;
+
+    virtual void scrollToItem(size_t index) const = 0;
 
     template <typename CB> void setItemBuilder(CB &&cb) const
     {
@@ -54,6 +54,7 @@ namespace Compose
 
    protected:
     void setItemExtent(int extent) const;
+    int getItemExtent() const;
 
    private:
     struct State;
@@ -65,4 +66,4 @@ namespace Compose
   };
 }
 
-#define LIST_ITEM(...) it.item << [=](Compose::Widget &it, __VA_ARGS__)
+#define LIST_ITEM(...) it.item << [=](Compose::Widget & it, __VA_ARGS__)

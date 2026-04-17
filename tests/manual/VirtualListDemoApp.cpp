@@ -6,6 +6,7 @@
 
 #include "VirtualListDemoApp.h"
 #include "compose/widgets/Application.h"
+#include "compose/widgets/Button.h"
 #include "compose/widgets/Label.h"
 #include "compose/widgets/container/HorizontalList.h"
 #include "compose/widgets/container/VerticalList.h"
@@ -30,23 +31,27 @@ int runVirtualListDemo()
   constexpr int c_itemCount = 10000;
   USE_FONT_STORAGE(findDemoFontPath);
 
-  APPLICATION({ 32, 32, 640, 360 })
+  auto selectedItem = std::make_shared<Reactive::Var<int>>(0);
+
+  APPLICATION({ 32, 32, 640, 500 })
   {
     COLUMN(SizePercentage::FULL(), BackgroundColor { Color::BLACK() })
     {
-      LABEL(FixedSize { 200, 32 }, PrimaryColor { Color::WHITE() },
-            TextAlign::LEFT(), VerticalAlign::CENTER(), Padding { 10, 0, 0, 0 })
+      LABEL(FixedSize { 200, 32 }, PrimaryColor { Color::WHITE() }, TextAlign::LEFT(), VerticalAlign::CENTER(),
+            Padding { 10, 0, 0, 0 })
       {
         TEXT("Virtual list demo with 10000 items");
       };
 
+      constexpr auto c_itemHeight = 28;
+
       VERTICAL_LIST(ItemCount { c_itemCount }, Height::PX(220), Width::FULL(), BackgroundColor { Color::BLACK() })
       {
-        ITEM_HEIGHT(28);
-
+        ITEM_HEIGHT(c_itemHeight);
+        SCROLL_TO_ITEM(selectedItem->get());
         LIST_ITEM(int idx)
         {
-          HEIGHT( 28 );
+          HEIGHT(c_itemHeight);
           FLEX_GROW(0);
           PADDING(10, 0, 10, 0);
           BACKGROUND_COLOR(idx % 2 == 0 ? Color::RGB(16, 16, 16) : Color::RGB(24, 24, 24));
@@ -62,7 +67,7 @@ int runVirtualListDemo()
       HORIZONTAL_LIST(ItemCount { c_itemCount }, Height::PX(80), Width::FULL(), BackgroundColor { Color::BLACK() })
       {
         ITEM_WIDTH(120);
-
+        SCROLL_TO_ITEM(selectedItem->get());
         LIST_ITEM(int idx)
         {
           WIDTH(120);
@@ -74,6 +79,35 @@ int runVirtualListDemo()
                 PrimaryColor { idx % 10 == 0 ? Color::GREEN() : Color::WHITE() })
           {
             TEXT(std::format("Item {}", idx));
+          };
+        };
+      };
+
+      ROW()
+      {
+        BUTTON(FixedSize { 100, 100 })
+        {
+          TEXT("Previous");
+
+          LEFT_CLICK(Position)
+          {
+            *selectedItem = std::max(0, *selectedItem.get() - 1);
+            return true;
+          };
+        };
+
+        LABEL(FixedSize { 100, 100 })
+        {
+          TEXT("Item:" + std::to_string(selectedItem->get()));
+        };
+
+        BUTTON(FixedSize { 100, 100 })
+        {
+          TEXT("Next");
+          LEFT_CLICK(Position)
+          {
+            *selectedItem = *selectedItem.get() + 1;
+            return true;
           };
         };
       };

@@ -79,7 +79,8 @@ namespace Compose
 
     void ensureHandlers()
     {
-      nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle), "VirtualList handle invalid while registering handlers");
+      nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle),
+                                   "VirtualList handle invalid while registering handlers");
 
       if(scrollHandler == nullptr)
         scrollHandler = lv_obj_add_event_cb(handle, onListChanged, LV_EVENT_SCROLL, this);
@@ -90,8 +91,8 @@ namespace Compose
 
     [[nodiscard]] int currentVisibleItems(lv_obj_t *targetHandle, int itemStride) const
     {
-      const auto viewportExtent = axis == Axis::Vertical ? lv_obj_get_content_height(targetHandle)
-                                                         : lv_obj_get_content_width(targetHandle);
+      const auto viewportExtent
+          = axis == Axis::Vertical ? lv_obj_get_content_height(targetHandle) : lv_obj_get_content_width(targetHandle);
       const auto stride = std::max(1, itemStride);
       return std::max(1, (std::max(1, viewportExtent) + stride - 1) / stride);
     }
@@ -141,16 +142,17 @@ namespace Compose
           && lv_obj_get_parent(topSpacer) == listHandle && lv_obj_get_parent(bottomSpacer) == listHandle;
 
       const auto rowsValid = static_cast<int>(rows.size()) == renderedItems
-          && std::all_of(rows.begin(),
-                         rows.end(),
-                         [listHandle](const auto row) { return row && lv_obj_is_valid(row) && lv_obj_get_parent(row) == listHandle; });
+          && std::all_of(rows.begin(), rows.end(), [listHandle](const auto row) {
+                               return row && lv_obj_is_valid(row) && lv_obj_get_parent(row) == listHandle;
+                             });
 
       return spacersValid && rowsValid;
     }
 
     [[nodiscard]] int currentScrollOffset(lv_obj_t *listHandle) const
     {
-      return std::max(0, axis == Axis::Vertical ? lv_obj_get_scroll_top(listHandle) : lv_obj_get_scroll_left(listHandle));
+      return std::max(0,
+                      axis == Axis::Vertical ? lv_obj_get_scroll_top(listHandle) : lv_obj_get_scroll_left(listHandle));
     }
 
     [[nodiscard]] int firstVisibleItem(int scrollOffset, int itemStride, int renderedItems) const
@@ -277,7 +279,8 @@ namespace Compose
         rows.erase(rows.begin());
         rows.push_back(recycled);
         nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle), "VirtualList handle invalid during remap");
-        lv_obj_move_to_index(recycled, static_cast<int32_t>(lv_obj_get_child_count(handle)) - c_insertIndexBeforeBottomSpacerOffset);
+        lv_obj_move_to_index(
+            recycled, static_cast<int32_t>(lv_obj_get_child_count(handle)) - c_insertIndexBeforeBottomSpacerOffset);
         const auto modelIndex = appliedFirst + renderedItems - delta + step;
         rebuildRowContent(recycled, modelIndex);
       }
@@ -358,7 +361,8 @@ namespace Compose
     [[nodiscard]] lv_obj_t *currentValidHandle() const
     {
       auto *listHandle = handle;
-      nltools_detailedAssertAlways(listHandle && lv_obj_is_valid(listHandle), "VirtualList handle invalid during refresh");
+      nltools_detailedAssertAlways(listHandle && lv_obj_is_valid(listHandle),
+                                   "VirtualList handle invalid during refresh");
       return listHandle;
     }
 
@@ -463,8 +467,14 @@ namespace Compose
     state.refresh(getHandle(), true);
   }
 
+  int VirtualizedList::getItemExtent() const
+  {
+    return ensureState().itemExtent;
+  }
+
   VirtualizedList::State &VirtualizedList::ensureState() const
   {
-    return ensureDataForKeyExistsOwning<State>(c_virtualListStateKey, [handle = getHandle(), axis = m_axis] { return new State(handle, axis); });
+    return ensureDataForKeyExistsOwning<State>(
+        c_virtualListStateKey, [handle = getHandle(), axis = m_axis] { return new State(handle, axis); });
   }
 }
