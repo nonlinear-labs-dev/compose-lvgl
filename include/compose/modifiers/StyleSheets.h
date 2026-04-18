@@ -131,6 +131,7 @@ namespace Compose
     processClasses(classes...);
     return *this;
   }
+
   Style Style::add(auto... classes) const
   {
     Style ret = *this;
