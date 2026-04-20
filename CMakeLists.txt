@@ -19,8 +19,23 @@ addNLLibrary(
         EXTERNAL_LIBS freetype2 glibmm-2.4 ${LVGL_BACKEND_LIBS}
         OUR_LIBS reactive nltools nltools-2 lvgl lunasvg
         LIB_SOURCES src/common/*.cpp include/*.h ${LVGL_BACKEND_SPECIFIC_SOURCES}
-        TEST_SOURCES tests/*.cpp
+        TEST_SOURCES tests/test_basewidget.cpp
         INSTALL_HEADERS_DIR include
         IS_STATIC
         CPP_STANDARD 20
 )
+
+if (NOT CROSS_BUILD)
+    addNLExecutable(
+            NAME compose-lvgl-virtual-list-demo
+            DESCRIPTION "compose-lvgl virtual list demo"
+            VERSION 0.0.1
+            EXTERNAL_LIBS sdl2
+            OUR_LIBS compose-lvgl
+            SUBMODULE_LIBS reactive
+            LIB_SOURCES tests/manual/VirtualListDemoApp.h tests/manual/VirtualListDemoApp.cpp
+            EXECUTABLE_SOURCES tests/manual/VirtualListDemoMain.cpp
+            CPP_STANDARD 20
+            USE_PTHREADS
+    )
+endif ()

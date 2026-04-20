@@ -17,7 +17,10 @@ namespace Compose
           const auto &cd = labelWidget.getDataForKey<LabelData>(c_labelData);
 
           if(cd.bgColor.get().a > 0)
+          {
             ctx.fillRect(cd.bgColor, { 0, 0, w, h });
+            ctx.flushLayer();
+          }
 
           ctx.drawText(cd.text, cd.font, { 0, 0, w, h }, cd.primaryColor, cd.align, cd.verticalAlign);
         });
