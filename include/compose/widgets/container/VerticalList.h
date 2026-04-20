@@ -27,19 +27,19 @@ namespace Compose
 
     void scrollToItem(size_t index) const override
     {
-      auto itemHeight = getItemExtent();
-      auto itemTop = itemHeight * index;
-      auto itemBottom = itemTop + itemHeight;
-      auto scrollTop = lv_obj_get_scroll_top(getHandle());
-      auto scrollBottom = scrollTop + lv_obj_get_height(getHandle());
+      const auto itemHeight = getItemExtent();
+      const int itemTop = itemHeight * index;
+      const int itemBottom = itemTop + itemHeight;
+      const int scrollTop = lv_obj_get_scroll_top(getHandle());
+      const int scrollBottom = scrollTop + lv_obj_get_height(getHandle());
 
       if(itemTop < scrollTop)
-        lv_obj_scroll_by(getHandle(), 0, scrollTop - itemTop, LV_ANIM_ON);
+        lv_obj_scroll_by(getHandle(), 0, scrollTop - itemTop, LV_ANIM_OFF);
       else if(itemBottom > scrollBottom)
-        lv_obj_scroll_by(getHandle(), 0, scrollBottom - itemBottom, LV_ANIM_ON);
+        lv_obj_scroll_by(getHandle(), 0, scrollBottom - itemBottom, LV_ANIM_OFF);
     }
   };
 }
 
 #define VERTICAL_LIST(...)                                                                                             \
-  it.add(Compose::VerticalList(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::VerticalList && it)
+  it.add(Compose::VerticalList(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::VerticalList &&it)

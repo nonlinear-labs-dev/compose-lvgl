@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <concepts>
 #include <cstdint>
@@ -171,6 +172,123 @@ namespace Compose
     static constexpr Color TRANSPARENT()
     {
       return { 0, 0, 0, 0 };
+    }
+
+    struct HSV
+    {
+      float h = 0.0f;
+      float s = 0.0f;
+      float v = 0.0f;
+    };
+
+    [[nodiscard]] HSV toHSV() const
+    {
+      const float rf = static_cast<float>(r) / maxTFixed;
+      const float gf = static_cast<float>(g) / maxTFixed;
+      const float bf = static_cast<float>(b) / maxTFixed;
+
+      const float cmax = std::fmax(rf, std::fmax(gf, bf));
+      const float cmin = std::fmin(rf, std::fmin(gf, bf));
+      const float delta = cmax - cmin;
+
+      HSV hsv;
+      hsv.v = cmax;
+      hsv.s = (hsv.v <= 1e-6f) ? 0.0f : (delta / hsv.v);
+
+      if(delta > 1e-6f)
+      {
+        if(cmax == rf)
+          hsv.h = 60.0f * std::fmod(((gf - bf) / delta), 6.0f);
+        else if(cmax == gf)
+          hsv.h = 60.0f * (((bf - rf) / delta) + 2.0f);
+        else
+          hsv.h = 60.0f * (((rf - gf) / delta) + 4.0f);
+
+        if(hsv.h < 0.0f)
+          hsv.h += 360.0f;
+      }
+
+      return hsv;
+    }
+
+    [[nodiscard]] static Color fromHSV(float h, float s, float v, float alpha = 1.0f)
+    {
+      s = std::clamp(s, 0.0f, 1.0f);
+      v = std::clamp(v, 0.0f, 1.0f);
+
+      h = std::fmod(h, 360.0f);
+      if(h < 0.0f)
+        h += 360.0f;
+
+      const float c = v * s;
+      const float hh = h / 60.0f;
+      const float x = c * (1.0f - std::fabs(std::fmod(hh, 2.0f) - 1.0f));
+      const float m = v - c;
+
+      float rp = 0.0f;
+      float gp = 0.0f;
+      float bp = 0.0f;
+
+      if(s <= 1e-6f)
+      {
+        rp = v;
+        gp = v;
+        bp = v;
+      }
+      else if(hh < 1.0f)
+      {
+        rp = c;
+        gp = x;
+      }
+      else if(hh < 2.0f)
+      {
+        rp = x;
+        gp = c;
+      }
+      else if(hh < 3.0f)
+      {
+        gp = c;
+        bp = x;
+      }
+      else if(hh < 4.0f)
+      {
+        gp = x;
+        bp = c;
+      }
+      else if(hh < 5.0f)
+      {
+        rp = x;
+        bp = c;
+      }
+      else
+      {
+        rp = c;
+        bp = x;
+      }
+
+      auto toByte = [](float value) -> tColorValueType
+      {
+        return static_cast<tColorValueType>(std::round(std::clamp(value, 0.0f, 1.0f) * static_cast<float>(maxTFixed)));
+      };
+
+      return Color { toByte(rp + m), toByte(gp + m), toByte(bp + m), alpha };
+    }
+
+    [[nodiscard]] Color withHsvScaled(float hFactor, float sFactor, float vFactor) const
+    {
+      auto hsv = toHSV();
+      hsv.h = std::fmod(hsv.h * hFactor, 360.0f);
+      if(hsv.h < 0.0f)
+        hsv.h += 360.0f;
+      hsv.s = std::clamp(hsv.s * sFactor, 0.0f, 1.0f);
+      hsv.v = std::clamp(hsv.v * vFactor, 0.0f, 1.0f);
+      return fromHSV(hsv.h, hsv.s, hsv.v, a);
+    }
+
+    [[nodiscard]] Color dimBrightness(float factor) const
+    {
+      factor = std::clamp(factor, 0.0f, 1.0f);
+      return withHsvScaled(1.0f, 1.0f, factor);
     }
   };
 }
