@@ -99,6 +99,8 @@ namespace Compose
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends) = 0;
+    virtual void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
+                          std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
@@ -130,6 +132,8 @@ namespace Compose
     ~LVGLDrawContext() override;
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
+                  std::optional<RoundedEnds> ends) override;
+    void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void strokeRect(StrokeStyle style, Rect rect) override;

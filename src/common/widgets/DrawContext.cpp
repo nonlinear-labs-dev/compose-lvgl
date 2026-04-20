@@ -6,6 +6,7 @@
 #include "src/draw/lv_draw_vector.h"
 #include <memory>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include "compose/widgets/Label.h"
 #include <compose/FreeTypeFont.h>
@@ -15,6 +16,8 @@
 namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
+  using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+  using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
       : m_layer {}
@@ -65,6 +68,52 @@ namespace Compose
     }
 
     lv_draw_line(&m_layer, &line_dsc);
+  }
+
+  void LVGLDrawContext::drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
+  {
+    if(points.size() < 2)
+      return;
+
+    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_HIGH), &lv_vector_path_delete);
+    if(!dsc || !path)
+      return;
+
+    lv_fpoint_t first { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
+    lv_vector_path_move_to(path.get(), &first);
+
+    for(size_t i = 1; i < points.size(); i++)
+    {
+      const lv_fpoint_t point { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
+      lv_vector_path_line_to(path.get(), &point);
+    }
+
+    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
+    float strokeWidth = static_cast<float>(style.width);
+
+    lv_vector_dsc_set_stroke_width(dsc.get(), strokeWidth);
+    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+
+    if(ends.has_value())
+    {
+      if(ends.value().start && ends.value().end)
+        lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
+      else
+        lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_BUTT);
+    }
+
+    if(dash.has_value())
+    {
+      const auto d = dash.value();
+      std::array<float, 2> dashPattern { static_cast<float>(d.dashWidth), static_cast<float>(d.dashGap) };
+      lv_vector_dsc_set_stroke_dash(dsc.get(), dashPattern.data(), dashPattern.size());
+    }
+
+    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector(dsc.get());
   }
 
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control, const Point end)
@@ -146,9 +195,6 @@ namespace Compose
 
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
-
-  using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
-  using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
   void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft, int bottomRight)
   {
