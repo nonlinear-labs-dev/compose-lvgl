@@ -56,11 +56,10 @@ namespace Compose::LabelShared
 
       auto& canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(
           BaseWidget::c_labelData, [handle, d = draw] { return new LabelData(handle, d); });
+      (void) canvasData.m_buffer.get();
 
       const auto w = lv_obj_get_width(handle);
       const auto h = lv_obj_get_height(handle);
-
-      auto& bufferUser = canvasData.m_buffer.get();
 
       LVGLDrawContext drawContext(*handle);
       try
