@@ -29,20 +29,20 @@ namespace Compose
 
     struct StrokeStyle
     {
-      int width {};
-      Color color {};
+      int width { };
+      Color color { };
     };
 
     struct FillStyle
     {
-      Color color {};
+      Color color { };
     };
 
     struct Bitmap
     {
-      int width {};
-      int height {};
-      int stride {};
+      int width { };
+      int height { };
+      int stride { };
 
       const uint8_t *start;
     };
@@ -99,20 +99,20 @@ namespace Compose
 
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
-                          std::optional<RoundedEnds> ends)
-        = 0;
+                          std::optional<RoundedEnds> ends) = 0;
+    virtual void drawLineAA(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
+                            std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
-    virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end, std::optional<RoundedEnds> ends) = 0;
+    virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
+                                     std::optional<RoundedEnds> ends) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
     virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
-                                         int bottomRight)
-        = 0;
+                                         int bottomRight) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
-                                       int bottomRight)
-        = 0;
+                                       int bottomRight) = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
@@ -122,8 +122,8 @@ namespace Compose
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
     virtual void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
-                          Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
-                          int bottomY) = 0;
+                                  Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl,
+                                  Point releaseEnd, int bottomY) = 0;
     virtual void flushLayer() = 0;
   };
 
@@ -137,8 +137,11 @@ namespace Compose
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
+    void drawLineAA(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
+                    std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
-    void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end, std::optional<RoundedEnds> ends) override;
+    void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
+                             std::optional<RoundedEnds> ends) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
     void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
     void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
@@ -154,8 +157,8 @@ namespace Compose
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
     void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
-                              Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
-                              int bottomY) override;
+                          Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
+                          int bottomY) override;
     void flushLayer() override;
 
    private:
