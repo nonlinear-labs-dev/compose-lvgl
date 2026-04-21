@@ -17,7 +17,7 @@ namespace Compose
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
 
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
-      : m_layer {}
+      : m_layer { }
       , m_canvas(ctx)
   {
     lv_canvas_init_layer(&m_canvas, &m_layer);
@@ -566,6 +566,8 @@ namespace Compose
 
     if(!draw_buf || draw_buf->header.cf != LV_COLOR_FORMAT_ARGB8888)
       return;
+
+    flushLayer();
 
     const auto canvas_width = draw_buf->header.w;
     const auto canvas_height = draw_buf->header.h;

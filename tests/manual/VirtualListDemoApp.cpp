@@ -83,13 +83,7 @@ int runVirtualListDemo()
         };
       };
 
-      ROW(Height { 50 })
-      {
-        TOUCH()
-        {
-
-        };
-      };
+      ROW(Height { 50 }) { };
 
       ROW()
       {
@@ -122,14 +116,6 @@ int runVirtualListDemo()
 
       ROW(Height { 50 })
       {
-        DRAG_DROP("test-data")
-        {
-          DRAG_SOURCE()
-          {
-            return "this is the data";
-          };
-        };
-
         LABEL(Height { 50 }, VerticalAlign::CENTER())
         {
           TEXT("Drag me!");

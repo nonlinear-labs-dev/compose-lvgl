@@ -54,23 +54,25 @@ namespace Compose
       {
         if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
         {
-          auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
-          auto defaultWidth = Width::FULL();
-          if(parentWidth == LV_SIZE_CONTENT)
+          if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            defaultWidth = Width::FIT_CONTENT();
+            setModifier(Width::FIT_CONTENT());
           }
-          setModifier(defaultWidth);
+          else
+          {
+            setModifier(Width::FULL());
+          }
         }
         else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
         {
-          auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
-          auto defaultHeight = Height::FULL();
-          if(parentHeight == LV_SIZE_CONTENT)
+          if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            defaultHeight = Height::FIT_CONTENT();
+            setModifier(Height::FIT_CONTENT());
           }
-          setModifier(defaultHeight);
+          else
+          {
+            setModifier(Height::FULL());
+          }
         }
       }
     }
@@ -93,7 +95,7 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(Window &it, tArgs &&... args)
+    explicit Widget(Window &it, tArgs &&...args)
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
@@ -103,7 +105,7 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(BaseWidget &w, tArgs &&... args)
+    explicit Widget(BaseWidget &w, tArgs &&...args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
@@ -227,8 +229,8 @@ namespace Compose
       {
         try
         {
-          assert(lv_obj_get_style_layout(parent, LV_PART_MAIN)
-                 == LV_LAYOUT_NONE);  // position only works with LAYOUT_TYPE NONE
+          nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
+                                       "position only works with LAYOUT_TYPE NONE");
         }
         catch([[maybe_unused]] std::exception &e)
         {
@@ -361,20 +363,18 @@ namespace Compose
 
     void setModifier(SizePercentage s) const
     {
-      if(auto parent = lv_obj_get_parent(getHandle()))
+      if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
-        if(parentWidth == LV_SIZE_CONTENT)
+        if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
         {
-          LV_ASSERT_MSG(false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
-          throw std::logic_error("Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+          nltools_detailedAssertAlways(false,
+                                       "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
         }
 
-        auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
-        if(parentHeight == LV_SIZE_CONTENT)
+        if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
         {
-          LV_ASSERT_MSG(false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
-          throw std::logic_error("Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+          nltools_detailedAssertAlways(
+              false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
         }
       }
 
@@ -405,11 +405,10 @@ namespace Compose
       {
         if(LV_COORD_IS_PCT(w.it))
         {
-          auto parentWidth = lv_obj_get_style_width(parent, LV_PART_MAIN);
-          if(parentWidth == LV_SIZE_CONTENT)
+          if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            LV_ASSERT_MSG(false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
-            throw std::logic_error("Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+            nltools_detailedAssertAlways(
+                false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
           }
         }
 
@@ -428,11 +427,10 @@ namespace Compose
       {
         if(LV_COORD_IS_PCT(h.it))
         {
-          auto parentHeight = lv_obj_get_style_height(parent, LV_PART_MAIN);
-          if(parentHeight == LV_SIZE_CONTENT)
+          if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            LV_ASSERT_MSG(false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
-            throw std::logic_error("Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+            nltools_detailedAssertAlways(
+                false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
           }
         }
 
@@ -488,34 +486,36 @@ namespace Compose
     StateChange stateChange { *this };
   };
 
-  template <typename T> concept IsWidget = requires
-  {
-    typename T::WidgetType;
-  };
+  template <typename T>
+  concept IsWidget = requires { typename T::WidgetType; };
 
   template <typename ComposeWidget, typename tCB>
-  requires IsWidget<ComposeWidget> void operator<<(ComposeWidget &&lhs, tCB &&cb)
+    requires IsWidget<ComposeWidget>
+  void operator<<(ComposeWidget &&lhs, tCB &&cb)
   {
     using tComposeWidgetDecayed = std::remove_reference_t<ComposeWidget>;
 
-    lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
-      tComposeWidgetDecayed wrapper(w);
-      wrapper.clear();
-      cb(tComposeWidgetDecayed(w));
-    });
+    lhs.doAutorun(
+        [cb = std::forward<tCB>(cb), w = lhs.getHandle()]
+        {
+          tComposeWidgetDecayed wrapper(w);
+          wrapper.clear();
+          cb(tComposeWidgetDecayed(w));
+        });
   }
 }
 
 #define SCROLL_INTO_VIEW_WHEN(condition)                                                                               \
-  it.doAutorun([=, handle = it.getHandle()] {                                                                          \
-    if(condition)                                                                                                      \
-    {                                                                                                                  \
-      lv_obj_scroll_to_view(handle, false);                                                                            \
-    }                                                                                                                  \
-  });
+  it.doAutorun(                                                                                                        \
+      [=, handle = it.getHandle()]                                                                                     \
+      {                                                                                                                \
+        if(condition)                                                                                                  \
+        {                                                                                                              \
+          lv_obj_scroll_to_view(handle, false);                                                                        \
+        }                                                                                                              \
+      });
 
 #define LEFT_CLICK it.leftClick << [=]
-#define TOUCH() it.touch << [=](Compose::Touch * it)
 #define SWALLOW_LEFT_CLICK()                                                                                           \
   LEFT_CLICK(auto)                                                                                                     \
   {                                                                                                                    \
@@ -524,7 +524,8 @@ namespace Compose
 #define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
-  it.leftClick << [handle = it.getHandle()](Position p) -> bool {                                                      \
+  it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                        \
+  {                                                                                                                    \
     nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
     return false;                                                                                                      \
   }
