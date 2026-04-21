@@ -12,11 +12,9 @@
 
 namespace Compose
 {
-  template <typename T>
-  concept IntegralOrChar = std::integral<T> || std::same_as<T, char>;
+  template <typename T> concept IntegralOrChar = std::integral<T> || std::same_as<T, char>;
 
-  template <typename T>
-  concept Floating = std::floating_point<T>;
+  template <typename T> concept Floating = std::floating_point<T>;
 
   struct Color
   {
@@ -63,8 +61,9 @@ namespace Compose
       if(hexPart.size() != 6 && hexPart.size() != 8)
         throw std::invalid_argument("Invalid hex string length");
 
-      const auto parseHex = [](const std::string& hex) -> unsigned int
-      { return static_cast<unsigned int>(std::stoul(hex, nullptr, 16)); };
+      const auto parseHex = [](const std::string& hex) -> unsigned int {
+        return static_cast<unsigned int>(std::stoul(hex, nullptr, 16));
+      };
 
       const auto r = parseHex(hexPart.substr(0, 2));
       const auto g = parseHex(hexPart.substr(2, 2));
@@ -99,11 +98,10 @@ namespace Compose
 
     [[nodiscard]] Color multiply(float f) const
     {
-      return Color { static_cast<tColorValueType>(r * f), static_cast<tColorValueType>(g * f),
-                     static_cast<tColorValueType>(b * f), a };
+      return Color { static_cast<tColorValueType>(std::round(r * f)), static_cast<tColorValueType>(std::round(g * f)),
+                     static_cast<tColorValueType>(std::round(b * f)), a };
     }
-
-    static constexpr Color BACKGROUND()
+ static constexpr Color BACKGROUND()
     {
       return { 0, 0, 0, 1 };
     }
@@ -266,8 +264,7 @@ namespace Compose
         bp = x;
       }
 
-      auto toByte = [](float value) -> tColorValueType
-      {
+      auto toByte = [](float value) -> tColorValueType {
         return static_cast<tColorValueType>(std::round(std::clamp(value, 0.0f, 1.0f) * static_cast<float>(maxTFixed)));
       };
 

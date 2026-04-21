@@ -58,13 +58,14 @@ namespace std
   {
     std::size_t operator()(const Compose::Font &sz) const noexcept
     {
+      constexpr size_t c_magicHashConstant = 0x9e3779b9;
       const std::hash<std::string> stringHasher {};
       const std::hash<int> intHasher {};
       std::size_t hash = intHasher(sz.size);
-      hash ^= intHasher(static_cast<int>(sz.weight)) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-      hash ^= stringHasher(sz.baseName) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+      hash ^= intHasher(static_cast<int>(sz.weight)) + c_magicHashConstant + (hash << 6) + (hash >> 2);
+      hash ^= stringHasher(sz.baseName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
       for(const auto &fallbackName : sz.fallbackBaseNames)
-        hash ^= stringHasher(fallbackName) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        hash ^= stringHasher(fallbackName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
       return hash;
     }
   };

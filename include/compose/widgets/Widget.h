@@ -8,7 +8,6 @@
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
-#include "compose/modifiers/StyleSheets.h"
 #include "nltools/Assert.h"
 
 #include <stdexcept>
@@ -383,25 +382,6 @@ namespace Compose
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
       lv_obj_update_layout(getHandle());
-    }
-
-    virtual void setModifier(Font s) const
-    {
-    }
-
-    virtual void setModifier(TextAlign a) const
-    {
-    }
-
-    virtual void setModifier(VerticalAlign v) const
-    {
-    }
-
-    void setModifier(const Style &style) const
-    {
-      auto doNothing = [] {};
-      std::apply([&](const auto &... a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); },
-                 style.properties);
     }
 
     template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)

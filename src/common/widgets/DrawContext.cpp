@@ -40,7 +40,8 @@ namespace Compose
     drawLine(style, p1, p2, std::nullopt, std::nullopt);
   }
 
-  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
+  void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
+                                 std::optional<RoundedEnds> ends)
   {
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
@@ -67,7 +68,8 @@ namespace Compose
     lv_draw_line(&m_layer, &line_dsc);
   }
 
-  void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control, const Point end)
+  void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control,
+                                            const Point end)
   {
     using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
     using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
@@ -78,50 +80,30 @@ namespace Compose
     if(!dsc || !path)
       return;
 
-    lv_fpoint_t p0 = {
-      static_cast<float>(start.x),
-      static_cast<float>(start.y)
-  };
+    lv_fpoint_t p0 = { static_cast<float>(start.x), static_cast<float>(start.y) };
     lv_vector_path_move_to(path.get(), &p0);
 
-    lv_fpoint_t cp = {
-      static_cast<float>(control.x),
-      static_cast<float>(control.y)
-  };
+    lv_fpoint_t cp = { static_cast<float>(control.x), static_cast<float>(control.y) };
 
-    lv_fpoint_t ep = {
-      static_cast<float>(end.x),
-      static_cast<float>(end.y)
-  };
+    lv_fpoint_t ep = { static_cast<float>(end.x), static_cast<float>(end.y) };
 
     lv_vector_path_quad_to(path.get(), &cp, &ep);
 
     lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_TRANSP);
 
-    lv_vector_dsc_set_stroke_color(
-        dsc.get(),
-        lv_color_make(style.color.r, style.color.g, style.color.b));
+    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
 
-    lv_vector_dsc_set_stroke_opa(
-        dsc.get(),
-        static_cast<lv_opa_t>(style.color.a * 255.0f));
+    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0f));
 
-    lv_vector_dsc_set_stroke_width(
-        dsc.get(),
-        static_cast<float>(style.width));
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(style.width));
 
-    lv_vector_dsc_set_stroke_cap(
-        dsc.get(),
-        LV_VECTOR_STROKE_CAP_BUTT);
+    lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_BUTT);
 
-    lv_vector_dsc_set_stroke_join(
-        dsc.get(),
-        LV_VECTOR_STROKE_JOIN_ROUND);
+    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
 
     lv_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
   }
-
 
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control,
                                             const Point end, std::optional<RoundedEnds> ends)
@@ -237,7 +219,8 @@ namespace Compose
   using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
   using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
-  void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft, int bottomRight)
+  void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
+                                                int bottomRight)
   {
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
@@ -332,7 +315,8 @@ namespace Compose
     lv_draw_rect(&m_layer, &rect_dsc, &area);
   }
 
-  void LVGLDrawContext::fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight)
+  void LVGLDrawContext::fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
+                                              int bottomRight)
   {
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
@@ -497,7 +481,8 @@ namespace Compose
 
     const lv_fpoint_t center = { static_cast<float>(arcOptions.position.x), static_cast<float>(arcOptions.position.y) };
 
-    lv_vector_path_append_arc(path.get(), &center, arcOptions.radius, arcOptions.startAngle, arcOptions.sweepAngle, false);
+    lv_vector_path_append_arc(path.get(), &center, arcOptions.radius, arcOptions.startAngle, arcOptions.sweepAngle,
+                              false);
 
     lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
 
@@ -532,8 +517,12 @@ namespace Compose
       {
         const auto lineAnglePos = props.startAngle + i * segmentAngle;
 
-        const ArcDrawOptions lineArc
-            = { .position = props.center, .color = props.lineColor, .radius = props.radius, .strokeWidth = props.strokeWidth, .startAngle = lineAnglePos, .sweepAngle = lineAngle };
+        const ArcDrawOptions lineArc = { .position = props.center,
+                                         .color = props.lineColor,
+                                         .radius = props.radius,
+                                         .strokeWidth = props.strokeWidth,
+                                         .startAngle = lineAnglePos,
+                                         .sweepAngle = lineAngle };
 
         fillArc(lineArc);
       }
@@ -683,7 +672,8 @@ namespace Compose
               [&](int px, int py, unsigned char coverage) { drawFontPixel(*draw_buf, c, px, py, coverage); });
   }
 
-  void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py, unsigned char coverage)
+  void LVGLDrawContext::drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
+                                      unsigned char coverage)
   {
     const auto canvas_width = draw_buf.header.w;
     const auto canvas_height = draw_buf.header.h;
@@ -725,22 +715,10 @@ namespace Compose
     canvas_pixel[3] = static_cast<uint8_t>(out_a_u16);
   }
 
-  void LVGLDrawContext::flushLayer()
+  void LVGLDrawContext::fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
+                                         Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl,
+                                         Point releaseEnd, int bottomY)
   {
-    lv_canvas_finish_layer(&m_canvas, &m_layer);
-    lv_canvas_init_layer(&m_canvas, &m_layer);
-  }
-
-  void LVGLDrawContext::fillEnvelopeArea(
-    Color color,
-    Point start,
-    Point attackCtrl, Point attackEnd,
-    Point decay1End,
-    Point decay2Ctrl, Point decay2End,
-    Point sustainEnd,
-    Point releaseCtrl, Point releaseEnd,
-    int bottomY)
-{
     using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
     using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
@@ -748,7 +726,7 @@ namespace Compose
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
 
     if(!dsc || !path)
-        return;
+      return;
 
     // Start at bottom-left
     lv_fpoint_t p = { (float) start.x, (float) bottomY };
@@ -789,17 +767,15 @@ namespace Compose
     lv_vector_path_close(path.get());
 
     // Fill
-    lv_vector_dsc_set_fill_color(dsc.get(),
-        lv_color_make(color.r, color.g, color.b));
+    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
 
-    lv_vector_dsc_set_fill_opa(dsc.get(),
-        static_cast<lv_opa_t>(color.a * 255.0f));
+    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(color.a * 255.0f));
 
     // No stroke
     lv_vector_dsc_set_stroke_opa(dsc.get(), LV_OPA_TRANSP);
 
     lv_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
-}
+  }
 
 }

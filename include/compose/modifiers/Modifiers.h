@@ -364,7 +364,7 @@ namespace Compose
 #define ITEM_WIDTH(...) it.doAutorun([=] { it.setModifier(ItemWidth { __VA_ARGS__ }); });
 #define SCROLL_TO_ITEM(...) it.doAutorun([=] { it.scrollToItem(__VA_ARGS__); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
-#define STYLE(...) it.doAutorun([=] { it.setModifier(__VA_ARGS__); });
+#define STYLE(...) it.doAutorun([=] { it.setModifier(Style(__VA_ARGS__)); });
 #define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });
 #define SPACING(...) it.doAutorun([=] { it.setModifier(Spacing(__VA_ARGS__)); });
 #define ROW_SPACING(...) it.doAutorun([=] { it.setModifier(RowSpacing(__VA_ARGS__)); });
