@@ -222,63 +222,63 @@ namespace Compose
   void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
                                                 int bottomRight)
   {
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
-    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+    if(const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete))
+    {
+      if(const auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete))
+      {
+        float x = r.pos.x;
+        float y = r.pos.y;
+        float w = r.size.w;
+        float h = r.size.h;
 
-    if(!dsc || !path)
-      return;
+        float halfWidth = style.width / 2.0f;
+        x += halfWidth;
+        y += halfWidth;
+        w -= style.width;
+        h -= style.width;
 
-    float x = r.pos.x;
-    float y = r.pos.y;
-    float w = r.size.w;
-    float h = r.size.h;
+        lv_fpoint_t p;
 
-    float halfWidth = style.width / 2.0f;
-    x += halfWidth;
-    y += halfWidth;
-    w -= style.width;
-    h -= style.width;
+        p = { x + topLeft, y };
+        lv_vector_path_move_to(path.get(), &p);
 
-    lv_fpoint_t p;
+        p = { x + w - topRight, y };
+        lv_vector_path_line_to(path.get(), &p);
+        lv_fpoint_t cp = { x + w, y };
+        lv_fpoint_t ep = { x + w, y + topRight };
+        lv_vector_path_quad_to(path.get(), &cp, &ep);
 
-    p = { x + topLeft, y };
-    lv_vector_path_move_to(path.get(), &p);
+        p = { x + w, y + h - bottomRight };
+        lv_vector_path_line_to(path.get(), &p);
+        cp = { x + w, y + h };
+        ep = { x + w - bottomRight, y + h };
+        lv_vector_path_quad_to(path.get(), &cp, &ep);
 
-    p = { x + w - topRight, y };
-    lv_vector_path_line_to(path.get(), &p);
-    lv_fpoint_t cp = { x + w, y };
-    lv_fpoint_t ep = { x + w, y + topRight };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
+        p = { x + bottomLeft, y + h };
+        lv_vector_path_line_to(path.get(), &p);
+        cp = { x, y + h };
+        ep = { x, y + h - bottomLeft };
+        lv_vector_path_quad_to(path.get(), &cp, &ep);
 
-    p = { x + w, y + h - bottomRight };
-    lv_vector_path_line_to(path.get(), &p);
-    cp = { x + w, y + h };
-    ep = { x + w - bottomRight, y + h };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
+        p = { x, y + topLeft };
+        lv_vector_path_line_to(path.get(), &p);
+        cp = { x, y };
+        ep = { x + topLeft, y };
+        lv_vector_path_quad_to(path.get(), &cp, &ep);
 
-    p = { x + bottomLeft, y + h };
-    lv_vector_path_line_to(path.get(), &p);
-    cp = { x, y + h };
-    ep = { x, y + h - bottomLeft };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
+        lv_vector_path_close(path.get());
 
-    p = { x, y + topLeft };
-    lv_vector_path_line_to(path.get(), &p);
-    cp = { x, y };
-    ep = { x + topLeft, y };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
+        lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+        lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
+        lv_vector_dsc_set_stroke_width(dsc.get(), style.width);
+        lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+        lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
 
-    lv_vector_path_close(path.get());
-
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), style.width);
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
-    lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
-
-    lv_vector_dsc_add_path(dsc.get(), path.get());
-    lv_draw_vector(dsc.get());
-  };
+        lv_vector_dsc_add_path(dsc.get(), path.get());
+        lv_draw_vector(dsc.get());
+      }
+    }
+  }
 
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
@@ -374,38 +374,52 @@ namespace Compose
     lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points)
+  void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points)
   {
-    if(points.size() < 3)
-      return;
-
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
-    if(!dsc)
-      return;
-
-    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
-    if(!path)
-      return;
-
-    lv_fpoint_t first_point = { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
-    lv_vector_path_move_to(path.get(), &first_point);
-
-    for(size_t i = 1; i < points.size(); ++i)
+    if(points.size() >= 3)
     {
-      lv_fpoint_t point = { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
-      lv_vector_path_line_to(path.get(), &point);
+      if(const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete))
+      {
+        if(const auto path
+           = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete))
+        {
+          nltools_detailedAssertAlways(std::holds_alternative<Point>(points[0]),
+                                       "First Segment can't be QuadPathSegment");
+
+          const auto [startX, startY] = std::get<Point>(points[0]);
+          const auto first_point = lv_fpoint_t { static_cast<float>(startX), static_cast<float>(startY) };
+          lv_vector_path_move_to(path.get(), &first_point);
+
+          for(size_t i = 1; i < points.size(); ++i)
+          {
+            if(std::holds_alternative<Point>(points[i]))
+            {
+              const auto [x, y] = std::get<Point>(points[i]);
+              const auto fpoint = lv_fpoint_t { static_cast<float>(x), static_cast<float>(y) };
+              lv_vector_path_line_to(path.get(), &fpoint);
+            }
+            else if(std::holds_alternative<QuadPathSegment>(points[i]))
+            {
+              const auto [a, b] = std::get<QuadPathSegment>(points[i]);
+              lv_fpoint_t start = { static_cast<float>(a.x), static_cast<float>(a.y) };
+              lv_fpoint_t end = { static_cast<float>(b.x), static_cast<float>(b.y) };
+              lv_vector_path_quad_to(path.get(), &start, &end);
+            }
+          }
+
+          lv_vector_path_close(path.get());
+
+          lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+          lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+          lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+          lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+          lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+          lv_vector_dsc_add_path(dsc.get(), path.get());
+
+          lv_draw_vector(dsc.get());
+        }
+      }
     }
-
-    lv_vector_path_close(path.get());
-
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
-    lv_vector_dsc_add_path(dsc.get(), path.get());
-
-    lv_draw_vector(dsc.get());
   }
 
   void LVGLDrawContext::fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc)
@@ -413,60 +427,56 @@ namespace Compose
     if(points.size() < 3)
       return;
 
-    if(rc.radius <= 0)
+    if(auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete))
     {
-      fillPolygon(stroke, fill, points);
-      return;
+      if(auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete))
+      {
+
+        const size_t count = points.size();
+        auto radius = static_cast<float>(rc.radius);
+
+        for(size_t i = 0; i < count; ++i)
+        {
+          Point p1 = points[(i + count - 1) % count];
+          Point p2 = points[i];
+          Point p3 = points[(i + 1) % count];
+
+          float dx1 = static_cast<float>(p1.x - p2.x);
+          float dy1 = static_cast<float>(p1.y - p2.y);
+          float dx2 = static_cast<float>(p3.x - p2.x);
+          float dy2 = static_cast<float>(p3.y - p2.y);
+
+          float len1 = std::sqrt(dx1 * dx1 + dy1 * dy1);
+          float len2 = std::sqrt(dx2 * dx2 + dy2 * dy2);
+
+          float r = std::min({ radius, len1 / 2.0f, len2 / 2.0f });
+
+          lv_fpoint_t start_arc = { p2.x + (dx1 / len1) * r, p2.y + (dy1 / len1) * r };
+          lv_fpoint_t end_arc = { p2.x + (dx2 / len2) * r, p2.y + (dy2 / len2) * r };
+          lv_fpoint_t control_point = { static_cast<float>(p2.x), static_cast<float>(p2.y) };
+
+          if(i == 0)
+            lv_vector_path_move_to(path.get(), &start_arc);
+          else
+            lv_vector_path_line_to(path.get(), &start_arc);
+
+          lv_vector_path_quad_to(path.get(), &control_point, &end_arc);
+        }
+
+        lv_vector_path_close(path.get());
+
+        lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+        lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+        lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+        lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+        lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+
+        lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+
+        lv_vector_dsc_add_path(dsc.get(), path.get());
+        lv_draw_vector(dsc.get());
+      }
     }
-
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
-    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
-    if(!dsc || !path)
-      return;
-
-    size_t count = points.size();
-    float radius = static_cast<float>(rc.radius);
-
-    for(size_t i = 0; i < count; ++i)
-    {
-      Point p1 = points[(i + count - 1) % count];
-      Point p2 = points[i];
-      Point p3 = points[(i + 1) % count];
-
-      float dx1 = static_cast<float>(p1.x - p2.x);
-      float dy1 = static_cast<float>(p1.y - p2.y);
-      float dx2 = static_cast<float>(p3.x - p2.x);
-      float dy2 = static_cast<float>(p3.y - p2.y);
-
-      float len1 = std::sqrt(dx1 * dx1 + dy1 * dy1);
-      float len2 = std::sqrt(dx2 * dx2 + dy2 * dy2);
-
-      float r = std::min({ radius, len1 / 2.0f, len2 / 2.0f });
-
-      lv_fpoint_t start_arc = { p2.x + (dx1 / len1) * r, p2.y + (dy1 / len1) * r };
-      lv_fpoint_t end_arc = { p2.x + (dx2 / len2) * r, p2.y + (dy2 / len2) * r };
-      lv_fpoint_t control_point = { static_cast<float>(p2.x), static_cast<float>(p2.y) };
-
-      if(i == 0)
-        lv_vector_path_move_to(path.get(), &start_arc);
-      else
-        lv_vector_path_line_to(path.get(), &start_arc);
-
-      lv_vector_path_quad_to(path.get(), &control_point, &end_arc);
-    }
-
-    lv_vector_path_close(path.get());
-
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
-
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
-
-    lv_vector_dsc_add_path(dsc.get(), path.get());
-    lv_draw_vector(dsc.get());
   }
 
   void LVGLDrawContext::fillArc(const ArcDrawOptions &arcOptions)
@@ -716,68 +726,4 @@ namespace Compose
     canvas_pixel[0] = static_cast<uint8_t>((src_b * src_factor + dst_b * dst_factor + out_a_x255 / 2) / out_a_x255);
     canvas_pixel[3] = static_cast<uint8_t>(out_a_u16);
   }
-
-  void LVGLDrawContext::fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
-                                         Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl,
-                                         Point releaseEnd, int bottomY)
-  {
-    using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
-    using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
-
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
-    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
-
-    if(!dsc || !path)
-      return;
-
-    // Start at bottom-left
-    lv_fpoint_t p = { (float) start.x, (float) bottomY };
-    lv_vector_path_move_to(path.get(), &p);
-
-    // Go up to start of envelope
-    p = { (float) start.x, (float) start.y };
-    lv_vector_path_line_to(path.get(), &p);
-
-    // Attack (quad)
-    lv_fpoint_t cp = { (float) attackCtrl.x, (float) attackCtrl.y };
-    lv_fpoint_t ep = { (float) attackEnd.x, (float) attackEnd.y };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
-
-    // Decay1 (line)
-    p = { (float) decay1End.x, (float) decay1End.y };
-    lv_vector_path_line_to(path.get(), &p);
-
-    // Decay2 (quad)
-    cp = { (float) decay2Ctrl.x, (float) decay2Ctrl.y };
-    ep = { (float) decay2End.x, (float) decay2End.y };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
-
-    // Sustain (line)
-    p = { (float) sustainEnd.x, (float) sustainEnd.y };
-    lv_vector_path_line_to(path.get(), &p);
-
-    // Release (quad)
-    cp = { (float) releaseCtrl.x, (float) releaseCtrl.y };
-    ep = { (float) releaseEnd.x, (float) releaseEnd.y };
-    lv_vector_path_quad_to(path.get(), &cp, &ep);
-
-    // Go down to baseline
-    p = { (float) releaseEnd.x, (float) bottomY };
-    lv_vector_path_line_to(path.get(), &p);
-
-    // Close back to start
-    lv_vector_path_close(path.get());
-
-    // Fill
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
-
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(color.a * 255.0f));
-
-    // No stroke
-    lv_vector_dsc_set_stroke_opa(dsc.get(), LV_OPA_TRANSP);
-
-    lv_vector_dsc_add_path(dsc.get(), path.get());
-    lv_draw_vector(dsc.get());
-  }
-
 }
