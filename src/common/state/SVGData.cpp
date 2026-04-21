@@ -13,6 +13,7 @@ namespace Compose
         handle,
         [](lv_event_t* e)
         {
+          Reactive::Deferrer deferrer;
           const auto data = static_cast<SVGData*>(lv_event_get_user_data(e));
           // Trigger re-render when size changes
           if(data->document.get())

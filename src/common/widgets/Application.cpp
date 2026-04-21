@@ -34,13 +34,11 @@ namespace Compose
     const auto loop = Glib::MainLoop::create();
 
     Glib::signal_timeout().connect(
-        [&, loop]
-        {
+        [&, loop] {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
-          Reactive::Deferrer frameDeferrer;
           lv_timer_handler();
 
           auto keepRunning = lv_display_get_next(nullptr) != nullptr;
@@ -54,5 +52,6 @@ namespace Compose
         c_frameIntervalInMs);
 
     loop->run();
+    [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
   }
 }

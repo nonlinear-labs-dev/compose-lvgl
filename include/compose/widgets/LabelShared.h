@@ -51,29 +51,26 @@ namespace Compose::LabelShared
   {
     nltools_detailedAssertAlways(!self.template doesDataForKeyExist<LabelData>(),
                                  "CanvasData should not exist, setting a new render callback is prohibited");
-    Widget(self.getHandle())
-        .doAutorun(
-            [draw = std::move(draw), handle = self.getHandle()]
-            {
-              const Widget widget(handle);
+    Widget(self.getHandle()).doAutorun([draw = std::move(draw), handle = self.getHandle()] {
+      const Widget widget(handle);
 
-              auto& canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(
-                  BaseWidget::c_labelData, [handle, d = draw] { return new LabelData(handle, d); });
+      auto& canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(
+          BaseWidget::c_labelData, [handle, d = draw] { return new LabelData(handle, d); });
 
-              const auto w = lv_obj_get_width(handle);
-              const auto h = lv_obj_get_height(handle);
+      const auto w = lv_obj_get_width(handle);
+      const auto h = lv_obj_get_height(handle);
 
-              auto& bufferUser = canvasData.buffer.get();
+      auto& bufferUser = canvasData.m_buffer.get();
 
-              LVGLDrawContext drawContext(*handle);
-              try
-              {
-                canvasData.drawCallback(drawContext, w, h);
-              }
-              catch(std::exception&)
-              {
-              }
-            });
+      LVGLDrawContext drawContext(*handle);
+      try
+      {
+        canvasData.m_drawCallback(drawContext, w, h);
+      }
+      catch(std::exception&)
+      {
+      }
+    });
   }
 
   inline int computeStartX(int availableWidth, int textWidth, const TextAlign& a)
