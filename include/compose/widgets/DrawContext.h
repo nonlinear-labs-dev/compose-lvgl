@@ -55,7 +55,6 @@ namespace Compose
       int strokeWidth;
       float startAngle;
       float sweepAngle;
-      float cornerRadius;
 
       std::optional<std::vector<float>> dashes = std::nullopt;
     };
@@ -99,20 +98,17 @@ namespace Compose
 
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
-                          std::optional<RoundedEnds> ends)
-        = 0;
+                          std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end, std::optional<RoundedEnds> ends) = 0;
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
     virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
     virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
-                                         int bottomRight)
-        = 0;
+                                         int bottomRight) = 0;
     virtual void fillRect(Color color, Rect r) = 0;
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
-                                       int bottomRight)
-        = 0;
+                                       int bottomRight) = 0;
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
     virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;

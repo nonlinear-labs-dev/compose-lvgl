@@ -3,6 +3,8 @@
 #include "compose/modifiers/Rotation.h"
 #include "container/Container.h"
 #include "src/misc/lv_types.h"
+#include <functional>
+#include <vector>
 
 namespace Compose
 {
@@ -24,5 +26,7 @@ namespace Compose
     lv_indev_t* m_mouse { nullptr };
     lv_indev_t* m_mouseWheel { nullptr };
     lv_indev_t* m_keyboard { nullptr };
+    std::vector<lv_indev_t*> m_touchIndevs;
+    std::function<void()> m_backendCleanup;
   };
 }

@@ -72,6 +72,106 @@ namespace Compose
   using LeftClick = ClickHandler<LV_EVENT_SHORT_CLICKED>;
   using LongClick = ClickHandler<LV_EVENT_LONG_PRESSED>;
 
+  struct Touch
+  {
+    BaseWidget &self;
+    using CB = std::function<void()>;
+
+    struct Data
+    {
+      Data(lv_obj_t *handle, const CB &beginCB, const CB &endCB)
+          : m_handle(handle)
+          , m_begin(beginCB)
+          , m_end(endCB)
+      {
+        m_pressedHandler = lv_obj_add_event_cb(
+            handle,
+            [](lv_event_t *e)
+            {
+              Reactive::Deferrer def;
+              if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+              {
+                if(!self->m_pressed)
+                {
+                  self->m_pressed = true;
+                  self->m_begin();
+                }
+              }
+            },
+            LV_EVENT_PRESSED, this);
+
+        auto onRelease = [](lv_event_t *e)
+        {
+          Reactive::Deferrer def;
+          if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+          {
+            if(self->m_pressed)
+            {
+              self->m_pressed = false;
+              self->m_end();
+            }
+          }
+        };
+
+        m_releasedHandler = lv_obj_add_event_cb(handle, onRelease, LV_EVENT_RELEASED, this);
+        m_pressLostHandler = lv_obj_add_event_cb(handle, onRelease, LV_EVENT_PRESS_LOST, this);
+      }
+
+      ~Data()
+      {
+        if(m_pressed)
+        {
+          m_pressed = false;
+          m_end();
+        }
+
+        if(lv_obj_is_valid(m_handle))
+        {
+          lv_obj_remove_event_dsc(m_handle, m_pressedHandler);
+          lv_obj_remove_event_dsc(m_handle, m_releasedHandler);
+          lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
+        }
+      }
+
+      lv_obj_t *m_handle;
+      CB m_begin;
+      CB m_end;
+      bool m_pressed = false;
+      lv_event_dsc_t *m_pressedHandler = nullptr;
+      lv_event_dsc_t *m_releasedHandler = nullptr;
+      lv_event_dsc_t *m_pressLostHandler = nullptr;
+    };
+
+    struct Begin
+    {
+      Touch *self;
+      void operator<<(const CB &cb) const
+      {
+        self->m_begin = cb;
+      }
+    };
+
+    struct End
+    {
+      Touch *self;
+      void operator<<(const CB &cb) const
+      {
+        self->m_end = cb;
+      }
+    };
+
+    void operator<<(const std::function<void(Touch *it)> &cb)
+    {
+      cb(this);
+      self.ensureDataForKeyExistsOwning<Data>("TouchData", [this] { return new Data(self.getHandle(), m_begin, m_end); });
+    }
+
+    CB m_begin = [] {};
+    CB m_end = [] {};
+    Begin begin { this };
+    End end { this };
+  };
+
   struct StateChange
   {
     BaseWidget &self;

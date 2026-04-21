@@ -1,4 +1,6 @@
 #include "compose/state/CanvasData.h"
+#include "compose/widgets/DrawContext.h"
+#include "reactive/Computation.h"
 
 namespace Compose
 {
@@ -25,14 +27,31 @@ namespace Compose
 
     if(width > 0 && height > 0)
     {
+      if(width == lastBufferWidth && height == lastBufferHeight)
+      {
+        return;
+      }
+
       auto b = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
-      buffer.modify(
-          [=, this](auto& f)
-          {
-            lv_draw_buf_clear(b, nullptr);
-            lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
-            f.reset(b);
-          });
+      lv_draw_buf_clear(b, nullptr);
+
+      buffer.modify([=, this](auto& f) {
+        f.reset(b);
+        lv_canvas_set_buffer(this->handle, b->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+        lastBufferWidth = width;
+        lastBufferHeight = height;
+      });
+
+      try
+      {
+        Reactive::Computation::untracked([&] {
+          LVGLDrawContext drawContext(*handle);
+          drawCallback(drawContext, width, height);
+        });
+      }
+      catch(...)
+      {
+      }
     }
   }
 

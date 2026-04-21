@@ -2,6 +2,18 @@
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
 #include "src/drivers/evdev/lv_evdev.h"
+#include "src/display/lv_display.h"
+#include "src/indev/lv_indev.h"
+
+#include <array>
+#include <chrono>
+#include <cstdio>
+#include <fcntl.h>
+#include <linux/input.h>
+#include <optional>
+#include <string>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <fcntl.h>
 #include <linux/input-event-codes.h>
@@ -10,6 +22,7 @@
 
 namespace Compose
 {
+
   std::optional<std::string> discoverTouchEvdevPath()
   {
     constexpr int c_maxEventNodes = 64;
@@ -62,5 +75,66 @@ namespace Compose
     lv_display_set_rotation(disp, static_cast<lv_display_rotation_t>(rotation));
 
     m_display = disp;
+
+    auto *mtState = new MultiTouchState {};
+    mtState->display = disp;
+
+    const auto touchPath = discoverTouchEvdevPath();
+    const char *touchDevice = touchPath ? touchPath->c_str() : nullptr;
+
+    if(touchDevice)
+    {
+      mtState->fd = open(touchDevice, O_RDONLY | O_NONBLOCK);
+    }
+
+    if(mtState->fd >= 0)
+    {
+      input_absinfo absX {};
+      input_absinfo absY {};
+      if(ioctl(mtState->fd, EVIOCGABS(ABS_MT_POSITION_X), &absX) == 0 && ioctl(mtState->fd, EVIOCGABS(ABS_MT_POSITION_Y), &absY) == 0)
+      {
+        mtState->minX = absX.minimum;
+        mtState->maxX = absX.maximum;
+        mtState->minY = absY.minimum;
+        mtState->maxY = absY.maximum;
+        mtState->hasCalibration = true;
+      }
+      else if(ioctl(mtState->fd, EVIOCGABS(ABS_X), &absX) == 0 && ioctl(mtState->fd, EVIOCGABS(ABS_Y), &absY) == 0)
+      {
+        mtState->minX = absX.minimum;
+        mtState->maxX = absX.maximum;
+        mtState->minY = absY.minimum;
+        mtState->maxY = absY.maximum;
+        mtState->hasCalibration = true;
+      }
+
+      for(int slotIndex = 0; slotIndex < c_maxTouchPoints; slotIndex++)
+      {
+        if(auto *touchIndev = createTouchIndev(mtState, slotIndex))
+        {
+          m_touchIndevs.push_back(touchIndev);
+        }
+      }
+
+      if(m_touchIndevs.empty() && touchDevice)
+      {
+        m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, touchDevice);
+        lv_indev_set_display(m_mouse, disp);
+      }
+    }
+    else if(touchDevice)
+    {
+      m_mouse = lv_evdev_create(LV_INDEV_TYPE_POINTER, touchDevice);
+      lv_indev_set_display(m_mouse, disp);
+    }
+
+    m_backendCleanup = [mtState]
+    {
+      if(mtState->fd >= 0)
+      {
+        close(mtState->fd);
+      }
+      delete mtState;
+    };
   }
 }

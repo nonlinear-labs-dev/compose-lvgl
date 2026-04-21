@@ -19,7 +19,7 @@ addNLLibrary(
         EXTERNAL_LIBS freetype2 glibmm-2.4 ${LVGL_BACKEND_LIBS}
         OUR_LIBS reactive nltools nltools-2 lvgl lunasvg
         LIB_SOURCES src/common/*.cpp include/*.h ${LVGL_BACKEND_SPECIFIC_SOURCES}
-        TEST_SOURCES tests/test_basewidget.cpp
+        TEST_SOURCES tests/test_basewidget.cpp tests/test_stylesheet_json.cpp
         INSTALL_HEADERS_DIR include
         IS_STATIC
         CPP_STANDARD 20

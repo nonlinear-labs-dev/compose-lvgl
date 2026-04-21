@@ -6,16 +6,20 @@
 
 namespace Compose
 {
-  Window::~Window() = default;
+  Window::~Window()
+  {
+    if(const auto cb = std::move(m_backendCleanup))
+      cb();
+  }
 
   //void Window::setFullScreen(const bool f) const
   //{
-   // [[maybe_unused]] auto v = m_display;
-    //throw std::runtime_error("Not implemented");
- // }
+  // [[maybe_unused]] auto v = m_display;
+  //throw std::runtime_error("Not implemented");
+  // }
 
   //void Window::setSize(int x, int y) const
   //{
-//    lv_display_set_resolution(m_display, x, y);
+  //    lv_display_set_resolution(m_display, x, y);
   //}
 }
