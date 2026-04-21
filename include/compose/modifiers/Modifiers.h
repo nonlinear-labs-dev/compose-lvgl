@@ -362,6 +362,7 @@ namespace Compose
 #define ITEM_COUNT(...) it.doAutorun([=] { it.setModifier(ItemCount { __VA_ARGS__ }); });
 #define ITEM_HEIGHT(...) it.doAutorun([=] { it.setModifier(ItemHeight { __VA_ARGS__ }); });
 #define ITEM_WIDTH(...) it.doAutorun([=] { it.setModifier(ItemWidth { __VA_ARGS__ }); });
+#define SCROLL_TO_ITEM(...) it.doAutorun([=] { it.scrollToItem(__VA_ARGS__); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
 #define STYLE(...) it.doAutorun([=] { it.setModifier(__VA_ARGS__); });
 #define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });

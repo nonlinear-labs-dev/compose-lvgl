@@ -36,6 +36,7 @@ namespace Compose
     void setModifier(ItemCount count) const;
     void setOverscan(int overscanItems) const;
     void setItemBuilder(ItemBuilder cb) const;
+    virtual void scrollToItem(size_t index) const = 0;
 
     template <typename CB> void setItemBuilder(CB &&cb) const
     {
@@ -54,6 +55,7 @@ namespace Compose
 
    protected:
     void setItemExtent(int extent) const;
+    int getItemExtent() const;
 
    private:
     struct State;

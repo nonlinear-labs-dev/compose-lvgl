@@ -24,6 +24,20 @@ namespace Compose
     {
       setItemExtent(width.it);
     }
+
+    void scrollToItem(size_t index) const override
+    {
+      auto itemWidth = getItemExtent();
+      auto itemLeft = itemWidth * index;
+      auto itemRight = itemLeft + itemWidth;
+      auto scrollLeft = lv_obj_get_scroll_left(getHandle());
+      auto scrollRight = scrollLeft + lv_obj_get_width(getHandle());
+
+      if(itemLeft < scrollLeft)
+        lv_obj_scroll_by(getHandle(), scrollLeft - itemLeft, 0, LV_ANIM_ON);
+      else if(itemRight > scrollRight)
+        lv_obj_scroll_by(getHandle(), scrollRight - itemRight, 0, LV_ANIM_ON);
+    }
   };
 }
 

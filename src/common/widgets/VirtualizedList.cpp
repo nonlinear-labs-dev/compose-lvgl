@@ -462,6 +462,11 @@ namespace Compose
     state.refresh(getHandle(), true);
   }
 
+  int VirtualizedList::getItemExtent() const
+  {
+    return ensureState().itemExtent;
+  }
+
   VirtualizedList::State &VirtualizedList::ensureState() const
   {
     return ensureDataForKeyExistsOwning<State>(c_virtualListStateKey, [handle = getHandle(), axis = m_axis] { return new State(handle, axis); });
