@@ -29,7 +29,16 @@ namespace Compose
       Label::setModifier(PrimaryColor { Color::WHITE() });
       setModifier(VerticalAlign::CENTER());
       setModifier(TextAlign::CENTER());
-      setModifier(SizePercentage::FULL());
+
+      if(lv_obj_get_style_width(parent.getHandle(), LV_PART_MAIN) == LV_SIZE_CONTENT)
+        Label::setModifier(Width::FIT_CONTENT());
+      else
+        Label::setModifier(Width::FULL());
+
+      if(lv_obj_get_style_height(parent.getHandle(), LV_PART_MAIN) == LV_SIZE_CONTENT)
+        Label::setModifier(Height::FIT_CONTENT());
+      else
+        Label::setModifier(Height::FULL());
 
       doAutorun(
           [handle = getHandle()]
