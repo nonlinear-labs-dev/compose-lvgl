@@ -62,6 +62,110 @@ namespace Compose
     lv_draw_line(&m_layer, &line_dsc);
   }
 
+void LVGLDrawContext::drawLineAA(StrokeStyle style,
+                                Point p1,
+                                Point p2,
+                                std::optional<LineDashOptions> dash,
+                                std::optional<RoundedEnds> ends)
+{
+    using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+    using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
+
+    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+
+    if(!dsc || !path)
+        return;
+
+    // --- geometry (still int → float, but keeps API compatible)
+    lv_fpoint_t p0 = { static_cast<float>(p1.x), static_cast<float>(p1.y) };
+    lv_fpoint_t p1f = { static_cast<float>(p2.x), static_cast<float>(p2.y) };
+
+    lv_vector_path_move_to(path.get(), &p0);
+    lv_vector_path_line_to(path.get(), &p1f);
+
+    // --- stroke setup
+    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_TRANSP);
+
+    lv_vector_dsc_set_stroke_color(
+        dsc.get(),
+        lv_color_make(style.color.r, style.color.g, style.color.b));
+
+    lv_vector_dsc_set_stroke_opa(
+        dsc.get(),
+        static_cast<lv_opa_t>(style.color.a * 255.0f));
+
+    lv_vector_dsc_set_stroke_width(
+        dsc.get(),
+        static_cast<float>(style.width));
+
+    lv_vector_dsc_set_stroke_join(
+        dsc.get(),
+        LV_VECTOR_STROKE_JOIN_ROUND);
+
+    // --- rounded ends handling
+    lv_vector_stroke_cap_t cap = LV_VECTOR_STROKE_CAP_BUTT;
+
+    if(ends.has_value())
+    {
+        if(ends->start && ends->end)
+            cap = LV_VECTOR_STROKE_CAP_ROUND;
+        else
+            cap = LV_VECTOR_STROKE_CAP_BUTT; // asymmetric handled below
+    }
+
+    lv_vector_dsc_set_stroke_cap(dsc.get(), cap);
+
+    // --- dash support
+    if(dash.has_value())
+    {
+        float dashes[2] = {
+            static_cast<float>(dash->dashWidth),
+            static_cast<float>(dash->dashGap)
+        };
+
+        lv_vector_dsc_set_stroke_dash(dsc.get(), dashes, 2);
+    }
+
+    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector(dsc.get());
+
+    // --- handle asymmetric rounded ends (same trick you already use)
+    if(ends.has_value() && (ends->start != ends->end))
+    {
+        const Point circleCenter = ends->start ? p1 : p2;
+
+        auto capDsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+        auto capPath = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+
+        if(capDsc && capPath)
+        {
+            lv_fpoint_t center = {
+                static_cast<float>(circleCenter.x),
+                static_cast<float>(circleCenter.y)
+            };
+
+            lv_vector_path_append_circle(
+                capPath.get(),
+                &center,
+                style.width / 2.0f,
+                style.width / 2.0f);
+
+            lv_vector_dsc_set_fill_color(
+                capDsc.get(),
+                lv_color_make(style.color.r, style.color.g, style.color.b));
+
+            lv_vector_dsc_set_fill_opa(
+                capDsc.get(),
+                static_cast<lv_opa_t>(style.color.a * 255.0f));
+
+            lv_vector_dsc_add_path(capDsc.get(), capPath.get());
+            lv_draw_vector(capDsc.get());
+        }
+    }
+}
+
+
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style,
                                             const Point start,
                                             const Point control,
