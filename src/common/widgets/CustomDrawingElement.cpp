@@ -15,6 +15,7 @@ namespace Compose
       const Widget widget(handle);
 
       auto &canvasData = widget.ensureDataForKeyExistsOwning<CanvasData>(c_canvasData, [handle, d = draw] { return new CanvasData(handle, d); });
+      (void) canvasData.m_buffer.get();
 
       const auto w = lv_obj_get_width(handle);
       const auto h = lv_obj_get_height(handle);
@@ -22,7 +23,7 @@ namespace Compose
       LVGLDrawContext drawContext(*handle);
       try
       {
-        canvasData.drawCallback(drawContext, w, h);
+        canvasData.m_drawCallback(drawContext, w, h);
       }
       catch(std::exception &)
       {

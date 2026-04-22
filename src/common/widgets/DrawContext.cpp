@@ -45,6 +45,11 @@ namespace Compose
 
   void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
   {
+    assert(p1.x >= -1000);
+    assert(p2.x >= -1000);
+    assert(p1.y >= -1000);
+    assert(p2.y >= -1000);
+
     lv_draw_line_dsc_t line_dsc;
     lv_draw_line_dsc_init(&line_dsc);
     line_dsc.p1.x = p1.x;
@@ -74,6 +79,7 @@ namespace Compose
   {
     if(points.size() < 2)
       return;
+    //assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100000 && p.y >= -1000; }));
 
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_HIGH), &lv_vector_path_delete);
@@ -119,6 +125,11 @@ namespace Compose
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control, const Point end)
   {
     const int segments = (style.width > 4) ? 40 : 20;
+
+    assert(start.x >= -1000);
+    assert(start.x >= -1000);
+    assert(end.y >= -1000);
+    assert(end.y >= -1000);
 
     Point lastPoint = start;
 
@@ -354,6 +365,8 @@ namespace Compose
     if(points.size() < 3)
       return;
 
+    assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100000 && p.y >= -100000; }));
+
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
       return;
@@ -385,6 +398,8 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc)
   {
+    assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100 && p.y >= -1000; }));
+
     if(points.size() < 3)
       return;
 

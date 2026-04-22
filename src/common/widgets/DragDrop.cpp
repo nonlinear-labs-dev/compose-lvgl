@@ -1,6 +1,7 @@
 #include "compose/widgets/handler/DragDrop.h"
 
 #include "compose/widgets/Widget.h"
+#include "../input/TouchGestureFeed.h"
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj_pos.h"
 
@@ -13,6 +14,11 @@ namespace Compose
   {
     constexpr int c_dragDetectionHysteresis = 20;
     constexpr int c_dragAxisDecisionHysteresis = 4;
+
+    bool hasMultiTouch(lv_indev_t *indev)
+    {
+      return activeTouchCount(indev) > 1;
+    }
 
     bool isPointInside(lv_obj_t *widget, const lv_point_t &point)
     {
@@ -303,6 +309,11 @@ namespace Compose
           {
             if(auto *indev = lv_event_get_indev(e))
             {
+              if(hasMultiTouch(indev))
+              {
+                return;
+              }
+
               lv_point_t current;
               lv_indev_get_point(indev, &current);
               self->m_lastPos = current;
@@ -321,6 +332,17 @@ namespace Compose
           {
             if(auto *indev = lv_event_get_indev(e))
             {
+              if(hasMultiTouch(indev))
+              {
+                if(self->m_lastPos)
+                {
+                  self->m_lastPos.reset();
+                  self->m_end();
+                }
+
+                return;
+              }
+
               lv_point_t current;
               lv_indev_get_point(indev, &current);
 
@@ -426,6 +448,11 @@ namespace Compose
           {
             if(auto *indev = lv_event_get_indev(e))
             {
+              if(hasMultiTouch(indev))
+              {
+                return;
+              }
+
               lv_point_t point;
               lv_indev_get_point(indev, &point);
               self->m_startPos = point;
@@ -449,6 +476,15 @@ namespace Compose
           {
             if(auto *indev = lv_event_get_indev(e))
             {
+              if(hasMultiTouch(indev))
+              {
+                restoreScrollableAncestors(self);
+                DragDropContext::get().resetSource(self->m_handle);
+                self->m_startPos.reset();
+                self->m_startDecision = StartDecision::Undecided;
+                return;
+              }
+
               lv_point_t point;
               lv_indev_get_point(indev, &point);
 

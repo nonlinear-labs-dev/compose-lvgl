@@ -1,4 +1,7 @@
 #include <compose/widgets/ConfirmationMessageBox.h>
+
+#include "reactive/Deferrer.h"
+
 #include <cstdint>
 #include "src/widgets/msgbox/lv_msgbox.h"
 #include "src/widgets/label/lv_label.h"
@@ -149,6 +152,7 @@ static void setResultAndClose(lv_event_t *e)
 
 static void yes(lv_event_t *e)
 {
+  Reactive::Deferrer deferrer;
   if(s_callback)
     s_callback();
   s_callback = nullptr;
@@ -157,6 +161,7 @@ static void yes(lv_event_t *e)
 
 static void no(lv_event_t *e)
 {
+  Reactive::Deferrer deferrer;
   setResultAndClose(e);
 }
 

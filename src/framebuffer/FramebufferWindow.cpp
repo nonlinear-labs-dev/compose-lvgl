@@ -4,6 +4,8 @@
 #include "src/drivers/evdev/lv_evdev.h"
 #include "src/display/lv_display.h"
 #include "src/indev/lv_indev.h"
+#include "src/indev/lv_indev_gesture.h"
+#include "../common/input/TouchGestureFeed.h"
 
 #include <array>
 #include <chrono>
@@ -14,6 +16,7 @@
 #include <string>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <vector>
 
 namespace Compose
 {
@@ -61,7 +64,6 @@ namespace Compose
       bool active = false;
       int rawX = 0;
       int rawY = 0;
-      lv_point_t lastPoint = { 0, 0 };
     };
 
     struct MultiTouchState
@@ -76,12 +78,13 @@ namespace Compose
       bool hasCalibration = false;
       uint64_t lastReadTick = 0;
       std::array<SlotState, c_maxTouchPoints> slots;
+      TouchGestureFeed feed { c_maxTouchPoints };
     };
 
-    struct TouchSlot
+    struct TouchInput
     {
+      TouchGestureIndevData common;
       MultiTouchState *state = nullptr;
-      int slot = 0;
     };
 
     uint64_t nowMs()
@@ -98,6 +101,20 @@ namespace Compose
         output = (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
       }
       return std::clamp(output, outMin, outMax);
+    }
+
+    lv_point_t translatePoint(const MultiTouchState &state, const SlotState &slotState, int offsetX, int offsetY, int width, int height)
+    {
+      auto x = slotState.rawX;
+      auto y = slotState.rawY;
+
+      if(state.hasCalibration)
+      {
+        x = calibrate(slotState.rawX, state.minX, state.maxX, offsetX, offsetX + width - 1);
+        y = calibrate(slotState.rawY, state.minY, state.maxY, offsetY, offsetY + height - 1);
+      }
+
+      return { x, y };
     }
 
     void updateSlots(MultiTouchState &state)
@@ -147,82 +164,90 @@ namespace Compose
       }
     }
 
-    void readTouchSlot(lv_indev_t *indev, lv_indev_data_t *data)
+    void readTouch(lv_indev_t *indev, lv_indev_data_t *data)
     {
-      auto *slot = static_cast<TouchSlot *>(lv_indev_get_driver_data(indev));
-      if(!slot || !slot->state || slot->state->fd < 0 || !slot->state->display)
+      auto *common = static_cast<TouchGestureIndevData *>(lv_indev_get_driver_data(indev));
+      auto *touch = common ? static_cast<TouchInput *>(common->context) : nullptr;
+      if(!touch || !touch->state || touch->state->fd < 0 || !touch->state->display)
       {
         data->state = LV_INDEV_STATE_RELEASED;
         data->point = lv_point_t { 0, 0 };
         return;
       }
 
-      auto &state = *slot->state;
-      updateSlots(state);
+      auto &state = *touch->state;
+      const auto lvTick = lv_tick_get();
+      const auto refreshNeeded = state.feed.shouldRefresh(lvTick);
+      if(refreshNeeded)
+      {
+        updateSlots(state);
+      }
 
       const auto offsetX = lv_display_get_offset_x(state.display);
       const auto offsetY = lv_display_get_offset_y(state.display);
       const auto width = lv_display_get_horizontal_resolution(state.display);
       const auto height = lv_display_get_vertical_resolution(state.display);
-
-      auto &slotState = state.slots[slot->slot];
-      if(slotState.active)
+      if(refreshNeeded)
       {
-        auto x = slotState.rawX;
-        auto y = slotState.rawY;
+        std::vector<TouchSample> touches;
+        touches.reserve(c_maxTouchPoints);
 
-        if(state.hasCalibration)
+        for(int i = 0; i < c_maxTouchPoints; i++)
         {
-          x = calibrate(slotState.rawX, state.minX, state.maxX, offsetX, offsetX + width - 1);
-          y = calibrate(slotState.rawY, state.minY, state.maxY, offsetY, offsetY + height - 1);
+          if(const auto &slotState = state.slots[i]; slotState.active)
+          {
+            touches.push_back(TouchSample {
+                .id = static_cast<uint64_t>(i),
+                .point = translatePoint(state, slotState, offsetX, offsetY, width, height),
+            });
+          }
         }
 
-        data->state = LV_INDEV_STATE_PRESSED;
-        data->point = lv_point_t { x, y };
-        slotState.lastPoint = data->point;
+        state.feed.update(touches, static_cast<uint32_t>(state.lastReadTick));
+        state.feed.markRefreshed(lvTick);
       }
-      else
-      {
-        data->state = LV_INDEV_STATE_RELEASED;
-        data->point = slotState.lastPoint;
-      }
+
+      applyTouchGestureFeed(indev, data, state.feed, common->lastPoint);
     }
 
-    void releaseTouchSlot(lv_event_t *e)
+    void releaseTouch(lv_event_t *e)
     {
       auto *indev = static_cast<lv_indev_t *>(lv_event_get_user_data(e));
-      auto *slot = static_cast<TouchSlot *>(lv_indev_get_driver_data(indev));
-      if(slot)
+      auto *touch = static_cast<TouchGestureIndevData *>(lv_indev_get_driver_data(indev));
+      if(touch)
       {
         lv_indev_set_driver_data(indev, nullptr);
         lv_indev_set_read_cb(indev, nullptr);
-        lv_free(slot);
+        lv_free(touch->context);
       }
     }
 
-    lv_indev_t *createTouchIndev(MultiTouchState *state, int slotIndex)
+    lv_indev_t *createTouchIndev(MultiTouchState *state)
     {
-      auto *slot = static_cast<TouchSlot *>(lv_malloc_zeroed(sizeof(TouchSlot)));
-      if(!slot)
+      auto *touch = static_cast<TouchInput *>(lv_malloc_zeroed(sizeof(TouchInput)));
+      if(!touch)
       {
         return nullptr;
       }
 
-      slot->state = state;
-      slot->slot = slotIndex;
+      touch->common.feed = &state->feed;
+      touch->common.context = touch;
+      touch->state = state;
 
       auto *indev = lv_indev_create();
       if(!indev)
       {
-        lv_free(slot);
+        lv_free(touch);
         return nullptr;
       }
 
       lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
-      lv_indev_set_read_cb(indev, readTouchSlot);
-      lv_indev_set_driver_data(indev, slot);
+      lv_indev_set_read_cb(indev, readTouch);
+      lv_indev_set_driver_data(indev, &touch->common);
       lv_indev_set_display(indev, state->display);
-      lv_indev_add_event_cb(indev, releaseTouchSlot, LV_EVENT_DELETE, indev);
+      lv_indev_set_pinch_up_threshold(indev, 1.05f);
+      lv_indev_set_pinch_down_threshold(indev, 0.95f);
+      lv_indev_add_event_cb(indev, releaseTouch, LV_EVENT_DELETE, indev);
       return indev;
     }
   }
@@ -270,12 +295,9 @@ namespace Compose
         mtState->hasCalibration = true;
       }
 
-      for(int slotIndex = 0; slotIndex < c_maxTouchPoints; slotIndex++)
+      if(auto *touchIndev = createTouchIndev(mtState))
       {
-        if(auto *touchIndev = createTouchIndev(mtState, slotIndex))
-        {
-          m_touchIndevs.push_back(touchIndev);
-        }
+        m_touchIndevs.push_back(touchIndev);
       }
 
       if(m_touchIndevs.empty() && touchDevice)

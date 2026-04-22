@@ -186,6 +186,7 @@ class BaseWidget
       lv_obj_add_event_cb(
           m_widget,
           [](lv_event_t* e) {
+            Reactive::Deferrer deferrer;
             auto target = static_cast<lv_obj_t*>(lv_event_get_target(e));
             auto storage = static_cast<UserDataStorage*>(lv_obj_get_user_data(target));
 

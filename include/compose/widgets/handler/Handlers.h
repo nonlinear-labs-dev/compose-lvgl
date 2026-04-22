@@ -210,4 +210,70 @@ namespace Compose
       self.ensureDataForKeyExistsOwning<StateChangeData>(BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
     }
   };
+
+  struct Pinch
+  {
+    BaseWidget &self;
+    using CB = std::function<void(double x, double y, double diff)>;
+
+    struct PinchData
+    {
+      PinchData(lv_obj_t *handle, const CB &cb)
+          : m_handle(handle)
+          , m_callback(cb)
+      {
+        m_handler = lv_obj_add_event_cb(
+            handle,
+            [](lv_event_t *e)
+            {
+              Reactive::Deferrer def;
+              if(const auto user_data = static_cast<PinchData *>(lv_event_get_user_data(e)))
+              {
+                if(lv_event_get_gesture_type(e) == LV_INDEV_GESTURE_PINCH)
+                {
+                  const auto state = lv_event_get_gesture_state(e, LV_INDEV_GESTURE_PINCH);
+
+                  if(state == LV_INDEV_GESTURE_STATE_RECOGNIZED)
+                  {
+                    const auto scale = lv_event_get_pinch_scale(e);
+                    const auto diff = static_cast<double>(scale - user_data->m_oldScale);
+                    user_data->m_oldScale = scale;
+
+                    lv_point_t point = { 0, 0 };
+                    if(const auto indev = lv_event_get_indev(e))
+                    {
+                      lv_indev_get_point(indev, &point);
+                    }
+
+                    lv_area_t widget_coords;
+                    lv_obj_get_coords(user_data->m_handle, &widget_coords);
+                    user_data->m_callback(point.x - widget_coords.x1, point.y - widget_coords.y1, diff);
+                  }
+                  else if(state == LV_INDEV_GESTURE_STATE_ENDED || state == LV_INDEV_GESTURE_STATE_CANCELED || state == LV_INDEV_GESTURE_STATE_NONE)
+                  {
+                    user_data->m_oldScale = 1.0f;
+                  }
+                }
+              }
+            },
+            LV_EVENT_GESTURE, this);
+      }
+
+      ~PinchData()
+      {
+        lv_obj_remove_event_dsc(m_handle, m_handler);
+      }
+
+      lv_obj_t *m_handle;
+      CB m_callback;
+      float m_oldScale = 1.0f;
+      lv_event_dsc_t *m_handler;
+    };
+
+    void operator<<(const CB &cb) const
+    {
+      assert(!self.getData<PinchData>("PinchData"));
+      self.ensureDataForKeyExistsOwning<PinchData>("PinchData", [this, cb] { return new PinchData(self.getHandle(), cb); });
+    }
+  };
 }

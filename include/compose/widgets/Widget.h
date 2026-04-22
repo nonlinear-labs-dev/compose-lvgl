@@ -501,6 +501,7 @@ namespace Compose
     LongClick longClick { *this, c_longClickKey };
     Touch touch { *this };
     StateChange stateChange { *this };
+    Pinch pinch { *this };
     Drag drag { *this };
     DragDrop dragDrop { *this };
 
@@ -537,6 +538,7 @@ namespace Compose
 
 #define LEFT_CLICK it.leftClick << [=]
 #define TOUCH() it.touch << [=](Compose::Touch * it)
+#define PINCH it.pinch << [=]
 #define SWALLOW_LEFT_CLICK()                                                                                                                                                       \
   LEFT_CLICK(auto)                                                                                                                                                                 \
   {                                                                                                                                                                                \

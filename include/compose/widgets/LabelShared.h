@@ -54,6 +54,7 @@ namespace Compose::LabelShared
       const Widget widget(handle);
 
       auto& canvasData = widget.ensureDataForKeyExistsOwning<LabelData>(BaseWidget::c_labelData, [handle, d = draw] { return new LabelData(handle, d); });
+      (void) canvasData.m_buffer.get();
 
       const auto w = lv_obj_get_width(handle);
       const auto h = lv_obj_get_height(handle);
@@ -61,7 +62,7 @@ namespace Compose::LabelShared
       LVGLDrawContext drawContext(*handle);
       try
       {
-        canvasData.drawCallback(drawContext, w, h);
+        canvasData.m_drawCallback(drawContext, w, h);
       }
       catch(std::exception&)
       {
