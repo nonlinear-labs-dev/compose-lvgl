@@ -6,6 +6,7 @@
 #include "compose/FreeTypeFont.h"
 #include <functional>
 #include <string>
+#include <utility>
 
 namespace Compose
 {
@@ -13,12 +14,12 @@ namespace Compose
   {
    public:
     using Widget::setModifier;
-    using Widget::Widget;
+    using WidgetType = Widget::WidgetType;
 
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit Label(BaseWidget &parent, tArgs... args)
+    explicit Label(BaseWidget &parent, tArgs &&...args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       setLabelRenderingFunction();
@@ -28,7 +29,16 @@ namespace Compose
       Label::setModifier(PrimaryColor { Color::WHITE() });
       setModifier(VerticalAlign::CENTER());
       setModifier(TextAlign::CENTER());
-      setModifier(SizePercentage::FULL());
+
+      if(lv_obj_get_style_width(parent.getHandle(), LV_PART_MAIN) == LV_SIZE_CONTENT)
+        Label::setModifier(Width::FIT_CONTENT());
+      else
+        Label::setModifier(Width::FULL());
+
+      if(lv_obj_get_style_height(parent.getHandle(), LV_PART_MAIN) == LV_SIZE_CONTENT)
+        Label::setModifier(Height::FIT_CONTENT());
+      else
+        Label::setModifier(Height::FULL());
 
       doAutorun(
           [handle = getHandle()]
@@ -54,7 +64,12 @@ namespace Compose
               lv_obj_set_height(handle, textHeight);
             }
           });
-      (setModifier(args), ...);
+      (setModifier(std::forward<tArgs>(args)), ...);
+    }
+
+    explicit Label(WidgetType *w)
+        : Widget(w)
+    {
     }
 
     void setModifier(Width w) const override;

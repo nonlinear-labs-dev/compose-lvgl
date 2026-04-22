@@ -53,6 +53,7 @@ namespace Compose
 
     static void onListChanged(lv_event_t *e)
     {
+      Reactive::Deferrer deferrer;
       if(auto *self = static_cast<State *>(lv_event_get_user_data(e)))
       {
         auto *currentTarget = static_cast<lv_obj_t *>(lv_event_get_current_target(e));

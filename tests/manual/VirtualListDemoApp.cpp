@@ -83,6 +83,8 @@ int runVirtualListDemo()
         };
       };
 
+      ROW(Height { 50 }) { };
+
       ROW()
       {
         BUTTON(FixedSize { 100, 100 })
@@ -109,6 +111,14 @@ int runVirtualListDemo()
             *selectedItem = *selectedItem.get() + 1;
             return true;
           };
+        };
+      };
+
+      ROW(Height { 50 })
+      {
+        LABEL(Height { 50 }, VerticalAlign::CENTER())
+        {
+          TEXT("Drag me!");
         };
       };
     };

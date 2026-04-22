@@ -19,7 +19,7 @@ namespace Compose
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit MultiLineLabel(BaseWidget &parent, tArgs... args)
+    explicit MultiLineLabel(BaseWidget &parent, tArgs &&... args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       setLabelRenderingFunction();
@@ -31,45 +31,48 @@ namespace Compose
       setModifier(TextAlign::LEFT());
       setModifier(SizePercentage::FULL());
 
-      doAutorun(
-          [handle = getHandle()]
+      doAutorun([handle = getHandle()] {
+        const MultiLineLabel l(handle);
+        const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
+
+        const auto [height] = labelData.height.get();
+        const auto [width] = labelData.width.get();
+        const auto &fontDesc = labelData.font.get();
+        const auto &font = s_fontStorage->getFont(fontDesc);
+        const auto text = labelData.text.get();
+
+        auto wrapWidth = width;
+        if(wrapWidth <= 0 || wrapWidth == LV_SIZE_CONTENT)
+        {
+          wrapWidth = lv_obj_get_width(handle);
+        }
+
+        if(wrapWidth > 0)
+        {
+          auto wrappedLines
+              = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) { return font.getStringWidth(t); });
+
+          if(height == LV_SIZE_CONTENT)
           {
-            const MultiLineLabel l(handle);
-            const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
+            const auto lineCount = wrappedLines.size();
+            const auto lineHeight = font.getFontHeight();
+            const auto totalHeight = static_cast<int>(lineCount * lineHeight);
 
-            const auto [height] = labelData.height.get();
-            const auto [width] = labelData.width.get();
-            const auto &fontDesc = labelData.font.get();
-            const auto &font = s_fontStorage->getFont(fontDesc);
-            const auto text = labelData.text.get();
+            lv_obj_set_height(handle, totalHeight);
+          }
 
-            auto wrapWidth = width;
-            if(wrapWidth <= 0 || wrapWidth == LV_SIZE_CONTENT) {
-                wrapWidth = lv_obj_get_width(handle);
+          if(width == LV_SIZE_CONTENT)
+          {
+            auto maxW = 0;
+            for(const auto &line : wrappedLines)
+            {
+              maxW = std::max(maxW, font.getStringWidth(line));
             }
-
-            if(wrapWidth > 0) {
-              auto wrappedLines = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) {
-                  return font.getStringWidth(t);
-              });
-
-              if(height == LV_SIZE_CONTENT) {
-                const auto lineCount = wrappedLines.size();
-                const auto lineHeight = font.getFontHeight();
-                const auto totalHeight = static_cast<int>(lineCount * lineHeight);
-
-                lv_obj_set_height(handle, totalHeight);
-              }
-
-              if(width == LV_SIZE_CONTENT) {
-                auto maxW = 0;
-                for(const auto& line : wrappedLines) {
-                  maxW = std::max(maxW, font.getStringWidth(line));
-                }
-                lv_obj_set_width(handle, maxW);
-              }
-            }
-          });      (setModifier(args), ...);
+            lv_obj_set_width(handle, maxW);
+          }
+        }
+      });
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     void setModifier(Width w) const override;
@@ -92,4 +95,4 @@ namespace Compose
 }
 
 #define MULTI_LINE_LABEL(...)                                                                                          \
-  it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel &&it)
+  it.add(Compose::MultiLineLabel(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::MultiLineLabel && it)

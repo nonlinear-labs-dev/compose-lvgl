@@ -3,6 +3,8 @@
 #include "compose/modifiers/Rotation.h"
 #include "container/Container.h"
 #include "src/misc/lv_types.h"
+#include <functional>
+#include <vector>
 
 namespace Compose
 {
