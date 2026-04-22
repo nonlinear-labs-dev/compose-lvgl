@@ -101,6 +101,7 @@ namespace Compose
       lv_screen_load(BaseWidget::getHandle());
       applyDefaultStyle(BaseWidget::getHandle());
       Widget::setModifier(BackgroundColor::TRANSPARENT());
+      setModifier(Clickable { false });
       (setModifier(std::forward<tArgs>(args)), ...);
     }
 
@@ -111,6 +112,7 @@ namespace Compose
       applyDefaultStyle(BaseWidget::getHandle());
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
+      setModifier(Clickable { false });
       (setModifier(std::forward<tArgs>(args)), ...);
     }
 
