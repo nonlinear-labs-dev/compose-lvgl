@@ -34,9 +34,11 @@ namespace Compose
     const auto loop = Glib::MainLoop::create();
 
     Glib::signal_timeout().connect(
-        [&, loop] {
+        [&, loop]
+        {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+          Reactive::Deferrer deferrer;
           lv_tick_inc(delta.count());
           lastTick = current;
           lv_timer_handler();
