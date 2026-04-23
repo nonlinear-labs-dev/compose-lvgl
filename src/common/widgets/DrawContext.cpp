@@ -81,7 +81,7 @@ namespace Compose
     lv_draw_line(&m_layer, &line_dsc);
   }
 
-  void LVGLDrawContext::drawLineAA(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
+  void LVGLDrawContext::drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
                                    std::optional<RoundedEnds> ends)
   {
     using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
