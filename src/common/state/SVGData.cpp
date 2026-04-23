@@ -2,6 +2,7 @@
 #include "compose/widgets/DrawContext.h"
 #include "compose/modifiers/Color.h"
 #include "compose/modifiers/Rect.h"
+#include "reactive/Computation.h"
 
 namespace Compose
 {
@@ -20,14 +21,18 @@ namespace Compose
           {
             const auto w = lv_obj_get_width(data->handle);
             const auto h = lv_obj_get_height(data->handle);
-            LVGLDrawContext drawContext(*data->handle);
-            try
-            {
-              data->drawCallback(drawContext, w, h);
-            }
-            catch(std::exception&)
-            {
-            }
+            Reactive::Computation::untracked(
+                [=]
+                {
+                  LVGLDrawContext drawContext(*data->handle);
+                  try
+                  {
+                    data->drawCallback(drawContext, w, h);
+                  }
+                  catch(std::exception&)
+                  {
+                  }
+                });
           }
         },
         LV_EVENT_SIZE_CHANGED, this);

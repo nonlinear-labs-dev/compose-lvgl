@@ -12,7 +12,8 @@ namespace Compose
 
     m_resizeHandler = lv_obj_add_event_cb(
         handle,
-        [](lv_event_t* e) {
+        [](lv_event_t* e)
+        {
           Reactive::Deferrer deferrer;
           const auto data = static_cast<CanvasData*>(lv_event_get_user_data(e));
           data->ensureBuffer();
@@ -33,6 +34,19 @@ namespace Compose
       lv_draw_buf_clear(newBuffer, nullptr);
       lv_canvas_set_buffer(m_handle, newBuffer->data, width, height, LV_COLOR_FORMAT_ARGB8888);
       m_buffer.modify([=](auto& f) { f.reset(newBuffer); });
+
+      Reactive::Computation::untracked(
+          [=, this]
+          {
+            try
+            {
+              LVGLDrawContext drawContext(*(this->m_handle));
+              this->m_drawCallback(drawContext, width, height);
+            }
+            catch(std::exception&)
+            {
+            }
+          });
     }
   }
 
