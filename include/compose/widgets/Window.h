@@ -21,6 +21,11 @@ namespace Compose
       return std::forward<T>(it);
     }
 
+    [[nodiscard]] lv_display_t* getDisplay() const
+    {
+      return m_display;
+    }
+
    private:
     lv_display_t* m_display { nullptr };
     lv_indev_t* m_mouse { nullptr };
