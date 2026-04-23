@@ -21,11 +21,22 @@ namespace Compose
     lv_fs_posix_init();
   }
 
+  namespace
+  {
+    std::unique_ptr<Reactive::Deferrer> s_timerDeferrer;
+
+    void flushBeforeRefresh(lv_event_t*)
+    {
+      s_timerDeferrer.reset();
+    }
+  }
+
   void Application::runBlocking(const tCallback& callback) const
   {
     constexpr auto c_frameIntervalInMs = 16;
 
     Window window { m_position, m_rotation };
+    lv_display_add_event_cb(window.getDisplay(), flushBeforeRefresh, LV_EVENT_REFR_START, nullptr);
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });
@@ -38,10 +49,12 @@ namespace Compose
         {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
-          Reactive::Deferrer deferrer;
+
           lv_tick_inc(delta.count());
           lastTick = current;
+          s_timerDeferrer = std::make_unique<Reactive::Deferrer>();
           lv_timer_handler();
+          s_timerDeferrer.reset();
 
           auto keepRunning = lv_display_get_next(nullptr) != nullptr;
           if(!keepRunning)

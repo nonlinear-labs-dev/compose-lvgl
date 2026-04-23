@@ -103,9 +103,13 @@ namespace Compose
     };
     using tPathSegment = std::variant<Point, QuadPathSegment>;
 
+    static std::vector<tPathSegment> toPathSegments(const std::vector<Point>& arr);
+
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends) = 0;
+    virtual void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
+                            std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
                                      std::optional<RoundedEnds> ends) = 0;
@@ -117,8 +121,8 @@ namespace Compose
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
                                        int bottomRight) = 0;
-
     virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> segments) = 0;
+    virtual void fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point>& segments);
     virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
     virtual void drawSegmentedArc(const SegmentedArcDrawOptions &props) = 0;
@@ -139,6 +143,8 @@ namespace Compose
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
+    void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
+                    std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
                              std::optional<RoundedEnds> ends) override;
