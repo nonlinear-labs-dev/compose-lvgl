@@ -1,5 +1,5 @@
 #pragma once
-#include "nltools/logging/Log.h"
+#include "nltools-2/NotSyncedException.h"
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj.h"
 #include "src/misc/lv_types.h"
@@ -14,7 +14,6 @@
 #include <format>
 #include <reactive/Computations.h>
 #include <reactive/Var.h>
-#include <nltools-2/NotSyncedException.h>
 
 class BaseWidget
 {
@@ -134,7 +133,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = fac();
-      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) { }));
+      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) {}));
       return *static_cast<T*>(data);
     }
 
@@ -167,7 +166,7 @@ class BaseWidget
           {
             cb();
           }
-          catch(const NotSyncedException&)
+          catch(const NotSyncedException& ignore)
           {
           }
           catch(const std::exception& e)

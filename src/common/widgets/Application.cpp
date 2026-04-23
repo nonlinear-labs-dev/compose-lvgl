@@ -23,27 +23,37 @@ namespace Compose
 
   void Application::runBlocking(const tCallback& callback) const
   {
+    constexpr auto c_frameIntervalInMs = 16;
+
     Window window { m_position, m_rotation };
 
     const Reactive::Computations c;
     c.add([&] { callback(window); });
 
     auto lastTick = std::chrono::high_resolution_clock::now();
+    const auto loop = Glib::MainLoop::create();
 
     Glib::signal_timeout().connect(
-        [&]
+        [&, loop]
         {
           const auto current = std::chrono::high_resolution_clock::now();
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
+          Reactive::Deferrer deferrer;
           lv_tick_inc(delta.count());
           lastTick = current;
-          Reactive::Deferrer frameDeferrer;
           lv_timer_handler();
-          return true;
-        },
-        16);
 
-    const auto loop = Glib::MainLoop::create();
+          auto keepRunning = lv_display_get_next(nullptr) != nullptr;
+          if(!keepRunning)
+          {
+            loop->quit();
+          }
+
+          return keepRunning;
+        },
+        c_frameIntervalInMs);
+
     loop->run();
+    [[maybe_unused]] auto leakingDeferrer = new Reactive::Deferrer();
   }
 }

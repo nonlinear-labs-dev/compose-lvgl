@@ -1,6 +1,8 @@
 #include "compose/state/CanvasData.h"
 #include "compose/widgets/DrawContext.h"
 #include <compose/widgets/CustomDrawingElement.h>
+
+#include "reactive/Computation.h"
 #include "src/widgets/canvas/lv_canvas.h"
 #include "src/draw/lv_draw_buf.h"
 #include "src/misc/lv_color.h"
@@ -9,8 +11,8 @@ namespace Compose
 {
   void CustomDrawingElement::setDrawCall(tDrawCB &&draw) const
   {
-    nltools_detailedAssertAlways(!doesDataForKeyExist<CanvasData>(),
-                                 "CanvasData should not exist, setting a new render callback is prohibited");
+    assert(!doesDataForKeyExist<
+           CanvasData>());  // CanvasData should not exist, setting a new render callback is prohibited
 
     Widget(getHandle())
         .doAutorun(
@@ -20,8 +22,7 @@ namespace Compose
 
               auto &canvasData = widget.ensureDataForKeyExistsOwning<CanvasData>(c_canvasData, [handle, d = draw]
                                                                                  { return new CanvasData(handle, d); });
-
-              auto &bufferUser = canvasData.buffer.get();
+              (void) canvasData.m_buffer.get();
 
               const auto w = lv_obj_get_width(handle);
               const auto h = lv_obj_get_height(handle);
@@ -29,12 +30,11 @@ namespace Compose
               LVGLDrawContext drawContext(*handle);
               try
               {
-                canvasData.drawCallback(drawContext, w, h);
+                canvasData.m_drawCallback(drawContext, w, h);
               }
               catch(std::exception &)
               {
               }
             });
   }
-
 }

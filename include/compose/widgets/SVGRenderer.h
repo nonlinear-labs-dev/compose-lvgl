@@ -17,10 +17,10 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit SVGRenderer(Widget& parent, tArgs... args)
+    explicit SVGRenderer(Widget& parent, tArgs&&... args)
         : SVGRenderer(parent)
     {
-      (setModifier(args), ...);
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     void setModifier(const SVGPath& path) const;
@@ -29,4 +29,4 @@ namespace Compose
   };
 }
 
-#define SVG_RENDERER(...) it.add(Compose::SVGRenderer(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGRenderer&& it)
+#define SVG_RENDERER(...) it.add(Compose::SVGRenderer(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::SVGRenderer && it)

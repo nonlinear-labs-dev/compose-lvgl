@@ -9,8 +9,7 @@
 #include "compose/modifiers/Scrollable.h"
 #include "nltools/Assert.h"
 
-#include <cassert>
-#include <tuple>
+#include <stdexcept>
 #include <type_traits>
 
 namespace Compose
@@ -38,14 +37,6 @@ namespace Compose
     bool operator==(const LayoutType &) const = default;
   };
 
-  struct Border
-  {
-    int width;
-    Color color;
-
-    bool operator==(const Border &) const = default;
-  };
-
   class Widget : public BaseWidget
   {
    public:
@@ -63,11 +54,25 @@ namespace Compose
       {
         if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_COLUMN)
         {
-          setModifier(Width::FULL());
+          if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+          {
+            setModifier(Width::FIT_CONTENT());
+          }
+          else
+          {
+            setModifier(Width::FULL());
+          }
         }
         else if(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN) == LV_FLEX_FLOW_ROW)
         {
-          setModifier(Height::FULL());
+          if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+          {
+            setModifier(Height::FIT_CONTENT());
+          }
+          else
+          {
+            setModifier(Height::FULL());
+          }
         }
       }
     }
@@ -90,23 +95,25 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(Window &it, tArgs... args)
+    explicit Widget(Window &it, tArgs &&...args)
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
       applyDefaultStyle(BaseWidget::getHandle());
       Widget::setModifier(BackgroundColor::TRANSPARENT());
-      (setModifier(args), ...);
+      setModifier(Clickable { false });
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     template <typename... tArgs>
-    explicit Widget(BaseWidget &w, tArgs... args)
+    explicit Widget(BaseWidget &w, tArgs &&...args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
-      (setModifier(args), ...);
+      setModifier(Clickable { false });
+      (setModifier(std::forward<tArgs>(args)), ...);
     }
 
     explicit Widget(WidgetType *w)
@@ -261,9 +268,39 @@ namespace Compose
       lv_obj_set_style_margin_bottom(getHandle(), margin.bottom, LV_PART_MAIN);
     }
 
+    void setModifier(MarginLeft m) const
+    {
+      lv_obj_set_style_margin_left(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginTop m) const
+    {
+      lv_obj_set_style_margin_top(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginRight m) const
+    {
+      lv_obj_set_style_margin_right(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
+    void setModifier(MarginBottom m) const
+    {
+      lv_obj_set_style_margin_bottom(getHandle(), m.margin, LV_PART_MAIN);
+    }
+
     void setModifier(Border border) const
     {
+      setModifier(BorderWidth { border.width });
+      setModifier(BorderColor { border.color });
+    }
+
+    void setModifier(BorderWidth border) const
+    {
       lv_obj_set_style_border_width(getHandle(), border.width, LV_PART_MAIN);
+    }
+
+    void setModifier(BorderColor border) const
+    {
       lv_obj_set_style_border_color(getHandle(),
                                     lv_color_t {
                                         .blue = border.color.b,
@@ -272,6 +309,31 @@ namespace Compose
                                     },
                                     LV_PART_MAIN);
       lv_obj_set_style_border_opa(getHandle(), static_cast<unsigned short>(border.color.a * 255), LV_PART_MAIN);
+    }
+
+    void setModifier(const BorderSides &sides) const
+    {
+      int value = LV_BORDER_SIDE_NONE;
+
+      for(auto s : sides.sides)
+      {
+        switch(s)
+        {
+          case BorderSides::TOP:
+            value |= (int) LV_BORDER_SIDE_TOP;
+            break;
+          case BorderSides::BOTTOM:
+            value |= (int) LV_BORDER_SIDE_BOTTOM;
+            break;
+          case BorderSides::LEFT:
+            value |= (int) LV_BORDER_SIDE_LEFT;
+            break;
+          case BorderSides::RIGHT:
+            value |= (int) LV_BORDER_SIDE_RIGHT;
+            break;
+        }
+      }
+      lv_obj_set_style_border_side(getHandle(), static_cast<lv_border_side_t>(value), LV_PART_MAIN);
     }
 
     void setModifier(RoundedCorner corner) const
@@ -303,6 +365,21 @@ namespace Compose
 
     void setModifier(SizePercentage s) const
     {
+      if(const auto parent = lv_obj_get_parent(getHandle()))
+      {
+        if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+        {
+          nltools_detailedAssertAlways(false,
+                                       "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+        }
+
+        if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+        {
+          nltools_detailedAssertAlways(
+              false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+        }
+      }
+
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
       lv_obj_update_layout(getHandle());
@@ -328,6 +405,15 @@ namespace Compose
     {
       if(const auto parent = lv_obj_get_parent(getHandle()))
       {
+        if(LV_COORD_IS_PCT(w.it))
+        {
+          if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+          {
+            nltools_detailedAssertAlways(
+                false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+          }
+        }
+
         if(isRow(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
         {
           lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
@@ -339,9 +425,21 @@ namespace Compose
 
     virtual void setModifier(Height h) const
     {
-      if(const auto parent = lv_obj_get_parent(getHandle()); isColumn(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
+      if(const auto parent = lv_obj_get_parent(getHandle()))
       {
-        lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        if(LV_COORD_IS_PCT(h.it))
+        {
+          if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
+          {
+            nltools_detailedAssertAlways(
+                false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+          }
+        }
+
+        if(isColumn(lv_obj_get_style_flex_flow(parent, LV_PART_MAIN)))
+        {
+          lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
+        }
       }
       lv_obj_set_height(getHandle(), h.it);
       lv_obj_update_layout(getHandle());

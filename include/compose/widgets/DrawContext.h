@@ -55,7 +55,6 @@ namespace Compose
       int strokeWidth;
       float startAngle;
       float sweepAngle;
-      float cornerRadius;
 
       std::optional<std::vector<float>> dashes = std::nullopt;
     };
@@ -97,6 +96,15 @@ namespace Compose
       }
     };
 
+    struct QuadPathSegment
+    {
+      Point a;
+      Point b;
+    };
+    using tPathSegment = std::variant<Point, QuadPathSegment>;
+
+    static std::vector<tPathSegment> toPathSegments(const std::vector<Point>& arr);
+
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends) = 0;
@@ -113,7 +121,8 @@ namespace Compose
     virtual void fillRoundedRect(Color color, Rect r, RoundedCorner rc) = 0;
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
                                        int bottomRight) = 0;
-    virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) = 0;
+    virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> segments) = 0;
+    virtual void fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point>& segments);
     virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
     virtual void drawSegmentedArc(const SegmentedArcDrawOptions &props) = 0;
@@ -121,9 +130,6 @@ namespace Compose
 
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
-    virtual void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
-                                  Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl,
-                                  Point releaseEnd, int bottomY) = 0;
     virtual void flushLayer() = 0;
   };
 
@@ -148,17 +154,15 @@ namespace Compose
                                  int bottomRight) override;
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
-    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight);
-    void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
-    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc);
+    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
+                               int bottomRight) override;
+    void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points) override;
+    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) override;
     void fillArc(const ArcDrawOptions &arcOptions) override;
     void drawSegmentedArc(const SegmentedArcDrawOptions &props) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;
-    void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) override;
+    void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
-    void fillEnvelopeArea(Color color, Point start, Point attackCtrl, Point attackEnd, Point decay1End,
-                          Point decay2Ctrl, Point decay2End, Point sustainEnd, Point releaseCtrl, Point releaseEnd,
-                          int bottomY) override;
     void flushLayer() override;
 
    private:

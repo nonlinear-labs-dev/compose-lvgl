@@ -5,7 +5,6 @@
 #include "src/core/lv_obj_pos.h"
 #include <nltools/logging/Log.h>
 #include <reactive/Deferrer.h>
-#include <memory>
 #include <assert.h>
 #include <compose/widgets/BaseWidget.h>
 #include <compose/modifiers/Position.h>
@@ -66,6 +65,7 @@ namespace Compose
     {
       assert(!self.getData<ClickData>(m_key));
       self.ensureDataForKeyExistsOwning<ClickData>(m_key, [this, cb] { return new ClickData(self.getHandle(), cb); });
+      lv_obj_set_flag(self.getHandle(), LV_OBJ_FLAG_CLICKABLE, true);
     }
   };
 
@@ -108,8 +108,8 @@ namespace Compose
     void operator<<(const CB &cb) const
     {
       assert(!self.getData<StateChangeData>(BaseWidget::c_stateChangeKey));
-      self.ensureDataForKeyExistsOwning<StateChangeData>(
-          BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
+      self.ensureDataForKeyExistsOwning<StateChangeData>(BaseWidget::c_stateChangeKey, [this, cb]
+                                                         { return new StateChangeData(self.getHandle(), cb); });
     }
   };
 }

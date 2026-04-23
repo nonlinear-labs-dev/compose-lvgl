@@ -11,6 +11,7 @@
 #include "Size.h"
 #include "BackgroundColor.h"
 #include "PrimaryColor.h"
+#include "Border.h"
 #include "SVGPath.h"
 #include "PixelSize.h"
 #include "Hidden.h"
@@ -27,6 +28,27 @@ namespace Compose
   struct ListEntryID
   {
     std::string id;
+  };
+
+  struct ItemCount
+  {
+    int it;
+
+    bool operator==(const ItemCount &) const = default;
+  };
+
+  struct ItemHeight
+  {
+    int it;
+
+    bool operator==(const ItemHeight &) const = default;
+  };
+
+  struct ItemWidth
+  {
+    int it;
+
+    bool operator==(const ItemWidth &) const = default;
   };
 
   struct SizePercentage
@@ -246,6 +268,11 @@ namespace Compose
       return { LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY };
     }
 
+    static constexpr FlexAlign SPACE_BETWEEEN()
+    {
+      return { LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_SPACE_BETWEEN };
+    }
+
     bool operator==(const FlexAlign &) const = default;
   };
 
@@ -332,6 +359,10 @@ namespace Compose
 #define EXPAND(...) it.doAutorun([=] { it.setModifier(Expand(__VA_ARGS__)); });
 #define STYLE_SHEET(...) it.doAutorun([=] { it.setModifier(StyleSheet(__VA_ARGS__)); });
 #define LIST_ID(...) it.doAutorun([=] { it.setModifier(ListEntryID(__VA_ARGS__)); });
+#define ITEM_COUNT(...) it.doAutorun([=] { it.setModifier(ItemCount { __VA_ARGS__ }); });
+#define ITEM_HEIGHT(...) it.doAutorun([=] { it.setModifier(ItemHeight { __VA_ARGS__ }); });
+#define ITEM_WIDTH(...) it.doAutorun([=] { it.setModifier(ItemWidth { __VA_ARGS__ }); });
+#define SCROLL_TO_ITEM(...) it.doAutorun([=] { it.scrollToItem(__VA_ARGS__); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
 #define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });
 #define SPACING(...) it.doAutorun([=] { it.setModifier(Spacing(__VA_ARGS__)); });
@@ -360,6 +391,8 @@ namespace Compose
 #define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
 #define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });
 #define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
+#define BORDER_WIDTH(...) it.doAutorun([=] { it.setModifier(BorderWidth(__VA_ARGS__)); });
+#define BORDER_COLOR(...) it.doAutorun([=] { it.setModifier(BorderColor(__VA_ARGS__)); });
 #define FLEX_GROW(...) it.doAutorun([=] { it.setModifier(FlexGrow { __VA_ARGS__ }); });
 #define VERTICAL_ALIGN(...) it.doAutorun([=] { it.setModifier(VerticalAlign(__VA_ARGS__)); });
 #define FLOW_DIRECTION(...) it.doAutorun([=] { it.setModifier(FlowDirection(__VA_ARGS__)); });
