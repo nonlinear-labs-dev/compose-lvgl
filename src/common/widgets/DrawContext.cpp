@@ -19,6 +19,115 @@ namespace Compose
   using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
   using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
+  namespace
+  {
+    struct ClippedLineSegment
+    {
+      Point start;
+      Point end;
+      bool startWasClipped {};
+      bool endWasClipped {};
+    };
+
+    bool clipLineBoundary(double p, double q, double &start, double &end)
+    {
+      bool accepted = true;
+
+      if(p == 0.0)
+      {
+        if(q < 0.0)
+          accepted = false;
+      }
+      else
+      {
+        const auto intersection = q / p;
+
+        if(p < 0.0)
+        {
+          if(intersection > end)
+            accepted = false;
+          else if(intersection > start)
+            start = intersection;
+        }
+        else if(intersection < start)
+        {
+          accepted = false;
+        }
+        else if(intersection < end)
+        {
+          end = intersection;
+        }
+      }
+
+      return accepted;
+    }
+
+    std::optional<ClippedLineSegment> clipLineToArea(const Point start, const Point end, const lv_area_t &clipArea)
+    {
+      const auto dx = static_cast<double>(end.x - start.x);
+      const auto dy = static_cast<double>(end.y - start.y);
+      double clippedStart = 0.0;
+      double clippedEnd = 1.0;
+
+      const auto accepted = clipLineBoundary(-dx, start.x - clipArea.x1, clippedStart, clippedEnd) && clipLineBoundary(dx, clipArea.x2 - start.x, clippedStart, clippedEnd)
+          && clipLineBoundary(-dy, start.y - clipArea.y1, clippedStart, clippedEnd) && clipLineBoundary(dy, clipArea.y2 - start.y, clippedStart, clippedEnd);
+
+      std::optional<ClippedLineSegment> ret;
+
+      if(accepted)
+      {
+        const auto toPoint = [&](double t) {
+          return Point { .x = std::clamp(static_cast<int>(std::lround(start.x + dx * t)), clipArea.x1, clipArea.x2),
+                         .y = std::clamp(static_cast<int>(std::lround(start.y + dy * t)), clipArea.y1, clipArea.y2) };
+        };
+
+        ret = ClippedLineSegment { .start = toPoint(clippedStart), .end = toPoint(clippedEnd), .startWasClipped = clippedStart > 0.0, .endWasClipped = clippedEnd < 1.0 };
+      }
+
+      return ret;
+    }
+
+    lv_area_t toArea(const Rect &rect)
+    {
+      return { .x1 = rect.pos.x, .y1 = rect.pos.y, .x2 = rect.pos.x + rect.size.w - 1, .y2 = rect.pos.y + rect.size.h - 1 };
+    }
+
+    std::optional<lv_area_t> clipAreaToPane(const lv_area_t &area, lv_area_t pane, int padding = 0)
+    {
+      if(padding > 0)
+        lv_area_increase(&pane, padding, padding);
+
+      lv_area_t ret { .x1 = std::max(area.x1, pane.x1), .y1 = std::max(area.y1, pane.y1), .x2 = std::min(area.x2, pane.x2), .y2 = std::min(area.y2, pane.y2) };
+
+      return ret.x1 <= ret.x2 && ret.y1 <= ret.y2 ? std::make_optional(ret) : std::nullopt;
+    }
+
+    std::optional<lv_area_t> getBoundingArea(const std::vector<Point> &points, int padding = 0)
+    {
+      std::optional<lv_area_t> ret;
+
+      if(!points.empty())
+      {
+        lv_area_t area { .x1 = points.front().x, .y1 = points.front().y, .x2 = points.front().x, .y2 = points.front().y };
+
+        for(const auto &point : points)
+        {
+          area.x1 = std::min(area.x1, point.x);
+          area.y1 = std::min(area.y1, point.y);
+          area.x2 = std::max(area.x2, point.x);
+          area.y2 = std::max(area.y2, point.y);
+        }
+
+        if(padding > 0)
+          lv_area_increase(&area, padding, padding);
+
+        ret = area;
+      }
+
+      return ret;
+    }
+  }
+
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
       : m_layer {}
       , m_canvas(ctx)
@@ -45,41 +154,46 @@ namespace Compose
 
   void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
   {
-    assert(p1.x >= -1000);
-    assert(p2.x >= -1000);
-    assert(p1.y >= -1000);
-    assert(p2.y >= -1000);
-
-    lv_draw_line_dsc_t line_dsc;
-    lv_draw_line_dsc_init(&line_dsc);
-    line_dsc.p1.x = p1.x;
-    line_dsc.p1.y = p1.y;
-    line_dsc.p2.x = p2.x;
-    line_dsc.p2.y = p2.y;
-    line_dsc.color = lv_color_make(style.color.r, style.color.g, style.color.b);
-    line_dsc.width = style.width;
-    line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
-
-    if(dash.has_value())
+    if(auto clippedLine = clipLineToArea(p1, p2, m_layer._clip_area))
     {
-      line_dsc.dash_gap = dash.value().dashGap;
-      line_dsc.dash_width = dash.value().dashWidth;
-    }
+      p1 = clippedLine->start;
+      p2 = clippedLine->end;
+      lv_draw_line_dsc_t line_dsc;
+      lv_draw_line_dsc_init(&line_dsc);
+      line_dsc.p1.x = p1.x;
+      line_dsc.p1.y = p1.y;
+      line_dsc.p2.x = p2.x;
+      line_dsc.p2.y = p2.y;
+      line_dsc.color = lv_color_make(style.color.r, style.color.g, style.color.b);
+      line_dsc.width = style.width;
+      line_dsc.opa = static_cast<lv_opa_t>(style.color.a * 255.0);
 
-    if(ends.has_value())
-    {
-      line_dsc.round_end = ends.value().end;
-      line_dsc.round_start = ends.value().start;
-    }
+      if(dash.has_value())
+      {
+        line_dsc.dash_gap = dash.value().dashGap;
+        line_dsc.dash_width = dash.value().dashWidth;
+      }
 
-    lv_draw_line(&m_layer, &line_dsc);
+      if(ends.has_value())
+      {
+        line_dsc.round_end = ends.value().end && !clippedLine->endWasClipped;
+        line_dsc.round_start = ends.value().start && !clippedLine->startWasClipped;
+      }
+
+      lv_draw_line(&m_layer, &line_dsc);
+    }
   }
 
   void LVGLDrawContext::drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
   {
     if(points.size() < 2)
       return;
-    //assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100000 && p.y >= -1000; }));
+
+    if(auto bounds = getBoundingArea(points, style.width / 2))
+    {
+      if(!clipAreaToPane(*bounds, m_layer._clip_area))
+        return;
+    }
 
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_HIGH), &lv_vector_path_delete);
@@ -125,12 +239,6 @@ namespace Compose
   void LVGLDrawContext::drawQuadraticBezier(const StrokeStyle style, const Point start, const Point control, const Point end)
   {
     const int segments = (style.width > 4) ? 40 : 20;
-
-    assert(start.x >= -1000);
-    assert(start.x >= -1000);
-    assert(end.y >= -1000);
-    assert(end.y >= -1000);
-
     Point lastPoint = start;
 
     for(int i = 1; i <= segments; ++i)
@@ -171,44 +279,43 @@ namespace Compose
 
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
-    lv_draw_rect_dsc_t rect_dsc;
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_opa = LV_OPA_TRANSP;
-    rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
-    rect_dsc.border_width = style.width;
-    rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+    const auto area = toArea(rect);
+    if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area, style.width))
+    {
+      lv_draw_rect_dsc_t rect_dsc;
+      lv_draw_rect_dsc_init(&rect_dsc);
+      rect_dsc.bg_opa = LV_OPA_TRANSP;
+      rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
+      rect_dsc.border_width = style.width;
+      rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
 
-    lv_area_t area;
-    area.x1 = rect.pos.x;
-    area.y1 = rect.pos.y;
-    area.x2 = rect.pos.x + rect.size.w - 1;
-    area.y2 = rect.pos.y + rect.size.h - 1;
-
-    lv_draw_rect(&m_layer, &rect_dsc, &area);
+      lv_draw_rect(&m_layer, &rect_dsc, &*clippedArea);
+    }
   }
 
   void LVGLDrawContext::strokeRoundedRect(StrokeStyle style, Rect rect, RoundedCorner rc)
   {
-    lv_draw_rect_dsc_t rect_dsc;
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_opa = LV_OPA_TRANSP;
-    rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
-    rect_dsc.border_width = style.width;
-    rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
+    const auto area = toArea(rect);
+    if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area, style.width))
+    {
+      lv_draw_rect_dsc_t rect_dsc;
+      lv_draw_rect_dsc_init(&rect_dsc);
+      rect_dsc.bg_opa = LV_OPA_TRANSP;
+      rect_dsc.border_color = lv_color_make(style.color.r, style.color.g, style.color.b);
+      rect_dsc.border_width = style.width;
+      rect_dsc.border_opa = static_cast<lv_opa_t>(style.color.a * 255.0);
 
-    rect_dsc.radius = rc.radius;
+      rect_dsc.radius = rc.radius;
 
-    lv_area_t area;
-    area.x1 = rect.pos.x;
-    area.y1 = rect.pos.y;
-    area.x2 = rect.pos.x + rect.size.w - 1;
-    area.y2 = rect.pos.y + rect.size.h - 1;
-
-    lv_draw_rect(&m_layer, &rect_dsc, &area);
+      lv_draw_rect(&m_layer, &rect_dsc, &*clippedArea);
+    }
   }
 
   void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft, int bottomRight)
   {
+    if(!clipAreaToPane(toArea(r), m_layer._clip_area, style.width))
+      return;
+
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
 
@@ -269,41 +376,40 @@ namespace Compose
 
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
-    lv_draw_rect_dsc_t rect_dsc;
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
-    rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
-    rect_dsc.border_opa = LV_OPA_TRANSP;
+    const auto area = toArea(rect);
+    if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area))
+    {
+      lv_draw_rect_dsc_t rect_dsc;
+      lv_draw_rect_dsc_init(&rect_dsc);
+      rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
+      rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
+      rect_dsc.border_opa = LV_OPA_TRANSP;
 
-    lv_area_t area;
-    area.x1 = rect.pos.x;
-    area.y1 = rect.pos.y;
-    area.x2 = rect.pos.x + rect.size.w - 1;
-    area.y2 = rect.pos.y + rect.size.h - 1;
-
-    lv_draw_rect(&m_layer, &rect_dsc, &area);
+      lv_draw_rect(&m_layer, &rect_dsc, &*clippedArea);
+    }
   }
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-    lv_draw_rect_dsc_t rect_dsc;
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
-    rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
-    rect_dsc.border_opa = LV_OPA_TRANSP;
-    rect_dsc.radius = rc.radius;
+    const auto area = toArea(rect);
+    if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area))
+    {
+      lv_draw_rect_dsc_t rect_dsc;
+      lv_draw_rect_dsc_init(&rect_dsc);
+      rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
+      rect_dsc.bg_opa = static_cast<lv_opa_t>(color.a * 255.0);
+      rect_dsc.border_opa = LV_OPA_TRANSP;
+      rect_dsc.radius = rc.radius;
 
-    lv_area_t area;
-    area.x1 = rect.pos.x;
-    area.y1 = rect.pos.y;
-    area.x2 = rect.pos.x + rect.size.w - 1;
-    area.y2 = rect.pos.y + rect.size.h - 1;
-
-    lv_draw_rect(&m_layer, &rect_dsc, &area);
+      lv_draw_rect(&m_layer, &rect_dsc, &*clippedArea);
+    }
   }
 
   void LVGLDrawContext::fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight)
   {
+    if(!clipAreaToPane(toArea(rect), m_layer._clip_area))
+      return;
+
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_make(color.r, color.g, color.b);
@@ -365,7 +471,11 @@ namespace Compose
     if(points.size() < 3)
       return;
 
-    assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100000 && p.y >= -100000; }));
+    if(auto bounds = getBoundingArea(points, stroke.width / 2))
+    {
+      if(!clipAreaToPane(*bounds, m_layer._clip_area))
+        return;
+    }
 
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
@@ -398,10 +508,14 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc)
   {
-    assert(std::all_of(points.begin(), points.end(), [](const Point &p) { return p.x >= -100 && p.y >= -1000; }));
-
     if(points.size() < 3)
       return;
+
+    if(auto bounds = getBoundingArea(points, stroke.width / 2 + rc.radius))
+    {
+      if(!clipAreaToPane(*bounds, m_layer._clip_area))
+        return;
+    }
 
     if(rc.radius <= 0)
     {
@@ -461,6 +575,13 @@ namespace Compose
 
   void LVGLDrawContext::fillArc(const ArcDrawOptions &arcOptions)
   {
+    const auto halfStroke = static_cast<int>(std::ceil(static_cast<float>(arcOptions.strokeWidth) / 2.0f));
+    const auto radius = static_cast<int>(std::ceil(arcOptions.radius)) + halfStroke;
+    lv_area_t bounds { .x1 = arcOptions.position.x - radius, .y1 = arcOptions.position.y - radius, .x2 = arcOptions.position.x + radius, .y2 = arcOptions.position.y + radius };
+
+    if(!clipAreaToPane(bounds, m_layer._clip_area))
+      return;
+
     const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
     if(!dsc)
       return;

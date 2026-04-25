@@ -504,6 +504,7 @@ namespace Compose
     Pinch pinch { *this };
     Drag drag { *this };
     DragDrop dragDrop { *this };
+    TimerTick timerTick { *this };
 
     [[nodiscard]] bool isCurrentDropTarget() const
     {
@@ -556,3 +557,5 @@ namespace Compose
   auto &_state_ref_##name                                                                                                                                                          \
       = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>("WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });       \
   if(auto *name = &_state_ref_##name)
+
+#define TIMER_TICK it.timerTick << [=]

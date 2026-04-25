@@ -224,8 +224,7 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e)
-            {
+            [](lv_event_t *e) {
               Reactive::Deferrer def;
               if(const auto user_data = static_cast<PinchData *>(lv_event_get_user_data(e)))
               {
@@ -274,6 +273,40 @@ namespace Compose
     {
       assert(!self.getData<PinchData>("PinchData"));
       self.ensureDataForKeyExistsOwning<PinchData>("PinchData", [this, cb] { return new PinchData(self.getHandle(), cb); });
+    }
+  };
+
+  struct TimerTick
+  {
+    BaseWidget &self;
+    using CB = std::function<void()>;
+
+    struct TimerData
+    {
+      lv_timer_t *timer;
+      CB cb;
+
+      static void callback(lv_timer_t *timer)
+      {
+        auto self = static_cast<TimerData *>(lv_timer_get_user_data(timer));
+        self->cb();
+      }
+
+      TimerData(lv_obj_t *handle, const CB &cb)
+          : cb(cb)
+      {
+        timer = lv_timer_create(callback, 16, this);
+      }
+
+      ~TimerData()
+      {
+        lv_timer_del(timer);
+      }
+    };
+
+    void operator<<(const CB &cb) const
+    {
+      self.ensureDataForKeyExistsOwning<TimerData>("TimerData", [this, cb] { return new TimerData(self.getHandle(), cb); });
     }
   };
 }
