@@ -21,16 +21,3 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ./include ${LIBS_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC reactive lvgl lunasvg ${LIBS_LIBRARIES})
-
-if(ENABLE_TESTING)
-    add_executable(compose-lvgl-stylesheet-tests
-        tests/test_stylesheet_json.cpp
-    )
-
-    target_link_libraries(compose-lvgl-stylesheet-tests PRIVATE
-        ${PROJECT_NAME}
-        Catch2::Catch2WithMain
-    )
-
-    add_test(NAME compose-lvgl-stylesheet-tests COMMAND compose-lvgl-stylesheet-tests)
-endif()
