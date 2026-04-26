@@ -25,6 +25,20 @@ namespace Compose
   class DrawContext
   {
    public:
+    class ScopedOffset
+    {
+     public:
+      ScopedOffset(DrawContext &context, Point offset);
+      ~ScopedOffset();
+      ScopedOffset(const ScopedOffset &) = delete;
+      ScopedOffset &operator=(const ScopedOffset &) = delete;
+      ScopedOffset(ScopedOffset &&other) noexcept;
+      ScopedOffset &operator=(ScopedOffset &&) = delete;
+
+     private:
+      DrawContext *m_context {};
+    };
+
     virtual ~DrawContext() = default;
 
     struct StrokeStyle
@@ -121,6 +135,12 @@ namespace Compose
 
     /** LVGL canvas: dispatch queued draws (e.g. fillRect) before direct buffer writes (e.g. FreeType text). */
     virtual void flushLayer() {}
+
+    [[nodiscard]] ScopedOffset offset(Point offset);
+
+   protected:
+    virtual void pushOffset(Point offset) = 0;
+    virtual void popOffset() = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -139,12 +159,12 @@ namespace Compose
     void strokeRect(StrokeStyle style, Rect rect) override;
     void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
     void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
-                                         int bottomRight) override;
+                                 int bottomRight) override;
     void fillRect(Color color, Rect rect) override;
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
-    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight);
+    void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight) override;
     void fillPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points) override;
-    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc);
+    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) override;
     void fillArc(const ArcDrawOptions &arcOptions) override;
     void drawSegmentedArc(const SegmentedArcDrawOptions &props) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;
@@ -156,8 +176,13 @@ namespace Compose
     static void drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
                               unsigned char coverage);
 
+    void pushOffset(Point offset) override;
+    void popOffset() override;
+
     lv_layer_t m_layer;
     tCanvas &m_canvas;
+    Point m_currentOffset {};
+    std::vector<Point> m_offsetStack;
   };
 
   extern std::unique_ptr<FontStorage> s_fontStorage;

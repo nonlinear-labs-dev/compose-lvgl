@@ -29,6 +29,7 @@ namespace Compose
     void onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY);
     [[nodiscard]] bool isCurrentTarget(lv_obj_t *widget) const;
     [[nodiscard]] bool isDragging() const;
+    [[nodiscard]] std::optional<std::string> getDraggedType() const;
 
    private:
     DragDropContext() = default;
@@ -57,7 +58,7 @@ namespace Compose
       Setter m_setter;
     };
 
-    std::unique_ptr<Source> m_source;
+    Reactive::Var<std::unique_ptr<Source>> m_source;
     std::vector<std::unique_ptr<Target>> m_targets;
   };
 
