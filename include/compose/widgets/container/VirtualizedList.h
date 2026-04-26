@@ -3,6 +3,7 @@
 #include "compose/widgets/Widget.h"
 
 #include <functional>
+#include <string>
 #include <utility>
 
 namespace Compose
@@ -16,6 +17,8 @@ namespace Compose
   {
    public:
     using ItemBuilder = std::function<void(Widget &, int)>;
+    using ItemIdProvider = std::function<std::string(int)>;
+    using ItemBuilderById = std::function<void(Widget &, const std::string &)>;
     using Widget::setModifier;
 
     enum class Axis
@@ -41,6 +44,8 @@ namespace Compose
     void setModifier(FlexAlign align) const;
     void setModifier(const Style &style) const;
     void setItemBuilder(ItemBuilder cb) const;
+    void setItemIdProvider(ItemIdProvider cb) const;
+    void setItemBuilderById(ItemBuilderById cb) const;
     virtual void scrollToItem(size_t index) const = 0;
 
     template <typename CB> void setItemBuilder(CB &&cb) const
@@ -58,6 +63,26 @@ namespace Compose
       const VirtualizedList *m_parent;
     } item { this };
 
+    struct ItemIdDefinition
+    {
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->setItemIdProvider(std::forward<CB>(cb));
+      }
+
+      const VirtualizedList *m_parent;
+    } itemId { this };
+
+    struct ItemByIdDefinition
+    {
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->setItemBuilderById(std::forward<CB>(cb));
+      }
+
+      const VirtualizedList *m_parent;
+    } itemById { this };
+
    protected:
     void setItemExtent(int extent) const;
     int getItemExtent() const;
@@ -73,3 +98,5 @@ namespace Compose
 }
 
 #define LIST_ITEM(...) it.item << [=](Compose::Widget & it, __VA_ARGS__)
+#define LIST_ITEM_ID(...) it.itemId << [=](__VA_ARGS__)
+#define LIST_ITEM_BY_ID(...) it.itemById << [=](Compose::Widget & it, __VA_ARGS__)

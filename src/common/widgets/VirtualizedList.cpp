@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <string>
 #include <tools/Log.h>
 #include <vector>
 
@@ -25,9 +26,12 @@ namespace Compose
     Axis axis;
     lv_obj_t *handle = nullptr;
     ItemBuilder itemBuilder;
+    ItemIdProvider itemIdProvider;
+    ItemBuilderById itemBuilderById;
     lv_obj_t *topSpacer = nullptr;
     lv_obj_t *bottomSpacer = nullptr;
     std::vector<lv_obj_t *> rows;
+    std::vector<std::string> rowIds;
     lv_event_dsc_t *scrollHandler = nullptr;
     lv_event_dsc_t *scrollEndHandler = nullptr;
     lv_event_dsc_t *sizeHandler = nullptr;
@@ -135,11 +139,17 @@ namespace Compose
       return std::max(1, measured);
     }
 
+    [[nodiscard]] bool isIdBased() const
+    {
+      return static_cast<bool>(itemIdProvider) && static_cast<bool>(itemBuilderById);
+    }
+
     void invalidateStructure()
     {
       topSpacer = nullptr;
       bottomSpacer = nullptr;
       rows.clear();
+      rowIds.clear();
     }
 
     [[nodiscard]] lv_obj_t *createStyledWidget(lv_obj_t *listHandle) const
@@ -159,6 +169,7 @@ namespace Compose
 
       topSpacer = createStyledWidget(listHandle);
       rows.reserve(renderedItems);
+      rowIds.assign(renderedItems, "");
 
       for(auto i = 0; i < renderedItems; i++)
         rows.push_back(createStyledWidget(listHandle));
@@ -210,10 +221,39 @@ namespace Compose
       itemBuilder(row, modelIndex);
     }
 
+    void rebuildRowContent(lv_obj_t *rowHandle, const std::string &id) const
+    {
+      assert(rowHandle && lv_obj_is_valid(rowHandle));
+
+      Widget row(rowHandle);
+
+      if(auto *storage = row.getUserDataStorage())
+        storage->entries.erase(c_computationsKey);
+
+      row.clear();
+      itemBuilderById(row, id);
+    }
+
     void remapAllRows(int first, int renderedItems) const
     {
       for(auto slot = 0; slot < renderedItems; slot++)
         rebuildRowContent(rows[slot], first + slot);
+    }
+
+    [[nodiscard]] std::vector<std::string> collectIds(int first, int renderedItems) const
+    {
+      std::vector<std::string> ret;
+      ret.reserve(renderedItems);
+
+      for(auto slot = 0; slot < renderedItems; slot++)
+        ret.emplace_back(itemIdProvider(first + slot));
+
+      return ret;
+    }
+
+    [[nodiscard]] bool hasMatchingIds(const std::vector<std::string> &ids) const
+    {
+      return rowIds == ids;
     }
 
     [[nodiscard]] int renderedItemCount(lv_obj_t *listHandle, int itemStride) const
@@ -251,6 +291,49 @@ namespace Compose
       }
 
       return remapShiftedRows(firstMappedIndex, first, renderedItems);
+    }
+
+    void remapRowsById(const std::vector<std::string> &ids)
+    {
+      std::vector<lv_obj_t *> orderedRows;
+      std::vector<std::string> orderedIds;
+      std::vector<bool> rowUsed(rows.size(), false);
+
+      orderedRows.reserve(ids.size());
+      orderedIds.reserve(ids.size());
+
+      for(const auto &id : ids)
+      {
+        auto found = rows.size();
+
+        for(auto idx = 0U; idx < rows.size() && found == rows.size(); idx++)
+        {
+          if(!rowUsed[idx] && rowIds[idx] == id)
+            found = idx;
+        }
+
+        if(found == rows.size())
+        {
+          for(auto idx = 0U; idx < rows.size() && found == rows.size(); idx++)
+          {
+            if(!rowUsed[idx])
+              found = idx;
+          }
+
+          assert(found != rows.size());
+          rebuildRowContent(rows[found], id);
+        }
+
+        rowUsed[found] = true;
+        orderedRows.emplace_back(rows[found]);
+        orderedIds.emplace_back(id);
+      }
+
+      for(auto idx = 0U; idx < orderedRows.size(); idx++)
+        lv_obj_move_to_index(orderedRows[idx], c_insertIndexAfterTopSpacer + static_cast<int32_t>(idx));
+
+      rows = std::move(orderedRows);
+      rowIds = std::move(orderedIds);
     }
 
     void updateVirtualSpacing(int mappedFirst, int renderedItems, int itemStride) const
@@ -374,7 +457,17 @@ namespace Compose
     void refreshRowsAndSpacing(lv_obj_t *listHandle, bool forceRebuildAll, const RenderWindow &window)
     {
       ensureValidStructure(listHandle, window.renderedItems, forceRebuildAll);
-      const auto mappedFirst = mapRowsToFirstVisibleItem(window.first, window.renderedItems, forceRebuildAll);
+      auto mappedFirst = window.first;
+
+      if(isIdBased())
+      {
+        remapRowsById(collectIds(window.first, window.renderedItems));
+      }
+      else
+      {
+        mappedFirst = mapRowsToFirstVisibleItem(window.first, window.renderedItems, forceRebuildAll);
+      }
+
       updateVirtualSpacing(mappedFirst, window.renderedItems, window.itemStride);
       firstMappedIndex = mappedFirst;
     }
@@ -403,24 +496,31 @@ namespace Compose
       return false;
     }
 
-    void refreshMappedWindow(lv_obj_t *listHandle, bool forceRebuildAll)
+    void refreshMappedWindow(lv_obj_t *listHandle, bool forceRebuildAll, bool forceRefresh)
     {
       // Ensure content extent is up-to-date before deciding how many rows to materialize.
       lv_obj_update_layout(listHandle);
       const auto window = buildRenderWindow(listHandle);
-      if(!forceRebuildAll && firstMappedIndex == window.first && hasValidStructure(listHandle, window.renderedItems))
-        return;
+      if(!forceRebuildAll && !forceRefresh && firstMappedIndex == window.first && hasValidStructure(listHandle, window.renderedItems))
+      {
+        if(!isIdBased())
+          return;
+
+        if(hasMatchingIds(collectIds(window.first, window.renderedItems)))
+          return;
+      }
+
       refreshRowsAndSpacing(listHandle, forceRebuildAll, window);
       updateListLayout(listHandle);
     }
 
-    void refreshCurrentList(bool forceRebuildAll)
+    void refreshCurrentList(bool forceRebuildAll, bool forceRefresh)
     {
       ensureHandlers();
       auto *listHandle = currentValidHandle();
       if(hasNoItems(listHandle))
         return;
-      refreshMappedWindow(listHandle, forceRebuildAll);
+      refreshMappedWindow(listHandle, forceRebuildAll, forceRefresh);
     }
 
     struct RefreshGuard
@@ -432,14 +532,16 @@ namespace Compose
       }
     };
 
-    void refresh(lv_obj_t *currentHandle, bool forceRebuildAll = false)
+    void refresh(lv_obj_t *currentHandle, bool forceRebuildAll = false, bool forceRefresh = false)
     {
-      if(!isRefreshing && isValidListHandle(currentHandle) && itemBuilder)
+      const auto hasBuilder = static_cast<bool>(itemBuilder) || isIdBased();
+
+      if(!isRefreshing && isValidListHandle(currentHandle) && hasBuilder)
       {
         const auto start = std::chrono::steady_clock::now();
         isRefreshing = true;
         RefreshGuard guard { isRefreshing };
-        refreshCurrentList(forceRebuildAll);
+        refreshCurrentList(forceRebuildAll, forceRefresh);
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
         if(duration >= std::chrono::milliseconds(20))
           Tools::Log::warn("VirtualizedList refresh took", duration.count(), "ms for", itemCount, "items");
@@ -461,9 +563,12 @@ namespace Compose
       state->topSpacer = nullptr;
       state->bottomSpacer = nullptr;
       state->rows.clear();
+      state->rowIds.clear();
       state->firstMappedIndex = c_unmappedFirstIndex;
       state->isRefreshing = false;
       state->itemBuilder = nullptr;
+      state->itemIdProvider = nullptr;
+      state->itemBuilderById = nullptr;
     }
 
     lv_obj_clean(getHandle());
@@ -475,7 +580,10 @@ namespace Compose
     const auto newCount = std::max(0, count.it);
     const auto hasChanged = state.itemCount != newCount;
     state.itemCount = newCount;
-    state.refresh(getHandle(), hasChanged);
+    if(state.isIdBased())
+      state.refresh(getHandle(), false, hasChanged);
+    else
+      state.refresh(getHandle(), hasChanged);
   }
 
   void VirtualizedList::setModifier(Overscan overscanItems) const
@@ -505,6 +613,23 @@ namespace Compose
   {
     auto &state = ensureState();
     state.itemBuilder = std::move(cb);
+    state.itemIdProvider = nullptr;
+    state.itemBuilderById = nullptr;
+    state.refresh(getHandle(), true);
+  }
+
+  void VirtualizedList::setItemIdProvider(ItemIdProvider cb) const
+  {
+    auto &state = ensureState();
+    state.itemIdProvider = std::move(cb);
+    state.refresh(getHandle(), true);
+  }
+
+  void VirtualizedList::setItemBuilderById(ItemBuilderById cb) const
+  {
+    auto &state = ensureState();
+    state.itemBuilder = nullptr;
+    state.itemBuilderById = std::move(cb);
     state.refresh(getHandle(), true);
   }
 
