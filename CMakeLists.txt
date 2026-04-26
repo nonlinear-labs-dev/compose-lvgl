@@ -16,7 +16,6 @@ pkg_check_modules(LIBS REQUIRED freetype2 glibmm-2.4 giomm-2.4 ${LVGL_BACKEND_LI
 
 file(GLOB_RECURSE SOURCES src/common/*.cpp include/*.h ${LVGL_BACKEND_SPECIFIC_SOURCES})
 list(APPEND SOURCES src/common/widgets/DragDrop.cpp)
-list(APPEND SOURCES src/common/input/TouchGestureFeed.cpp)
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ./include ${LIBS_INCLUDE_DIRS})
