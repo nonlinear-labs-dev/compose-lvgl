@@ -4,9 +4,12 @@
 #include <compose/input/TouchIndev.h>
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj_pos.h"
+#include "src/misc/lv_async.h"
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
+#include <tools/Log.h>
 
 namespace Compose
 {
@@ -67,6 +70,23 @@ namespace Compose
     std::string targetKeyForType(const std::string &type)
     {
       return std::string("DragDropTarget_") + type;
+    }
+
+    struct DeferredDrop
+    {
+      DragDropContext::Setter setter;
+      nlohmann::json content;
+    };
+
+    void runDeferredDrop(void *userData)
+    {
+      Reactive::Deferrer deferrer;
+      const auto start = std::chrono::steady_clock::now();
+      std::unique_ptr<DeferredDrop> drop(static_cast<DeferredDrop *>(userData));
+      drop->setter(drop->content);
+      const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+      if(duration >= std::chrono::milliseconds(20))
+        Tools::Log::warn("Deferred drop callback took", duration.count(), "ms");
     }
 
     bool isDragStartAxisMatching(const DragDrop::DragDropForContent::Source::StartAxis::Direction axis, int xDiff, int yDiff)
@@ -141,6 +161,8 @@ namespace Compose
     {
       if(source->m_widget == self)
       {
+        std::unique_ptr<DeferredDrop> deferredDrop;
+
         if(source->m_currentTarget)
         {
           for(const auto &target : m_targets)
@@ -149,14 +171,22 @@ namespace Compose
             {
               if(auto content = source->m_getter())
               {
-                target->m_setter(*content);
+                deferredDrop = std::make_unique<DeferredDrop>(DeferredDrop { target->m_setter, std::move(*content) });
               }
+
+              break;
             }
           }
         }
 
         source->m_currentTarget = nullptr;
         m_source = nullptr;
+
+        if(deferredDrop)
+        {
+          const auto res = lv_async_call(runDeferredDrop, deferredDrop.release());
+          assert(res == LV_RESULT_OK);
+        }
       }
     }
   }
@@ -483,9 +513,10 @@ namespace Compose
               if(hasMultiTouch(indev))
               {
                 restoreScrollableAncestors(self);
-                DragDropContext::get().resetSource(self->m_handle);
                 self->m_startPos.reset();
                 self->m_startDecision = StartDecision::Undecided;
+                auto *handle = self->m_handle;
+                DragDropContext::get().resetSource(handle);
                 return;
               }
 
@@ -529,9 +560,10 @@ namespace Compose
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
         restoreScrollableAncestors(self);
-        DragDropContext::get().resetSource(self->m_handle);
         self->m_startPos.reset();
         self->m_startDecision = StartDecision::Undecided;
+        auto *handle = self->m_handle;
+        DragDropContext::get().resetSource(handle);
       }
     };
 
@@ -585,7 +617,7 @@ namespace Compose
       : m_handle(handle)
       , m_type(std::move(type))
   {
-    DragDropContext::get().addTarget(m_handle, m_type, [this](const nlohmann::json &content) { m_setter(content); });
+    DragDropContext::get().addTarget(m_handle, m_type, [setter = m_setter](const nlohmann::json &content) { (*setter)(content); });
   }
 
   DragDrop::DragDropForContent::Target::Data::~Data()
@@ -595,7 +627,7 @@ namespace Compose
 
   void DragDrop::DragDropForContent::Target::Data::setSetter(const Setter &setter)
   {
-    m_setter = setter;
+    *m_setter = setter;
   }
 
   void DragDrop::DragDropForContent::Target::operator<<(const Setter &cb)

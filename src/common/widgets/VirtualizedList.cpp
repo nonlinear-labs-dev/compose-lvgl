@@ -1,8 +1,11 @@
 #include "compose/widgets/container/VirtualizedList.h"
 
 #include "src/core/lv_obj_event.h"
+#include "src/misc/lv_async.h"
 
 #include <algorithm>
+#include <chrono>
+#include <tools/Log.h>
 #include <vector>
 
 namespace Compose
@@ -26,6 +29,7 @@ namespace Compose
     lv_obj_t *bottomSpacer = nullptr;
     std::vector<lv_obj_t *> rows;
     lv_event_dsc_t *scrollHandler = nullptr;
+    lv_event_dsc_t *scrollEndHandler = nullptr;
     lv_event_dsc_t *sizeHandler = nullptr;
     int itemCount = 0;
     int overscan = c_defaultOverscanItems;
@@ -46,6 +50,9 @@ namespace Compose
         if(scrollHandler)
           lv_obj_remove_event_dsc(handle, scrollHandler);
 
+        if(scrollEndHandler)
+          lv_obj_remove_event_dsc(handle, scrollEndHandler);
+
         if(sizeHandler)
           lv_obj_remove_event_dsc(handle, sizeHandler);
       }
@@ -58,6 +65,28 @@ namespace Compose
       {
         auto *currentTarget = static_cast<lv_obj_t *>(lv_event_get_current_target(e));
         self->refresh(currentTarget);
+      }
+    }
+
+    static void refreshAsync(void *userData)
+    {
+      if(auto *listHandle = static_cast<lv_obj_t *>(userData))
+      {
+        if(lv_obj_is_valid(listHandle))
+        {
+          BaseWidget widget(listHandle);
+          if(auto *self = widget.getData<State>(c_virtualListStateKey))
+            self->refresh(listHandle);
+        }
+      }
+    }
+
+    static void onScrollEnd(lv_event_t *e)
+    {
+      if(auto *currentTarget = static_cast<lv_obj_t *>(lv_event_get_current_target(e)))
+      {
+        lv_async_call_cancel(refreshAsync, currentTarget);
+        lv_async_call(refreshAsync, currentTarget);
       }
     }
 
@@ -84,6 +113,9 @@ namespace Compose
 
       if(scrollHandler == nullptr)
         scrollHandler = lv_obj_add_event_cb(handle, onListChanged, LV_EVENT_SCROLL, this);
+
+      if(scrollEndHandler == nullptr)
+        scrollEndHandler = lv_obj_add_event_cb(handle, onScrollEnd, LV_EVENT_SCROLL_END, this);
 
       if(sizeHandler == nullptr)
         sizeHandler = lv_obj_add_event_cb(handle, onListChanged, LV_EVENT_SIZE_CHANGED, this);
@@ -404,9 +436,13 @@ namespace Compose
     {
       if(!isRefreshing && isValidListHandle(currentHandle) && itemBuilder)
       {
+        const auto start = std::chrono::steady_clock::now();
         isRefreshing = true;
         RefreshGuard guard { isRefreshing };
         refreshCurrentList(forceRebuildAll);
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+        if(duration >= std::chrono::milliseconds(20))
+          Tools::Log::warn("VirtualizedList refresh took", duration.count(), "ms for", itemCount, "items");
       }
     }
   };
@@ -447,6 +483,22 @@ namespace Compose
     auto &state = ensureState();
     state.overscan = std::max(0, overscanItems.numItems);
     state.refresh(getHandle());
+  }
+
+  void VirtualizedList::setModifier(FlexAlign align) const
+  {
+    // Virtualized lists use spacer widgets on the main axis. Any non-start main alignment
+    // shifts the whole virtual window and breaks the index-to-position mapping.
+    Widget::setModifier(FlexAlign { LV_FLEX_ALIGN_START, align.cross, align.track_cross });
+  }
+
+  void VirtualizedList::setModifier(const Style &style) const
+  {
+    auto sanitized = style;
+    if(auto &align = std::get<std::optional<FlexAlign>>(sanitized.properties); align)
+      align = FlexAlign { LV_FLEX_ALIGN_START, align->cross, align->track_cross };
+
+    Widget::setModifier(sanitized);
   }
 
   void VirtualizedList::setItemBuilder(ItemBuilder cb) const

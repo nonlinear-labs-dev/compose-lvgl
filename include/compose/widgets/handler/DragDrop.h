@@ -217,7 +217,7 @@ namespace Compose
 
           lv_obj_t *m_handle;
           std::string m_type;
-          Setter m_setter = [](const nlohmann::json &) {};
+          std::shared_ptr<Setter> m_setter = std::make_shared<Setter>([](const nlohmann::json &) {});
         };
 
         void operator<<(const Setter &cb);

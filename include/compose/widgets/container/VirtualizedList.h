@@ -38,6 +38,8 @@ namespace Compose
     void clear() override;
     void setModifier(ItemCount count) const;
     void setModifier(Overscan overscanItems) const;
+    void setModifier(FlexAlign align) const;
+    void setModifier(const Style &style) const;
     void setItemBuilder(ItemBuilder cb) const;
     virtual void scrollToItem(size_t index) const = 0;
 
