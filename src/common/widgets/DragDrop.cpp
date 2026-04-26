@@ -8,8 +8,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
-#include <tools/Log.h>
 
 namespace Compose
 {
@@ -81,12 +79,8 @@ namespace Compose
     void runDeferredDrop(void *userData)
     {
       Reactive::Deferrer deferrer;
-      const auto start = std::chrono::steady_clock::now();
       std::unique_ptr<DeferredDrop> drop(static_cast<DeferredDrop *>(userData));
       drop->setter(drop->content);
-      const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
-      if(duration >= std::chrono::milliseconds(20))
-        Tools::Log::warn("Deferred drop callback took", duration.count(), "ms");
     }
 
     bool isDragStartAxisMatching(const DragDrop::DragDropForContent::Source::StartAxis::Direction axis, int xDiff, int yDiff)

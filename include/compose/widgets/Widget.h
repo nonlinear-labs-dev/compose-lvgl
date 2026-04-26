@@ -141,6 +141,11 @@ namespace Compose
       lv_obj_clean(getHandle());
     }
 
+    [[nodiscard]] virtual bool shouldClearBeforeAutorunCompose() const
+    {
+      return true;
+    }
+
     void setModifier(OverflowBehaviour r) const
     {
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_OVERFLOW_VISIBLE, r.it == OverflowBehaviour::VISIBLE);
@@ -522,7 +527,8 @@ namespace Compose
 
     lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
       tComposeWidgetDecayed wrapper(w);
-      wrapper.clear();
+      if(wrapper.shouldClearBeforeAutorunCompose())
+        wrapper.clear();
       cb(tComposeWidgetDecayed(w));
     });
   }

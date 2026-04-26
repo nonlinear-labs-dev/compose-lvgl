@@ -83,6 +83,11 @@ namespace Compose
       const VirtualizedList *m_parent;
     } itemById { this };
 
+    [[nodiscard]] bool shouldClearBeforeAutorunCompose() const override
+    {
+      return false;
+    }
+
    protected:
     void setItemExtent(int extent) const;
     int getItemExtent() const;
