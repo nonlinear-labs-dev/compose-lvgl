@@ -442,10 +442,10 @@ namespace Compose
     state.refresh(getHandle(), hasChanged);
   }
 
-  void VirtualizedList::setOverscan(int overscanItems) const
+  void VirtualizedList::setModifier(Overscan overscanItems) const
   {
     auto &state = ensureState();
-    state.overscan = std::max(0, overscanItems);
+    state.overscan = std::max(0, overscanItems.numItems);
     state.refresh(getHandle());
   }
 

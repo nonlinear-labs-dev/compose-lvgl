@@ -741,7 +741,40 @@ namespace Compose
     const auto textWidth = font.getStringWidth(t.text);
     const auto startX = LabelShared::computeStartX(r.size.w, textWidth, ta);
     const auto startY = LabelShared::computeStartYSingle(r.size.h, font, t.text, va);
-    drawText(t.text, r.pos.x + startX, r.pos.y + startY, font, c);
+
+    r = translate(r, m_currentOffset);
+    auto clipArea = m_layer._clip_area;
+
+    if(r.size.w > 0)
+    {
+      clipArea.x1 = std::max(clipArea.x1, r.pos.x);
+      clipArea.x2 = std::min(clipArea.x2, r.pos.x + r.size.w - 1);
+    }
+
+    if(r.size.h > 0)
+    {
+      clipArea.y1 = std::max(clipArea.y1, r.pos.y);
+      clipArea.y2 = std::min(clipArea.y2, r.pos.y + r.size.h - 1);
+    }
+
+    if(clipArea.x1 > clipArea.x2 || clipArea.y1 > clipArea.y2)
+      return;
+
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
+
+    if(!draw_buf)
+      return;
+
+    flushLayer();
+
+    const auto x = r.pos.x + startX;
+    const auto y = r.pos.y + startY;
+
+    font.draw(t.text, x, y, [&](int px, int py, unsigned char coverage) {
+      if(px >= clipArea.x1 && px <= clipArea.x2 && py >= clipArea.y1 && py <= clipArea.y2)
+        drawFontPixel(*draw_buf, c, px, py, coverage);
+    });
   }
 
   void LVGLDrawContext::putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride)

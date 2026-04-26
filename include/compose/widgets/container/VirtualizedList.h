@@ -7,6 +7,11 @@
 
 namespace Compose
 {
+  struct Overscan
+  {
+    int numItems = 2;
+  };
+
   class VirtualizedList : public Widget
   {
    public:
@@ -21,9 +26,7 @@ namespace Compose
 
     template <typename... tArgs>
     explicit VirtualizedList(Widget &parent, Axis axis, tArgs... args)
-        : Widget(parent,
-                 axis == Axis::Vertical ? FlexFlow::VERTICAL() : FlexFlow::HORIZONTAL(),
-                 Scrollable::SCROLL())
+        : Widget(parent, axis == Axis::Vertical ? FlexFlow::VERTICAL() : FlexFlow::HORIZONTAL(), Scrollable::SCROLL())
         , m_axis(axis)
     {
       ensureState();
@@ -34,7 +37,7 @@ namespace Compose
 
     void clear() override;
     void setModifier(ItemCount count) const;
-    void setOverscan(int overscanItems) const;
+    void setModifier(Overscan overscanItems) const;
     void setItemBuilder(ItemBuilder cb) const;
     virtual void scrollToItem(size_t index) const = 0;
 
@@ -67,4 +70,4 @@ namespace Compose
   };
 }
 
-#define LIST_ITEM(...) it.item << [=](Compose::Widget &it, __VA_ARGS__)
+#define LIST_ITEM(...) it.item << [=](Compose::Widget & it, __VA_ARGS__)
