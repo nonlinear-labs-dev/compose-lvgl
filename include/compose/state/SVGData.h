@@ -13,12 +13,10 @@ namespace Compose
 
     Reactive::Var<tDocumentPtr> document { nullptr };
     CustomDrawingElement::tDrawCB drawCallback;
-    lv_event_dsc_t* resizeHandler = nullptr;
-    lv_obj_t* handle = nullptr;
     Reactive::Var<std::optional<PrimaryColor>> color;
 
-    SVGData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
-    ~SVGData();
+    SVGData(CustomDrawingElement::tDrawCB cb);
+    ~SVGData() = default;
     void renderToDrawContext(DrawContext& ctx, int width, int height) const;
   };
 }
