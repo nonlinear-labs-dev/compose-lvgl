@@ -24,7 +24,7 @@ namespace Compose
     return ret;
   }
 
-  void DrawContext::fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point>& segments)
+  void DrawContext::fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point> &segments)
   {
     fillPolygon(stroke, fill, toPathSegments(segments));
   }
@@ -79,6 +79,76 @@ namespace Compose
     }
 
     lv_draw_line(&m_layer, &line_dsc);
+  }
+
+  void LVGLDrawContext::drawVectorLine(StrokeStyle style, const std::vector<PointF> &points,
+                                       std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
+  {
+    using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+    using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
+
+    if(const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete))
+    {
+      if(const auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete))
+      {
+        if(points.size() >= 2)
+        {
+          auto fPoints = std::vector<lv_fpoint_t> { };
+          for(const auto &p : points)
+          {
+            fPoints.emplace_back(lv_fpoint_t { p.x, p.y });
+          }
+          lv_vector_path_move_to(path.get(), &fPoints.front());
+          for(size_t i = 1; i < fPoints.size(); i++)
+          {
+            lv_vector_path_line_to(path.get(), &fPoints[i]);
+          }
+          lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_TRANSP);
+          lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+          lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0f));
+          lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(style.width));
+          lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+          lv_vector_stroke_cap_t cap = LV_VECTOR_STROKE_CAP_BUTT;
+
+          if(ends.has_value())
+          {
+            if(ends->start && ends->end)
+              cap = LV_VECTOR_STROKE_CAP_ROUND;
+            else
+              cap = LV_VECTOR_STROKE_CAP_BUTT;
+          }
+
+          lv_vector_dsc_set_stroke_cap(dsc.get(), cap);
+
+          if(dash.has_value())
+          {
+            float dashes[2] = { static_cast<float>(dash->dashWidth), static_cast<float>(dash->dashGap) };
+            lv_vector_dsc_set_stroke_dash(dsc.get(), dashes, 2);
+          }
+
+          lv_vector_dsc_add_path(dsc.get(), path.get());
+          lv_draw_vector(dsc.get());
+
+          if(ends.has_value() && (ends->start != ends->end))
+          {
+            const PointF circleCenter = ends->start ? points.front() : points.back();
+
+            auto capDsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+            auto capPath = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
+
+            if(capDsc && capPath)
+            {
+              lv_fpoint_t center = { static_cast<float>(circleCenter.x), static_cast<float>(circleCenter.y) };
+              lv_vector_path_append_circle(capPath.get(), &center, style.width / 2.0f, style.width / 2.0f);
+              lv_vector_dsc_set_fill_color(capDsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+              lv_vector_dsc_set_fill_opa(capDsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0f));
+              lv_vector_dsc_add_path(capDsc.get(), capPath.get());
+              lv_draw_vector(capDsc.get());
+            }
+          }
+        }
+      }
+    }
   }
 
   void LVGLDrawContext::drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
