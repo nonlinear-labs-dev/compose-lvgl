@@ -13,8 +13,8 @@ namespace Compose
     {
       const Widget widget(getHandle());
 
-      auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
-          c_svgData, [handle = getHandle(), cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
+      auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(c_svgData, [cb = [](DrawContext&, int, int) { }]
+                                                                   { return new SVGData(cb); });
 
       svgData.document.modify([&document](auto& doc) { doc = std::move(document); });
 
@@ -23,7 +23,7 @@ namespace Compose
           {
             const Widget widget(handle);
             const auto& svgData = widget.ensureDataForKeyExistsOwning<SVGData>(
-                c_svgData, [handle, cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
+                c_svgData, [cb = [](DrawContext&, int, int) { }] { return new SVGData(cb); });
             svgData.renderToDrawContext(ctx, width, height);
           });
     }
@@ -42,8 +42,8 @@ namespace Compose
 
   void SVGRenderer::setModifier(PrimaryColor col) const
   {
-    auto& svgData = ensureDataForKeyExistsOwning<SVGData>(
-        c_svgData, [handle = getHandle(), cb = [](DrawContext&, int, int) {}] { return new SVGData(handle, cb); });
+    auto& svgData = ensureDataForKeyExistsOwning<SVGData>(c_svgData, [cb = [](DrawContext&, int, int) { }]
+                                                          { return new SVGData(cb); });
     svgData.color = col;
   }
 }
