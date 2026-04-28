@@ -26,6 +26,7 @@ namespace Compose
     ItemBuilder itemBuilder;
     ItemIdProvider itemIdProvider;
     ItemBuilderById itemBuilderById;
+    EmptyListPlaceholderBuilder emptyListPlaceholderBuilder;
     lv_obj_t *topSpacer = nullptr;
     lv_obj_t *bottomSpacer = nullptr;
     std::vector<lv_obj_t *> rows;
@@ -526,9 +527,20 @@ namespace Compose
     {
       ensureHandlers();
       auto *listHandle = currentValidHandle();
+
       if(hasNoItems(listHandle))
-        return;
-      refreshMappedWindow(listHandle, forceRebuildAll, forceRefresh);
+      {
+        if(emptyListPlaceholderBuilder)
+        {
+          Widget self(listHandle);
+          lv_obj_clean(listHandle);
+          emptyListPlaceholderBuilder(self);
+        }
+      }
+      else
+      {
+        refreshMappedWindow(listHandle, forceRebuildAll, forceRefresh);
+      }
     }
 
     struct RefreshGuard
@@ -639,6 +651,12 @@ namespace Compose
     state.itemBuilderById = std::move(cb);
     if(shouldRefresh)
       state.refresh(getHandle(), true);
+  }
+
+  void VirtualizedList::setEmptyListPlaceholderBuilder(EmptyListPlaceholderBuilder cb) const
+  {
+    auto &state = ensureState();
+    state.emptyListPlaceholderBuilder = std::move(cb);
   }
 
   void VirtualizedList::setItemExtent(int extent) const

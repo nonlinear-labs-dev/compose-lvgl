@@ -250,17 +250,17 @@ namespace Compose
 
     static constexpr FlexAlign START_CENTER()
     {
-      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER };
+      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
     }
 
     static constexpr FlexAlign END_CENTER()
     {
-      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER };
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
     }
 
     static constexpr FlexAlign END_START()
     {
-      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START };
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START };
     }
 
     static constexpr FlexAlign SPACE_EVENLY()

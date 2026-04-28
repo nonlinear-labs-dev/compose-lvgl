@@ -378,7 +378,8 @@ namespace Compose
   void from_json(const nlohmann::json& j, Font& out)
   {
     out = Font {};
-    out.size = j.at("size").get<int>();
+    if(j.contains("size"))
+      out.size = j.at("size").get<int>();
 
     if(j.contains("weight"))
       out.weight = parseFontWeight(j.at("weight").get<std::string>());
