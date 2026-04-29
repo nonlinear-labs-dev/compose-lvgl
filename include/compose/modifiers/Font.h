@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 namespace Compose
 {
@@ -20,10 +21,11 @@ namespace Compose
         = FontWeight::Regular;
 
     std::string baseName = "Nonlegible-Rubik";
+    std::vector<std::string> fallbackBaseNames { "" };
 
-    constexpr bool operator==(const Font &o) const noexcept
+    bool operator==(const Font &o) const noexcept
     {
-      return size == o.size && baseName == o.baseName && weight == o.weight;
+      return size == o.size && baseName == o.baseName && weight == o.weight && fallbackBaseNames == o.fallbackBaseNames;
     }
 
     static std::string getWeightString(FontWeight weight)
@@ -56,8 +58,15 @@ namespace std
   {
     std::size_t operator()(const Compose::Font &sz) const noexcept
     {
-      constexpr std::hash<std::string> h {};
-      return sz.size * 1000 + h(sz.baseName);
+      constexpr size_t c_magicHashConstant = 0x9e3779b9;
+      const std::hash<std::string> stringHasher {};
+      const std::hash<int> intHasher {};
+      std::size_t hash = intHasher(sz.size);
+      hash ^= intHasher(static_cast<int>(sz.weight)) + c_magicHashConstant + (hash << 6) + (hash >> 2);
+      hash ^= stringHasher(sz.baseName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
+      for(const auto &fallbackName : sz.fallbackBaseNames)
+        hash ^= stringHasher(fallbackName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
+      return hash;
     }
   };
 }

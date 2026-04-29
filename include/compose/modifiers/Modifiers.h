@@ -11,6 +11,7 @@
 #include "Size.h"
 #include "BackgroundColor.h"
 #include "PrimaryColor.h"
+#include "Border.h"
 #include "SVGPath.h"
 #include "PixelSize.h"
 #include "Hidden.h"
@@ -267,6 +268,11 @@ namespace Compose
       return { LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_SPACE_EVENLY };
     }
 
+    static constexpr FlexAlign SPACE_BETWEEEN()
+    {
+      return { LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_SPACE_BETWEEN };
+    }
+
     bool operator==(const FlexAlign &) const = default;
   };
 
@@ -385,6 +391,8 @@ namespace Compose
 #define SIZE(...) it.doAutorun([=] { it.setModifier(SizeVariant(__VA_ARGS__)); });
 #define NAME(...) it.doAutorun([=] { it.setModifier(Widget::Name(__VA_ARGS__)); });
 #define BORDER(...) it.doAutorun([=] { it.setModifier(Border(__VA_ARGS__)); });
+#define BORDER_WIDTH(...) it.doAutorun([=] { it.setModifier(BorderWidth(__VA_ARGS__)); });
+#define BORDER_COLOR(...) it.doAutorun([=] { it.setModifier(BorderColor(__VA_ARGS__)); });
 #define FLEX_GROW(...) it.doAutorun([=] { it.setModifier(FlexGrow { __VA_ARGS__ }); });
 #define VERTICAL_ALIGN(...) it.doAutorun([=] { it.setModifier(VerticalAlign(__VA_ARGS__)); });
 #define FLOW_DIRECTION(...) it.doAutorun([=] { it.setModifier(FlowDirection(__VA_ARGS__)); });

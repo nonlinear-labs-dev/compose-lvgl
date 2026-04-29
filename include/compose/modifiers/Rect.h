@@ -9,6 +9,12 @@ namespace Compose
     float y = {};
   };
 
+  struct PointF
+  {
+    float x = {};
+    float y = {};
+  };
+
   struct Rect
   {
     Point pos;

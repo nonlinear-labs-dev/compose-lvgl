@@ -1,11 +1,11 @@
 #pragma once
-#include <nltools/enums/EnumDecl.h>
+
 #include <lvgl.h>
 
-#define BUILD_ALIGN(name, value)                                                                                       \
-  constexpr static Align name()                                                                                        \
-  {                                                                                                                    \
-    return { value };                                                                                                  \
+#define BUILD_ALIGN(name, value)                                                                                                                                                   \
+  constexpr static Align name()                                                                                                                                                    \
+  {                                                                                                                                                                                \
+    return { value };                                                                                                                                                              \
   }
 
 namespace Compose

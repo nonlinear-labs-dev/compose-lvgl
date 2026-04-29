@@ -3,6 +3,8 @@
 #include "compose/modifiers/Rotation.h"
 #include "container/Container.h"
 #include "src/misc/lv_types.h"
+#include <functional>
+#include <vector>
 
 namespace Compose
 {
@@ -17,6 +19,11 @@ namespace Compose
     {
       lv_screen_load(it.getHandle());
       return std::forward<T>(it);
+    }
+
+    [[nodiscard]] lv_display_t* getDisplay() const
+    {
+      return m_display;
     }
 
    private:
