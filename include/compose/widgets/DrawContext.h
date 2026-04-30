@@ -108,6 +108,8 @@ namespace Compose
     virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
     virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends) = 0;
+    virtual void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points,
+                                std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends) = 0;
     virtual void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
                             std::optional<RoundedEnds> ends) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
@@ -143,6 +145,8 @@ namespace Compose
     void drawLine(StrokeStyle style, Point p1, Point p2) override;
     void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
+    void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points, std::optional<LineDashOptions> dash,
+                        std::optional<RoundedEnds> ends) override;
     void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
                     std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
