@@ -5,8 +5,8 @@ namespace Compose
 {
   struct Point
   {
-    float x = {};
-    float y = {};
+    int x = {};
+    int y = {};
   };
 
   struct PointF
