@@ -485,9 +485,6 @@ namespace Compose
 
     LeftClick leftClick { *this, c_leftClickKey };
     LongClick longClick { *this, c_longClickKey };
-    Pressed pressed { *this, c_pressedKey };
-    Pressing pressing { *this, c_pressingKey };
-    Released released { *this, c_releasedKey };
     StateChange stateChange { *this };
   };
 

@@ -72,66 +72,6 @@ namespace Compose
   using LeftClick = ClickHandler<LV_EVENT_SHORT_CLICKED>;
   using LongClick = ClickHandler<LV_EVENT_LONG_PRESSED>;
 
-  template <lv_event_code_t FilterType> struct PointerHandler
-  {
-    const char *m_key;
-    BaseWidget &self;
-    using CB = std::function<bool(Position)>;
-
-    PointerHandler(BaseWidget &w, auto key)
-        : m_key { key }
-        , self { w }
-    {
-    }
-
-    struct PointerData
-    {
-      PointerData(lv_obj_t *handle, const CB &cb)
-          : m_handle(handle)
-          , m_callback(cb)
-      {
-        m_handler = lv_obj_add_event_cb(
-            handle,
-            [](lv_event_t *e)
-            {
-              Reactive::Deferrer def;
-              const auto user_data = static_cast<PointerData *>(lv_event_get_user_data(e));
-              const auto indev = lv_event_get_indev(e);
-              if(indev)
-              {
-                lv_point_t point = { 0, 0 };
-                lv_indev_get_point(indev, &point);
-                lv_area_t widget_coords;
-                lv_obj_get_coords(user_data->m_handle, &widget_coords);
-                const int rel_x = point.x - widget_coords.x1;
-                const int rel_y = point.y - widget_coords.y1;
-                e->stop_processing = user_data->m_callback({ rel_x, rel_y });
-              }
-            },
-            FilterType, this);
-      }
-
-      ~PointerData()
-      {
-        lv_obj_remove_event_dsc(m_handle, m_handler);
-      }
-
-      lv_obj_t *m_handle;
-      CB m_callback;
-      lv_event_dsc_t *m_handler;
-    };
-
-    void operator<<(const CB &cb) const
-    {
-      assert(!self.getData<PointerData>(m_key));
-      self.ensureDataForKeyExistsOwning<PointerData>(m_key, [this, cb] { return new PointerData(self.getHandle(), cb); });
-    }
-  };
-
-  using Pressed = PointerHandler<LV_EVENT_PRESSED>;
-  using Pressing = PointerHandler<LV_EVENT_PRESSING>;
-  using Released = PointerHandler<LV_EVENT_RELEASED>;
-
   struct StateChange
   {
     BaseWidget &self;
