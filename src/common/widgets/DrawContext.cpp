@@ -30,7 +30,7 @@ namespace Compose
   }
 
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
-      : m_layer { }
+      : m_layer {}
       , m_canvas(ctx)
   {
     lv_canvas_init_layer(&m_canvas, &m_layer);
@@ -81,6 +81,17 @@ namespace Compose
     lv_draw_line(&m_layer, &line_dsc);
   }
 
+  void LVGLDrawContext::drawLines(StrokeStyle style, const std::vector<Point> &points)
+  {
+    std::optional<Point> prevPoint;
+    for(auto &p : points)
+    {
+      if(prevPoint)
+        drawLine(style, prevPoint.value(), p);
+      prevPoint = p;
+    }
+  }
+
   void LVGLDrawContext::drawVectorLine(StrokeStyle style, const std::vector<PointF> &points,
                                        std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
   {
@@ -93,7 +104,7 @@ namespace Compose
       {
         if(points.size() >= 2)
         {
-          auto fPoints = std::vector<lv_fpoint_t> { };
+          auto fPoints = std::vector<lv_fpoint_t> {};
           for(const auto &p : points)
           {
             fPoints.emplace_back(lv_fpoint_t { p.x, p.y });
@@ -152,7 +163,7 @@ namespace Compose
   }
 
   void LVGLDrawContext::drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
-                                   std::optional<RoundedEnds> ends)
+                                       std::optional<RoundedEnds> ends)
   {
     using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
     using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
