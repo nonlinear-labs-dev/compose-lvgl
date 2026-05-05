@@ -91,7 +91,7 @@ int runVirtualListDemo()
         {
           TEXT("Previous");
 
-          LEFT_CLICK(Position)
+          PRESSED(Position)
           {
             *selectedItem = std::max(0, *selectedItem.get() - 1);
             return true;
@@ -106,7 +106,7 @@ int runVirtualListDemo()
         BUTTON(FixedSize { 100, 100 })
         {
           TEXT("Next");
-          LEFT_CLICK(Position)
+          PRESSED(Position)
           {
             *selectedItem = *selectedItem.get() + 1;
             return true;

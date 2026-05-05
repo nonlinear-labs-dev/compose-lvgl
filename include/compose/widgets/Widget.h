@@ -95,7 +95,7 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(Window &it, tArgs &&...args)
+    explicit Widget(Window &it, tArgs &&... args)
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
@@ -106,7 +106,7 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(BaseWidget &w, tArgs &&...args)
+    explicit Widget(BaseWidget &w, tArgs &&... args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
@@ -483,54 +483,49 @@ namespace Compose
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE, static_cast<bool>(c));
     }
 
-    LeftClick leftClick { *this, c_leftClickKey };
+    Pressed pressed { *this, c_pressedKey };
+    Clicked clicked { *this, c_clickedKey };
     LongClick longClick { *this, c_longClickKey };
     StateChange stateChange { *this };
   };
 
-  template <typename T>
-  concept IsWidget = requires { typename T::WidgetType; };
+  template <typename T> concept IsWidget = requires
+  {
+    typename T::WidgetType;
+  };
 
   template <typename ComposeWidget, typename tCB>
-    requires IsWidget<ComposeWidget>
-  void operator<<(ComposeWidget &&lhs, tCB &&cb)
+  requires IsWidget<ComposeWidget> void operator<<(ComposeWidget &&lhs, tCB &&cb)
   {
     using tComposeWidgetDecayed = std::remove_reference_t<ComposeWidget>;
 
-    lhs.doAutorun(
-        [cb = std::forward<tCB>(cb), w = lhs.getHandle()]
-        {
-          tComposeWidgetDecayed wrapper(w);
-          wrapper.clear();
-          cb(tComposeWidgetDecayed(w));
-        });
+    lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
+      tComposeWidgetDecayed wrapper(w);
+      wrapper.clear();
+      cb(tComposeWidgetDecayed(w));
+    });
   }
 }
 
 #define SCROLL_INTO_VIEW_WHEN(condition)                                                                               \
-  it.doAutorun(                                                                                                        \
-      [=, handle = it.getHandle()]                                                                                     \
-      {                                                                                                                \
-        if(condition)                                                                                                  \
-        {                                                                                                              \
-          lv_obj_scroll_to_view(handle, false);                                                                        \
-        }                                                                                                              \
-      });
+  it.doAutorun([=, handle = it.getHandle()] {                                                                          \
+    if(condition)                                                                                                      \
+    {                                                                                                                  \
+      lv_obj_scroll_to_view(handle, false);                                                                            \
+    }                                                                                                                  \
+  });
 
-#define LEFT_CLICK it.leftClick << [=]
-#define SWALLOW_LEFT_CLICK()                                                                                           \
-  LEFT_CLICK(auto)                                                                                                     \
+#define PRESSED it.pressed << [=]
+#define SWALLOW_PRESSED()                                                                                              \
+  PRESSED(auto)                                                                                                        \
   {                                                                                                                    \
     return true;                                                                                                       \
   };
+#define CLICKED it.clicked << [=]
 #define LONG_CLICK it.longClick << [=]
-#define PRESSED it.pressed << [=]
-#define PRESSING it.pressing << [=]
-#define RELEASED it.released << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
-  it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                        \
-  {                                                                                                                    \
+  it.leftClick << [handle = it.getHandle()](Position p) -> bool {                                                      \
     nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
     return false;                                                                                                      \
   }

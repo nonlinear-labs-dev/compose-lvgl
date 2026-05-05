@@ -21,7 +21,8 @@ class BaseWidget
   using tType = lv_obj_t;
   static constexpr auto c_computationsKey = "Computations";
   static constexpr auto c_nameKey = "Name";
-  static constexpr auto c_leftClickKey = "LeftClick";
+  static constexpr auto c_pressedKey = "Pressed";
+  static constexpr auto c_clickedKey = "Click";
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_stateChangeKey = "StateChange";
   static constexpr auto c_canvasData = "CanvasData";
@@ -54,7 +55,7 @@ class BaseWidget
 
     ~UserDataStorage()
     {
-      Reactive::Deferrer deferrer { };
+      Reactive::Deferrer deferrer {};
       entries.clear();
     }
   };
@@ -97,7 +98,7 @@ class BaseWidget
     return ensureDataForKeyExistsOwning<T>(key, [] { return new T(); });
   }
 
-  template <typename T> [[nodiscard]] bool doesDataForKeyExist() const
+  template <typename T>[[nodiscard]] bool doesDataForKeyExist() const
   {
     const auto storage = ensureUserDataStorage();
     return storage->entries.contains(typeid(T).name());
@@ -132,7 +133,7 @@ class BaseWidget
     if(it == storage->entries.end() || !it->second)
     {
       auto data = fac();
-      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) { }));
+      storage->entries.emplace(key, std::make_unique<UserDataEntry>(data, [](void* p) {}));
       return *static_cast<T*>(data);
     }
 
@@ -142,12 +143,10 @@ class BaseWidget
   void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
-    erase_if(storage->entries,
-             [](const auto& it)
-             {
-               return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData
-                   && it.first != c_svgData;
-             });
+    erase_if(storage->entries, [](const auto& it) {
+      return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData
+          && it.first != c_svgData;
+    });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const
@@ -158,25 +157,23 @@ class BaseWidget
   template <typename tCB> void doAutorun(tCB&& cb) const
   {
     auto& comp = getComputations();
-    comp.add(
-        [cb = std::forward<tCB>(cb)]
-        {
-          try
-          {
-            cb();
-          }
-          catch(const NotSyncedException& ignore)
-          {
-          }
-          catch(const std::exception& e)
-          {
-            std::cerr << std::format("Computation::execute() failed: {}", e.what()) << std::endl;
-          }
-          catch(...)
-          {
-            std::cerr << "Computation::execute() failed." << std::endl;
-          }
-        });
+    comp.add([cb = std::forward<tCB>(cb)] {
+      try
+      {
+        cb();
+      }
+      catch(const NotSyncedException& ignore)
+      {
+      }
+      catch(const std::exception& e)
+      {
+        std::cerr << std::format("Computation::execute() failed: {}", e.what()) << std::endl;
+      }
+      catch(...)
+      {
+        std::cerr << "Computation::execute() failed." << std::endl;
+      }
+    });
   }
 
   [[nodiscard]] UserDataStorage* getUserDataStorage() const
@@ -195,8 +192,7 @@ class BaseWidget
 
       lv_obj_add_event_cb(
           m_widget,
-          [](lv_event_t* e)
-          {
+          [](lv_event_t* e) {
             auto target = static_cast<lv_obj_t*>(lv_event_get_target(e));
             auto storage = static_cast<UserDataStorage*>(lv_obj_get_user_data(target));
 

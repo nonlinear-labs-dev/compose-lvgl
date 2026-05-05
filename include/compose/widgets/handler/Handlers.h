@@ -12,30 +12,29 @@
 namespace Compose
 {
 
-  template <lv_event_code_t FilterType> struct ClickHandler
+  template <lv_event_code_t FilterType> struct EventHandler
   {
     const char *m_key;
     BaseWidget &self;
     using CB = std::function<bool(Position)>;
 
-    ClickHandler(BaseWidget &w, auto key)
+    EventHandler(BaseWidget &w, auto key)
         : m_key { key }
         , self { w }
     {
     }
 
-    struct ClickData
+    struct EventData
     {
-      ClickData(lv_obj_t *handle, const CB &cb)
+      EventData(lv_obj_t *handle, const CB &cb)
           : m_handle(handle)
           , m_callback(cb)
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e)
-            {
+            [](lv_event_t *e) {
               Reactive::Deferrer def;
-              const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
+              const auto user_data = static_cast<EventData *>(lv_event_get_user_data(e));
               const auto indev = lv_event_get_indev(e);
               if(indev)
               {
@@ -51,7 +50,7 @@ namespace Compose
             FilterType, this);
       }
 
-      ~ClickData()
+      ~EventData()
       {
         lv_obj_remove_event_dsc(m_handle, m_handler);
       }
@@ -63,14 +62,15 @@ namespace Compose
 
     void operator<<(const CB &cb) const
     {
-      assert(!self.getData<ClickData>(m_key));
-      self.ensureDataForKeyExistsOwning<ClickData>(m_key, [this, cb] { return new ClickData(self.getHandle(), cb); });
+      assert(!self.getData<EventData>(m_key));
+      self.ensureDataForKeyExistsOwning<EventData>(m_key, [this, cb] { return new EventData(self.getHandle(), cb); });
       lv_obj_set_flag(self.getHandle(), LV_OBJ_FLAG_CLICKABLE, true);
     }
   };
 
-  using LeftClick = ClickHandler<LV_EVENT_SHORT_CLICKED>;
-  using LongClick = ClickHandler<LV_EVENT_LONG_PRESSED>;
+  using Pressed = EventHandler<LV_EVENT_PRESSED>;
+  using Clicked = EventHandler<LV_EVENT_CLICKED>;
+  using LongClick = EventHandler<LV_EVENT_LONG_PRESSED>;
 
   struct StateChange
   {
@@ -85,8 +85,7 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e)
-            {
+            [](lv_event_t *e) {
               Reactive::Deferrer def;
               const auto user_data = static_cast<StateChangeData *>(lv_event_get_user_data(e));
               const auto checked = lv_obj_has_state(user_data->m_handle, LV_STATE_CHECKED);
@@ -108,8 +107,8 @@ namespace Compose
     void operator<<(const CB &cb) const
     {
       assert(!self.getData<StateChangeData>(BaseWidget::c_stateChangeKey));
-      self.ensureDataForKeyExistsOwning<StateChangeData>(BaseWidget::c_stateChangeKey, [this, cb]
-                                                         { return new StateChangeData(self.getHandle(), cb); });
+      self.ensureDataForKeyExistsOwning<StateChangeData>(
+          BaseWidget::c_stateChangeKey, [this, cb] { return new StateChangeData(self.getHandle(), cb); });
     }
   };
 }
