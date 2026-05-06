@@ -24,6 +24,11 @@ namespace Compose
 {
   struct StyleSheet;
 
+  struct StyleClass
+  {
+    std::string name;
+  };
+
   template <typename... T> struct MakeOptional;
   template <typename... T> struct MakeOptional<std::tuple<T...>>
   {
@@ -114,42 +119,45 @@ namespace Compose
   {
     std::vector<const StyleSheet*> nestedSheets;
 
-    auto doNothing = [] {};
-    for(const auto& name : { std::string_view { classes }... })
+    if constexpr(sizeof...(classes) > 0)
     {
-      const std::string_view requestedName = name;
-      const auto requestedHash = StyleSheet::calcNameHash(requestedName);
-
-      for(auto* sheet : sheets)
+      auto doNothing = [] {};
+      for(const auto& name : { std::string_view { classes }... })
       {
-        for(const auto& nestedSheet : sheet->children)
+        const std::string_view requestedName = name;
+        const auto requestedHash = StyleSheet::calcNameHash(requestedName);
+
+        for(auto* sheet : sheets)
         {
-          if(nestedSheet->nameHash == requestedHash && nestedSheet->name == requestedName)
+          for(const auto& nestedSheet : sheet->children)
           {
-            if(debug)
+            if(nestedSheet->nameHash == requestedHash && nestedSheet->name == requestedName)
             {
-              printf("Style::processClasses: found matching style sheet %s\n", nestedSheet->name.c_str());
-              printf("parents:\n");
-              auto parent = nestedSheet->parent;
-              while(parent)
-              {
-                printf("\tStyle::processClasses: parent: %s\n", parent->name.c_str());
-                parent = parent->parent;
-              }
-              printf("\n\n\n");
-            }
-
-            if(std::count(sheets.begin(), sheets.end(), nestedSheet.get()) == 0)
-            {
-              nestedSheets.push_back(nestedSheet.get());
-
               if(debug)
               {
-                printf("Style::processClasses: adding nested style sheet to lookup scope %s\n", nestedSheet->name.c_str());
+                printf("Style::processClasses: found matching style sheet %s\n", nestedSheet->name.c_str());
+                printf("parents:\n");
+                auto parent = nestedSheet->parent;
+                while(parent)
+                {
+                  printf("\tStyle::processClasses: parent: %s\n", parent->name.c_str());
+                  parent = parent->parent;
+                }
+                printf("\n\n\n");
               }
-            }
 
-            std::apply([&](const auto&... a) { ((a.has_value() ? set(a.value()) : doNothing()), ...); }, nestedSheet->styles);
+              if(std::count(sheets.begin(), sheets.end(), nestedSheet.get()) == 0)
+              {
+                nestedSheets.push_back(nestedSheet.get());
+
+                if(debug)
+                {
+                  printf("Style::processClasses: adding nested style sheet to lookup scope %s\n", nestedSheet->name.c_str());
+                }
+              }
+
+              std::apply([&](const auto&... a) { ((a.has_value() ? set(a.value()) : doNothing()), ...); }, nestedSheet->styles);
+            }
           }
         }
       }

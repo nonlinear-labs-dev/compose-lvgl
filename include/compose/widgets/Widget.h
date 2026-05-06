@@ -15,6 +15,42 @@
 
 namespace Compose
 {
+  namespace Detail
+  {
+    template <typename Tuple> struct StyleClassCollector
+    {
+      Tuple classes;
+
+      StyleClassCollector(const Tuple &c)
+          : classes(c)
+      {
+      }
+
+      auto add(const auto &c)
+      {
+        return *this;
+      }
+
+      auto add(const StyleClass &c)
+      {
+        auto r = std::tuple_cat(classes, std::make_tuple(c.name));
+        return StyleClassCollector<decltype(r)> { r };
+      }
+
+      template <typename tArgs> auto operator+(const tArgs &arg)
+      {
+        return add(arg);
+      }
+    };
+
+    template <typename... tArgs> void applyStyleClasses(Style &style, tArgs &&... args)
+    {
+      StyleClassCollector s(std::make_tuple());
+      auto classes = (s + ... + args);
+      std::apply([&](auto &... args) { style.add(args...); }, classes.classes);
+    }
+  }
+
   class Window;
 
   struct LayoutType
@@ -110,6 +146,10 @@ namespace Compose
       applyDefaultStyle(BaseWidget::getHandle());
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
+
+      auto parentStyle = Widget(w.getHandle()).getStyle().inherit();
+      Detail::applyStyleClasses(parentStyle, args...);
+      setModifier(parentStyle);
       (setModifier(std::forward<tArgs>(args)), ...);
     }
 
@@ -144,6 +184,10 @@ namespace Compose
     [[nodiscard]] virtual bool shouldClearBeforeAutorunCompose() const
     {
       return true;
+    }
+
+    void setModifier(StyleClass c)
+    {
     }
 
     void setModifier(OverflowBehaviour r) const
@@ -401,8 +445,15 @@ namespace Compose
 
     void setModifier(const Style &style) const
     {
+      auto &s = ensureDataForKeyExistsOwning<Style>(c_styleKey);
+      s = style;
       auto doNothing = [] {};
       std::apply([&](const auto &... a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); }, style.properties);
+    }
+
+    const Style &getStyle() const
+    {
+      return ensureDataForKeyExistsOwning<Style>(c_styleKey);
     }
 
     template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)
