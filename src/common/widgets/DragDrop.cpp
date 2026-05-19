@@ -1,9 +1,10 @@
 #include "compose/widgets/handler/DragDrop.h"
 
 #include "compose/widgets/Widget.h"
-#include "../input/TouchGestureFeed.h"
+#include <compose/input/TouchIndev.h>
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj_pos.h"
+#include "src/misc/lv_async.h"
 
 #include <algorithm>
 #include <cassert>
@@ -69,6 +70,19 @@ namespace Compose
       return std::string("DragDropTarget_") + type;
     }
 
+    struct DeferredDrop
+    {
+      DragDropContext::Setter setter;
+      nlohmann::json content;
+    };
+
+    void runDeferredDrop(void *userData)
+    {
+      Reactive::Deferrer deferrer;
+      std::unique_ptr<DeferredDrop> drop(static_cast<DeferredDrop *>(userData));
+      drop->setter(drop->content);
+    }
+
     bool isDragStartAxisMatching(const DragDrop::DragDropForContent::Source::StartAxis::Direction axis, int xDiff, int yDiff)
     {
       const auto absX = std::abs(xDiff);
@@ -129,7 +143,7 @@ namespace Compose
   void DragDropContext::setSource(lv_obj_t *self, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter,
                                   const DragWidgetBuilder &dragWidgetBuilder)
   {
-    if(!m_source)
+    if(!m_source.get())
     {
       m_source = std::make_unique<Source>(self, type, offsetX, offsetY, rootX, rootY, getter, dragWidgetBuilder);
     }
@@ -137,10 +151,12 @@ namespace Compose
 
   void DragDropContext::resetSource(lv_obj_t *self)
   {
-    if(auto *source = m_source.get())
+    if(auto *source = m_source.get().get())
     {
       if(source->m_widget == self)
       {
+        std::unique_ptr<DeferredDrop> deferredDrop;
+
         if(source->m_currentTarget)
         {
           for(const auto &target : m_targets)
@@ -149,14 +165,22 @@ namespace Compose
             {
               if(auto content = source->m_getter())
               {
-                target->m_setter(*content);
+                deferredDrop = std::make_unique<DeferredDrop>(DeferredDrop { target->m_setter, std::move(*content) });
               }
+
+              break;
             }
           }
         }
 
         source->m_currentTarget = nullptr;
-        m_source.reset();
+        m_source = nullptr;
+
+        if(deferredDrop)
+        {
+          const auto res = lv_async_call(runDeferredDrop, deferredDrop.release());
+          assert(res == LV_RESULT_OK);
+        }
       }
     }
   }
@@ -173,7 +197,7 @@ namespace Compose
 
   void DragDropContext::onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY)
   {
-    if(auto *source = m_source.get())
+    if(auto *source = m_source.get().get())
     {
       if(source->m_widget == dragSource)
       {
@@ -210,7 +234,7 @@ namespace Compose
   {
     bool result = false;
 
-    if(auto *source = m_source.get())
+    if(auto *source = m_source.get().get())
     {
       result = source->m_currentTarget == widget && widget != source->m_widget;
     }
@@ -221,6 +245,15 @@ namespace Compose
   bool DragDropContext::isDragging() const
   {
     return m_source != nullptr;
+  }
+
+  std::optional<std::string> DragDropContext::getDraggedType() const
+  {
+    if(auto *source = m_source.get().get())
+    {
+      return source->m_type;
+    }
+    return {};
   }
 
   DragDropContext::Source::Source(lv_obj_t *widget, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter,
@@ -302,8 +335,7 @@ namespace Compose
   {
     m_pressHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e)
-        {
+        [](lv_event_t *e) {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -325,8 +357,7 @@ namespace Compose
 
     m_pressingHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e)
-        {
+        [](lv_event_t *e) {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -357,8 +388,7 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
-    auto endDrag = [](lv_event_t *e)
-    {
+    auto endDrag = [](lv_event_t *e) {
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
@@ -430,8 +460,8 @@ namespace Compose
     self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
   }
 
-  DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter,
-                                                   const DragDropContext::DragWidgetBuilder &dragWidgetBuilder, StartAxis::Direction startAxis)
+  DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder,
+                                                   StartAxis::Direction startAxis)
       : m_handle(handle)
       , m_type(std::move(type))
       , m_getter(getter)
@@ -441,8 +471,7 @@ namespace Compose
   {
     m_pressHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e)
-        {
+        [](lv_event_t *e) {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -469,8 +498,7 @@ namespace Compose
 
     m_pressingHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e)
-        {
+        [](lv_event_t *e) {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -479,9 +507,10 @@ namespace Compose
               if(hasMultiTouch(indev))
               {
                 restoreScrollableAncestors(self);
-                DragDropContext::get().resetSource(self->m_handle);
                 self->m_startPos.reset();
                 self->m_startDecision = StartDecision::Undecided;
+                auto *handle = self->m_handle;
+                DragDropContext::get().resetSource(handle);
                 return;
               }
 
@@ -520,15 +549,15 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
-    auto endDrag = [](lv_event_t *e)
-    {
+    auto endDrag = [](lv_event_t *e) {
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
         restoreScrollableAncestors(self);
-        DragDropContext::get().resetSource(self->m_handle);
         self->m_startPos.reset();
         self->m_startDecision = StartDecision::Undecided;
+        auto *handle = self->m_handle;
+        DragDropContext::get().resetSource(handle);
       }
     };
 
@@ -570,8 +599,7 @@ namespace Compose
   {
     const auto key = sourceKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
-    owner.ensureDataForKeyExistsOwning<Data>(
-        key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
   }
 
   DragDrop::DragDropForContent::Target::Target(DragDropForContent *self)
@@ -583,8 +611,7 @@ namespace Compose
       : m_handle(handle)
       , m_type(std::move(type))
   {
-    DragDropContext::get().addTarget(
-        m_handle, m_type, [this](const nlohmann::json &content) { m_setter(content); });
+    DragDropContext::get().addTarget(m_handle, m_type, [setter = m_setter](const nlohmann::json &content) { (*setter)(content); });
   }
 
   DragDrop::DragDropForContent::Target::Data::~Data()
@@ -594,7 +621,7 @@ namespace Compose
 
   void DragDrop::DragDropForContent::Target::Data::setSetter(const Setter &setter)
   {
-    m_setter = setter;
+    *m_setter = setter;
   }
 
   void DragDrop::DragDropForContent::Target::operator<<(const Setter &cb)

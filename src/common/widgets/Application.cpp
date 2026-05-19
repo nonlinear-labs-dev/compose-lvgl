@@ -10,6 +10,7 @@
 #include <thread>
 #include <reactive/Computations.h>
 #include <reactive/Deferrer.h>
+#include <tools/Log.h>
 
 namespace Compose
 {
@@ -50,9 +51,13 @@ namespace Compose
           const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(current - lastTick);
           lv_tick_inc(delta.count());
           lastTick = current;
+          const auto frameStart = std::chrono::steady_clock::now();
           s_timerDeferrer = std::make_unique<Reactive::Deferrer>();
           lv_timer_handler();
           s_timerDeferrer.reset();
+          const auto frameDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - frameStart);
+          if(frameDuration >= std::chrono::milliseconds(50))
+            Tools::Log::warn("lv_timer_handler took", frameDuration.count(), "ms");
 
           auto keepRunning = lv_display_get_next(nullptr) != nullptr;
           if(!keepRunning)

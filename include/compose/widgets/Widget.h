@@ -15,6 +15,54 @@
 
 namespace Compose
 {
+  namespace Detail
+  {
+    template <typename Tuple> struct StyleClassCollector
+    {
+      Tuple classes;
+
+      StyleClassCollector(const Tuple &c)
+          : classes(c)
+      {
+      }
+
+      auto add(const auto &c)
+      {
+        return *this;
+      }
+
+      auto add(const StyleClass &c)
+      {
+        auto r = std::tuple_cat(classes, std::make_tuple(c.name));
+        return StyleClassCollector<decltype(r)> { r };
+      }
+
+      template <typename tArgs> auto operator+(const tArgs &arg)
+      {
+        return add(arg);
+      }
+    };
+
+    template <typename... tArgs> void applyStyleClasses(Style &style, tArgs &&...args)
+    {
+      StyleClassCollector s(std::make_tuple());
+      auto classes = (s + ... + args);
+      std::apply([&](auto &...args) { style.add(args...); }, classes.classes);
+    }
+
+    struct ModifierDispatcher
+    {
+      static void dispatch(auto widget, const StyleClass &)
+      {
+      }
+
+      static void dispatch(auto widget, auto &&m)
+      {
+        widget->setModifier(std::move(m));
+      }
+    };
+  }
+
   class Window;
 
   struct LayoutType
@@ -94,7 +142,7 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(Window &it, tArgs &&... args)
+    explicit Widget(Window &it, tArgs &&...args)
         : BaseWidget(lv_obj_create(nullptr))
     {
       lv_screen_load(BaseWidget::getHandle());
@@ -104,18 +152,26 @@ namespace Compose
     }
 
     template <typename... tArgs>
-    explicit Widget(BaseWidget &w, tArgs &&... args)
+    explicit Widget(BaseWidget &w, tArgs &&...args)
         : Widget(lv_obj_create(w.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
-      (setModifier(std::forward<tArgs>(args)), ...);
+      setModifiers(this, w, std::forward<tArgs>(args)...);
     }
 
     explicit Widget(WidgetType *w)
         : BaseWidget(w)
     {
+    }
+
+    template <typename... tArgs> static void setModifiers(auto self, BaseWidget &parentWidget, tArgs &&...args)
+    {
+      auto parentStyle = Widget(parentWidget.getHandle()).getStyle().inherit();
+      Detail::applyStyleClasses(parentStyle, args...);
+      self->setModifier(parentStyle);
+      (Detail::ModifierDispatcher::dispatch(self, std::move(args)), ...);
     }
 
     [[nodiscard]] int getWidth() const
@@ -139,6 +195,16 @@ namespace Compose
     {
       clearUserData();
       lv_obj_clean(getHandle());
+    }
+
+    [[nodiscard]] virtual bool shouldClearBeforeAutorunCompose() const
+    {
+      return true;
+    }
+
+    void setModifier(StyleClass c) const
+    {
+      applyStyle(getStyle().add(c.name));
     }
 
     void setModifier(OverflowBehaviour r) const
@@ -396,8 +462,20 @@ namespace Compose
 
     void setModifier(const Style &style) const
     {
-      auto doNothing = [] {};
-      std::apply([&](const auto &... a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); }, style.properties);
+      auto &s = ensureDataForKeyExistsOwning<Style>(c_styleKey);
+      s = style;
+      applyStyle(s);
+    }
+
+    void applyStyle(const Style &style) const
+    {
+      auto doNothing = [] { };
+      std::apply([&](const auto &...a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); }, style.properties);
+    }
+
+    const Style &getStyle() const
+    {
+      return ensureDataForKeyExistsOwning<Style>(c_styleKey);
     }
 
     template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)
@@ -501,7 +579,6 @@ namespace Compose
     LongClick longClick { *this, c_longClickKey };
     Touch touch { *this };
     StateChange stateChange { *this };
-    Pinch pinch { *this };
     Drag drag { *this };
     DragDrop dragDrop { *this };
     TimerTick timerTick { *this };
@@ -512,34 +589,41 @@ namespace Compose
     }
   };
 
-  template <typename T> concept IsWidget = requires
-  {
-    typename T::WidgetType;
-  };
+  template <typename T>
+  concept IsWidget = requires { typename T::WidgetType; };
 
-  template <typename ComposeWidget, typename tCB> requires IsWidget<ComposeWidget> void operator<<(ComposeWidget &&lhs, tCB &&cb)
+  template <typename ComposeWidget, typename tCB>
+    requires IsWidget<ComposeWidget>
+  void operator<<(ComposeWidget &&lhs, tCB &&cb)
   {
     using tComposeWidgetDecayed = std::remove_reference_t<ComposeWidget>;
 
-    lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
-      tComposeWidgetDecayed wrapper(w);
-      wrapper.clear();
-      cb(tComposeWidgetDecayed(w));
-    });
+    lhs.doAutorun(
+        [cb = std::forward<tCB>(cb), w = lhs.getHandle()]
+        {
+          tComposeWidgetDecayed wrapper(w);
+          if(wrapper.shouldClearBeforeAutorunCompose())
+            wrapper.clear();
+          cb(tComposeWidgetDecayed(w));
+        });
   }
 }
 
 #define SCROLL_INTO_VIEW_WHEN(condition)                                                                                                                                           \
-  it.doAutorun([=, handle = it.getHandle()] {                                                                                                                                      \
-    if(condition)                                                                                                                                                                  \
-    {                                                                                                                                                                              \
-      lv_obj_scroll_to_view(handle, false);                                                                                                                                        \
-    }                                                                                                                                                                              \
-  });
+  it.doAutorun(                                                                                                                                                                    \
+      [=, handle = it.getHandle()]                                                                                                                                                 \
+      {                                                                                                                                                                            \
+        if(condition)                                                                                                                                                              \
+        {                                                                                                                                                                          \
+          lv_obj_scroll_to_view(handle, false);                                                                                                                                    \
+        }                                                                                                                                                                          \
+      });
 
 #define LEFT_CLICK it.leftClick << [=]
 #define TOUCH() it.touch << [=](Compose::Touch * it)
-#define PINCH it.pinch << [=]
+#define TOUCH_BEGIN it->begin << [=]
+#define TOUCH_UPDATE it->update << [=]
+#define TOUCH_END it->end << [=]
 #define SWALLOW_LEFT_CLICK()                                                                                                                                                       \
   LEFT_CLICK(auto)                                                                                                                                                                 \
   {                                                                                                                                                                                \
@@ -548,7 +632,8 @@ namespace Compose
 #define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                                                                              \
-  it.leftClick << [handle = it.getHandle()](Position p) -> bool {                                                                                                                  \
+  it.leftClick << [handle = it.getHandle()](Position p) -> bool                                                                                                                    \
+  {                                                                                                                                                                                \
     nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                                                                                 \
     return false;                                                                                                                                                                  \
   }

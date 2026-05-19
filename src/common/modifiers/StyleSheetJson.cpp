@@ -1,8 +1,11 @@
 #include "compose/modifiers/StyleSheetJson.h"
 
 #include "compose/modifiers/Border.h"
+#include "compose/modifiers/Font.h"
+#include "compose/modifiers/Modifiers.h"
 #include "compose/modifiers/Padding.h"
 #include "compose/modifiers/RoundedCorner.h"
+#include "compose/modifiers/StyleSheets.h"
 #include "tools/json.h"
 
 #include <fstream>
@@ -375,7 +378,8 @@ namespace Compose
   void from_json(const nlohmann::json& j, Font& out)
   {
     out = Font {};
-    out.size = j.at("size").get<int>();
+    if(j.contains("size"))
+      out.size = j.at("size").get<int>();
 
     if(j.contains("weight"))
       out.weight = parseFontWeight(j.at("weight").get<std::string>());
@@ -594,13 +598,13 @@ namespace Compose
     return {};
   }
 
-  static StyleSheet parseStyleSheet(const std::string& name, const OrderedJson& definition, const ValueAssignments& inheritedAssignments = {},
-                                    std::vector<StyleSheet>* sameContextSheets = nullptr)
+  static std::unique_ptr<StyleSheet> parseStyleSheet(const std::string& name, const OrderedJson& definition, const ValueAssignments& inheritedAssignments = {},
+                                                     std::vector<std::unique_ptr<StyleSheet>>* sameContextSheets = nullptr)
   {
     if(!definition.is_object())
       throw std::invalid_argument("Style definition for '" + name + "' must be an object");
 
-    StyleSheet ret { name };
+    std::unique_ptr<StyleSheet> ret = std::make_unique<StyleSheet>(name);
     auto assignments = inheritedAssignments;
 
     for(const auto& [key, value] : definition.items())
@@ -633,14 +637,14 @@ namespace Compose
         if(className.empty())
           logStyleSheetError(name, key, "class name cannot be empty");
         else
-          ret.apply(parseStyleSheet(className, value, assignments, &ret.children));
+          ret->apply(parseStyleSheet(className, value, assignments, &ret->children));
       }
       else if(!isValueAssignment(key))
       {
         std::unordered_set<std::string> resolutionPath;
         const auto resolvedValue = resolveAssignedValue(value, assignments, resolutionPath);
         if(auto modifier = parseModifier(key, nlohmann::json(resolvedValue)))
-          std::visit([&](auto&& m) { ret.apply(std::forward<decltype(m)>(m)); }, modifier.value());
+          std::visit([&](auto&& m) { ret->apply(std::forward<decltype(m)>(m)); }, modifier.value());
         else
           logStyleSheetError(name, key, "unknown property");
       }
@@ -649,9 +653,9 @@ namespace Compose
     return ret;
   }
 
-  std::vector<StyleSheet> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files)
+  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files)
   {
-    std::vector<StyleSheet> ret;
+    std::vector<std::unique_ptr<StyleSheet>> ret;
 
     for(const auto& file : files)
     {

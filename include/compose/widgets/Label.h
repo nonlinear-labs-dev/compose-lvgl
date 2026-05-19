@@ -18,7 +18,7 @@ namespace Compose
     using AutorunStringCB = std::function<std::string()>;
 
     template <typename... tArgs>
-    explicit Label(BaseWidget &parent, tArgs &&... args)
+    explicit Label(BaseWidget &parent, tArgs &&...args)
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       setLabelRenderingFunction();
@@ -30,29 +30,32 @@ namespace Compose
       setModifier(TextAlign::CENTER());
       setModifier(Width { 1 });
 
-      doAutorun([handle = getHandle()] {
-        const Label l(handle);
-        const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
-        const auto [width] = labelData.width.get();
-        const auto [height] = labelData.height.get();
+      doAutorun(
+          [handle = getHandle()]
+          {
+            const Label l(handle);
+            const auto &labelData = l.getDataForKey<LabelData>(c_labelData);
+            const auto [width] = labelData.width.get();
+            const auto [height] = labelData.height.get();
 
-        const auto &fontDesc = labelData.font.get();
-        const auto &font = s_fontStorage->getFont(fontDesc);
-        const auto text = labelData.text.get();
+            const auto &fontDesc = labelData.font.get();
+            const auto &font = s_fontStorage->getFont(fontDesc);
+            const auto text = labelData.text.get();
 
-        if(width == LV_SIZE_CONTENT)
-        {
-          const auto textWidth = font.getStringWidth(text.text);
-          lv_obj_set_width(handle, textWidth);
-        }
+            if(width == LV_SIZE_CONTENT)
+            {
+              const auto textWidth = font.getStringWidth(text.text);
+              lv_obj_set_width(handle, textWidth);
+            }
 
-        if(height == LV_SIZE_CONTENT)
-        {
-          const auto textHeight = font.getFontHeight();
-          lv_obj_set_height(handle, textHeight);
-        }
-      });
-      (setModifier(std::forward<tArgs>(args)), ...);
+            if(height == LV_SIZE_CONTENT)
+            {
+              const auto textHeight = font.getFontHeight();
+              lv_obj_set_height(handle, textHeight);
+            }
+          });
+
+      setModifiers(this, parent, std::forward<tArgs>(args)...);
     }
 
     void setModifier(Width w) const override;
@@ -74,5 +77,5 @@ namespace Compose
   };
 }
 
-#define LABEL(...) it.add(Compose::Label(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Label && it)
+#define LABEL(...) it.add(Compose::Label(it __VA_OPT__(, __VA_ARGS__))) << [=](Compose::Label &&it)
 #define USE_FONT_STORAGE(...) Compose::s_fontStorage = std::make_unique<Compose::FontStorage>(__VA_ARGS__);

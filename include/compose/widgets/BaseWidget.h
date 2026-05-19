@@ -24,6 +24,7 @@ class BaseWidget
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_pressedKey = "Pressed";
   static constexpr auto c_stateChangeKey = "StateChange";
+  static constexpr auto c_styleKey = "Style";
   static constexpr auto c_canvasData = "CanvasData";
   static constexpr auto c_labelData = "LabelData";
   static constexpr auto c_svgData = "SVGData";
@@ -142,7 +143,9 @@ class BaseWidget
   void clearUserData() const
   {
     auto storage = ensureUserDataStorage();
-    erase_if(storage->entries, [](const auto& it) { return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData && it.first != c_svgData; });
+    erase_if(storage->entries, [](const auto& it) {
+      return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData && it.first != c_svgData && it.first != c_styleKey;
+    });
   }
 
   [[nodiscard]] virtual WidgetType* getHandle() const

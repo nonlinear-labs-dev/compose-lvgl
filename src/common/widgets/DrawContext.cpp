@@ -7,6 +7,7 @@
 #include <memory>
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include "compose/widgets/Label.h"
 #include <compose/FreeTypeFont.h>
@@ -21,6 +22,33 @@ namespace Compose
 
   namespace
   {
+    Point translate(Point point, Point offset)
+    {
+      point.x += offset.x;
+      point.y += offset.y;
+      return point;
+    }
+
+    Rect translate(Rect rect, Point offset)
+    {
+      rect.pos = translate(rect.pos, offset);
+      return rect;
+    }
+
+    std::vector<Point> translate(std::vector<Point> points, Point offset)
+    {
+      for(auto &point : points)
+        point = translate(point, offset);
+
+      return points;
+    }
+
+    DrawContext::ArcDrawOptions translate(DrawContext::ArcDrawOptions arc, Point offset)
+    {
+      arc.position = translate(arc.position, offset);
+      return arc;
+    }
+
     struct ClippedLineSegment
     {
       Point start;
@@ -128,6 +156,29 @@ namespace Compose
     }
   }
 
+  DrawContext::ScopedOffset::ScopedOffset(DrawContext &context, Point offset)
+      : m_context(&context)
+  {
+    m_context->pushOffset(offset);
+  }
+
+  DrawContext::ScopedOffset::~ScopedOffset()
+  {
+    if(m_context)
+      m_context->popOffset();
+  }
+
+  DrawContext::ScopedOffset::ScopedOffset(ScopedOffset &&other) noexcept
+      : m_context(other.m_context)
+  {
+    other.m_context = nullptr;
+  }
+
+  DrawContext::ScopedOffset DrawContext::offset(Point offset)
+  {
+    return ScopedOffset(*this, offset);
+  }
+
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
       : m_layer {}
       , m_canvas(ctx)
@@ -147,6 +198,19 @@ namespace Compose
     lv_canvas_init_layer(&m_canvas, &m_layer);
   }
 
+  void LVGLDrawContext::pushOffset(Point offset)
+  {
+    m_offsetStack.push_back(m_currentOffset);
+    m_currentOffset = translate(m_currentOffset, offset);
+  }
+
+  void LVGLDrawContext::popOffset()
+  {
+    assert(!m_offsetStack.empty());
+    m_currentOffset = m_offsetStack.back();
+    m_offsetStack.pop_back();
+  }
+
   void LVGLDrawContext::drawLine(const StrokeStyle style, const Point p1, const Point p2)
   {
     drawLine(style, p1, p2, std::nullopt, std::nullopt);
@@ -154,6 +218,9 @@ namespace Compose
 
   void LVGLDrawContext::drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
   {
+    p1 = translate(p1, m_currentOffset);
+    p2 = translate(p2, m_currentOffset);
+
     if(auto clippedLine = clipLineToArea(p1, p2, m_layer._clip_area))
     {
       p1 = clippedLine->start;
@@ -189,7 +256,9 @@ namespace Compose
     if(points.size() < 2)
       return;
 
-    if(auto bounds = getBoundingArea(points, style.width / 2))
+    const auto translatedPoints = translate(points, m_currentOffset);
+
+    if(auto bounds = getBoundingArea(translatedPoints, style.width / 2))
     {
       if(!clipAreaToPane(*bounds, m_layer._clip_area))
         return;
@@ -200,12 +269,12 @@ namespace Compose
     if(!dsc || !path)
       return;
 
-    lv_fpoint_t first { static_cast<float>(points[0].x), static_cast<float>(points[0].y) };
+    lv_fpoint_t first { static_cast<float>(translatedPoints[0].x), static_cast<float>(translatedPoints[0].y) };
     lv_vector_path_move_to(path.get(), &first);
 
-    for(size_t i = 1; i < points.size(); i++)
+    for(size_t i = 1; i < translatedPoints.size(); i++)
     {
-      const lv_fpoint_t point { static_cast<float>(points[i].x), static_cast<float>(points[i].y) };
+      const lv_fpoint_t point { static_cast<float>(translatedPoints[i].x), static_cast<float>(translatedPoints[i].y) };
       lv_vector_path_line_to(path.get(), &point);
     }
 
@@ -279,7 +348,7 @@ namespace Compose
 
   void LVGLDrawContext::strokeRect(const StrokeStyle style, const Rect rect)
   {
-    const auto area = toArea(rect);
+    const auto area = toArea(translate(rect, m_currentOffset));
     if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area, style.width))
     {
       lv_draw_rect_dsc_t rect_dsc;
@@ -295,6 +364,7 @@ namespace Compose
 
   void LVGLDrawContext::strokeRoundedRect(StrokeStyle style, Rect rect, RoundedCorner rc)
   {
+    rect = translate(rect, m_currentOffset);
     const auto area = toArea(rect);
     if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area, style.width))
     {
@@ -313,6 +383,8 @@ namespace Compose
 
   void LVGLDrawContext::strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft, int bottomRight)
   {
+    r = translate(r, m_currentOffset);
+
     if(!clipAreaToPane(toArea(r), m_layer._clip_area, style.width))
       return;
 
@@ -376,7 +448,7 @@ namespace Compose
 
   void LVGLDrawContext::fillRect(const Color color, const Rect rect)
   {
-    const auto area = toArea(rect);
+    const auto area = toArea(translate(rect, m_currentOffset));
     if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area))
     {
       lv_draw_rect_dsc_t rect_dsc;
@@ -391,7 +463,7 @@ namespace Compose
 
   void LVGLDrawContext::fillRoundedRect(const Color color, const Rect rect, const RoundedCorner rc)
   {
-    const auto area = toArea(rect);
+    const auto area = toArea(translate(rect, m_currentOffset));
     if(auto clippedArea = clipAreaToPane(area, m_layer._clip_area))
     {
       lv_draw_rect_dsc_t rect_dsc;
@@ -407,6 +479,8 @@ namespace Compose
 
   void LVGLDrawContext::fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft, int bottomRight)
   {
+    rect = translate(rect, m_currentOffset);
+
     if(!clipAreaToPane(toArea(rect), m_layer._clip_area))
       return;
 
@@ -471,6 +545,8 @@ namespace Compose
     if(points.size() < 3)
       return;
 
+    points = translate(std::move(points), m_currentOffset);
+
     if(auto bounds = getBoundingArea(points, stroke.width / 2))
     {
       if(!clipAreaToPane(*bounds, m_layer._clip_area))
@@ -511,16 +587,18 @@ namespace Compose
     if(points.size() < 3)
       return;
 
-    if(auto bounds = getBoundingArea(points, stroke.width / 2 + rc.radius))
-    {
-      if(!clipAreaToPane(*bounds, m_layer._clip_area))
-        return;
-    }
-
     if(rc.radius <= 0)
     {
       fillPolygon(stroke, fill, points);
       return;
+    }
+
+    points = translate(std::move(points), m_currentOffset);
+
+    if(auto bounds = getBoundingArea(points, stroke.width / 2 + rc.radius))
+    {
+      if(!clipAreaToPane(*bounds, m_layer._clip_area))
+        return;
     }
 
     auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
@@ -575,9 +653,13 @@ namespace Compose
 
   void LVGLDrawContext::fillArc(const ArcDrawOptions &arcOptions)
   {
-    const auto halfStroke = static_cast<int>(std::ceil(static_cast<float>(arcOptions.strokeWidth) / 2.0f));
-    const auto radius = static_cast<int>(std::ceil(arcOptions.radius)) + halfStroke;
-    lv_area_t bounds { .x1 = arcOptions.position.x - radius, .y1 = arcOptions.position.y - radius, .x2 = arcOptions.position.x + radius, .y2 = arcOptions.position.y + radius };
+    const auto translatedArcOptions = translate(arcOptions, m_currentOffset);
+    const auto halfStroke = static_cast<int>(std::ceil(static_cast<float>(translatedArcOptions.strokeWidth) / 2.0f));
+    const auto radius = static_cast<int>(std::ceil(translatedArcOptions.radius)) + halfStroke;
+    lv_area_t bounds { .x1 = translatedArcOptions.position.x - radius,
+                       .y1 = translatedArcOptions.position.y - radius,
+                       .x2 = translatedArcOptions.position.x + radius,
+                       .y2 = translatedArcOptions.position.y + radius };
 
     if(!clipAreaToPane(bounds, m_layer._clip_area))
       return;
@@ -590,23 +672,23 @@ namespace Compose
     if(!path)
       return;
 
-    const lv_fpoint_t center = { static_cast<float>(arcOptions.position.x), static_cast<float>(arcOptions.position.y) };
+    const lv_fpoint_t center = { static_cast<float>(translatedArcOptions.position.x), static_cast<float>(translatedArcOptions.position.y) };
 
-    lv_vector_path_append_arc(path.get(), &center, arcOptions.radius, arcOptions.startAngle, arcOptions.sweepAngle, false);
+    lv_vector_path_append_arc(path.get(), &center, translatedArcOptions.radius, translatedArcOptions.startAngle, translatedArcOptions.sweepAngle, false);
 
     lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
 
-    const auto &color = arcOptions.color;
+    const auto &color = translatedArcOptions.color;
 
     lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
     lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(arcOptions.strokeWidth));
+    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(translatedArcOptions.strokeWidth));
     lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
     lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
 
-    if(arcOptions.dashes.has_value())
+    if(translatedArcOptions.dashes.has_value())
     {
-      auto dashes = arcOptions.dashes.value();
+      auto dashes = translatedArcOptions.dashes.value();
       lv_vector_dsc_set_stroke_dash(dsc.get(), dashes.data(), dashes.size());
     }
 
@@ -659,11 +741,46 @@ namespace Compose
     const auto textWidth = font.getStringWidth(t.text);
     const auto startX = LabelShared::computeStartX(r.size.w, textWidth, ta);
     const auto startY = LabelShared::computeStartYSingle(r.size.h, font, t.text, va);
-    drawText(t.text, r.pos.x + startX, r.pos.y + startY, font, c);
+
+    r = translate(r, m_currentOffset);
+    auto clipArea = m_layer._clip_area;
+
+    if(r.size.w > 0)
+    {
+      clipArea.x1 = std::max(clipArea.x1, r.pos.x);
+      clipArea.x2 = std::min(clipArea.x2, r.pos.x + r.size.w - 1);
+    }
+
+    if(r.size.h > 0)
+    {
+      clipArea.y1 = std::max(clipArea.y1, r.pos.y);
+      clipArea.y2 = std::min(clipArea.y2, r.pos.y + r.size.h - 1);
+    }
+
+    if(clipArea.x1 > clipArea.x2 || clipArea.y1 > clipArea.y2)
+      return;
+
+    const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
+    const auto *draw_buf = canvas->draw_buf;
+
+    if(!draw_buf)
+      return;
+
+    flushLayer();
+
+    const auto x = r.pos.x + startX;
+    const auto y = r.pos.y + startY;
+
+    font.draw(t.text, x, y, [&](int px, int py, unsigned char coverage) {
+      if(px >= clipArea.x1 && px <= clipArea.x2 && py >= clipArea.y1 && py <= clipArea.y2)
+        drawFontPixel(*draw_buf, c, px, py, coverage);
+    });
   }
 
   void LVGLDrawContext::putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride)
   {
+    p = translate(p, m_currentOffset);
+
     if(!image.start || image.width <= 0 || image.height <= 0)
       return;
 
@@ -681,14 +798,16 @@ namespace Compose
     const int src_height = image.height;
     const int src_stride = image.stride;
 
-    const int start_x = p.x;
-    const int start_y = p.y;
+    const auto start_x = std::max(p.x, 0);
+    const auto start_y = std::max(p.y, 0);
+    const auto src_start_x = std::max(-p.x, 0);
+    const auto src_start_y = std::max(-p.y, 0);
 
     if(start_x >= canvas_width || start_y >= canvas_height)
       return;
 
-    const auto end_x = std::min<int>(start_x + src_width, static_cast<int>(canvas_width));
-    const auto end_y = std::min<int>(start_y + src_height, static_cast<int>(canvas_height));
+    const auto end_x = std::min<int>(p.x + src_width, static_cast<int>(canvas_width));
+    const auto end_y = std::min<int>(p.y + src_height, static_cast<int>(canvas_height));
     const auto copy_width = end_x - start_x;
     const auto copy_height = end_y - start_y;
 
@@ -701,10 +820,10 @@ namespace Compose
     for(int y = 0; y < copy_height; ++y)
     {
       const int canvas_y = start_y + y;
-      const int src_y = y;
+      const int src_y = src_start_y + y;
 
       uint8_t *canvas_row = canvas_data + canvas_y * canvas_stride + start_x * 4;
-      const uint8_t *src_row = src_data + src_y * src_stride;
+      const uint8_t *src_row = src_data + src_y * src_stride + src_start_x * 4;
 
       for(int x = 0; x < copy_width; ++x)
       {
@@ -768,11 +887,15 @@ namespace Compose
     if(text.empty())
       return;
 
+    x += m_currentOffset.x;
+    y += m_currentOffset.y;
+
     const auto *canvas = reinterpret_cast<lv_canvas_t *>(&m_canvas);
     const auto *draw_buf = canvas->draw_buf;
     if(!draw_buf)
       return;
 
+    flushLayer();
     font.draw(text, x, y, [&](int px, int py, unsigned char coverage) { drawFontPixel(*draw_buf, c, px, py, coverage); });
   }
 

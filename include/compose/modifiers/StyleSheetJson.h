@@ -1,14 +1,32 @@
 #pragma once
 
-#include <vector>
-
-#include "compose/modifiers/StyleSheets.h"
 #include "tools/json.h"
-
+#include <vector>
 #include <filesystem>
 
 namespace Compose
 {
+  struct StyleSheet;
+  struct RoundedCorner;
+  struct Scrollable;
+  struct FlexAlign;
+  struct VerticalAlign;
+  struct TextAlign;
+  struct Font;
+  struct BorderSides;
+  struct BorderColor;
+  struct BorderWidth;
+  struct Border;
+  struct Padding;
+  struct MarginBottom;
+  struct MarginTop;
+  struct MarginRight;
+  struct MarginLeft;
+  struct Margin;
+  struct Height;
+  struct Width;
+  class Color;
+
   void to_json(nlohmann::json& j, const Color& in);
   void from_json(const nlohmann::json& j, Color& out);
 
@@ -55,5 +73,5 @@ namespace Compose
 
   void to_json(nlohmann::json& j, const RoundedCorner& in);
 
-  std::vector<StyleSheet> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files);
+  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files);
 }
