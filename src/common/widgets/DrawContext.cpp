@@ -17,7 +17,7 @@
 namespace Compose
 {
   std::unique_ptr<FontStorage> s_fontStorage = nullptr;
-  using tVectorDscPtr = std::unique_ptr<lv_vector_dsc_t, decltype(&lv_vector_dsc_delete)>;
+  using tVectorDscPtr = std::unique_ptr<lv_draw_vector_dsc_t, decltype(&lv_draw_vector_dsc_delete)>;
   using tVectorPathPtr = std::unique_ptr<lv_vector_path_t, decltype(&lv_vector_path_delete)>;
 
   namespace
@@ -264,7 +264,7 @@ namespace Compose
         return;
     }
 
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_HIGH), &lv_vector_path_delete);
     if(!dsc || !path)
       return;
@@ -278,30 +278,30 @@ namespace Compose
       lv_vector_path_line_to(path.get(), &point);
     }
 
-    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
+    lv_draw_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
+    lv_draw_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+    lv_draw_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
     float strokeWidth = static_cast<float>(style.width);
 
-    lv_vector_dsc_set_stroke_width(dsc.get(), strokeWidth);
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+    lv_draw_vector_dsc_set_stroke_width(dsc.get(), strokeWidth);
+    lv_draw_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
 
     if(ends.has_value())
     {
       if(ends.value().start && ends.value().end)
-        lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
+        lv_draw_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
       else
-        lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_BUTT);
+        lv_draw_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_BUTT);
     }
 
     if(dash.has_value())
     {
       const auto d = dash.value();
       std::array<float, 2> dashPattern { static_cast<float>(d.dashWidth), static_cast<float>(d.dashGap) };
-      lv_vector_dsc_set_stroke_dash(dsc.get(), dashPattern.data(), dashPattern.size());
+      lv_draw_vector_dsc_set_stroke_dash(dsc.get(), dashPattern.data(), dashPattern.size());
     }
 
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
   }
 
@@ -388,7 +388,7 @@ namespace Compose
     if(!clipAreaToPane(toArea(r), m_layer._clip_area, style.width))
       return;
 
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
 
     if(!dsc || !path)
@@ -436,13 +436,13 @@ namespace Compose
 
     lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), style.width);
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
-    lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
+    lv_draw_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(style.color.r, style.color.g, style.color.b));
+    lv_draw_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(style.color.a * 255.0));
+    lv_draw_vector_dsc_set_stroke_width(dsc.get(), style.width);
+    lv_draw_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+    lv_draw_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
 
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
   };
 
@@ -492,7 +492,7 @@ namespace Compose
 
     rect_dsc.radius = std::max({ topLeft, topRight, bottomLeft, bottomRight });
 
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
 
     if(!dsc || !path)
@@ -534,9 +534,9 @@ namespace Compose
 
     lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(color.a * 255.0));
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_set_fill_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
+    lv_draw_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(color.a * 255.0));
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
   }
 
@@ -553,7 +553,7 @@ namespace Compose
         return;
     }
 
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     if(!dsc)
       return;
 
@@ -572,12 +572,12 @@ namespace Compose
 
     lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+    lv_draw_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+    lv_draw_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+    lv_draw_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+    lv_draw_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
 
     lv_draw_vector(dsc.get());
   }
@@ -601,7 +601,7 @@ namespace Compose
         return;
     }
 
-    auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     auto path = tVectorPathPtr(lv_vector_path_create(LV_VECTOR_PATH_QUALITY_MEDIUM), &lv_vector_path_delete);
     if(!dsc || !path)
       return;
@@ -639,15 +639,15 @@ namespace Compose
 
     lv_vector_path_close(path.get());
 
-    lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
-    lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    lv_draw_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
+    lv_draw_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
+    lv_draw_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+    lv_draw_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
+    lv_draw_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
 
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+    lv_draw_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
 
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
     lv_draw_vector(dsc.get());
   }
 
@@ -664,7 +664,7 @@ namespace Compose
     if(!clipAreaToPane(bounds, m_layer._clip_area))
       return;
 
-    const auto dsc = tVectorDscPtr(lv_vector_dsc_create(&m_layer), &lv_vector_dsc_delete);
+    const auto dsc = tVectorDscPtr(lv_draw_vector_dsc_create(&m_layer), &lv_draw_vector_dsc_delete);
     if(!dsc)
       return;
 
@@ -676,23 +676,23 @@ namespace Compose
 
     lv_vector_path_append_arc(path.get(), &center, translatedArcOptions.radius, translatedArcOptions.startAngle, translatedArcOptions.sweepAngle, false);
 
-    lv_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
+    lv_draw_vector_dsc_set_fill_opa(dsc.get(), LV_OPA_0);
 
     const auto &color = translatedArcOptions.color;
 
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(translatedArcOptions.strokeWidth));
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
-    lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
+    lv_draw_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
+    lv_draw_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
+    lv_draw_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(translatedArcOptions.strokeWidth));
+    lv_draw_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
+    lv_draw_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
 
     if(translatedArcOptions.dashes.has_value())
     {
       auto dashes = translatedArcOptions.dashes.value();
-      lv_vector_dsc_set_stroke_dash(dsc.get(), dashes.data(), dashes.size());
+      lv_draw_vector_dsc_set_stroke_dash(dsc.get(), dashes.data(), dashes.size());
     }
 
-    lv_vector_dsc_add_path(dsc.get(), path.get());
+    lv_draw_vector_dsc_add_path(dsc.get(), path.get());
 
     lv_draw_vector(dsc.get());
   }

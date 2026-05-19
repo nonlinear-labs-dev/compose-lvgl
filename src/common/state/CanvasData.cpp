@@ -26,6 +26,17 @@ namespace Compose
     const int width = lv_obj_get_width(this->m_handle);
     const int height = lv_obj_get_height(this->m_handle);
 
+    if(width <= 0 || height <= 0)
+    {
+      if(m_lastBufferWidth != width || m_lastBufferHeight != height)
+      {
+        m_lastBufferWidth = width;
+        m_lastBufferHeight = height;
+        m_buffer.modify([](auto &f) { f.reset(nullptr); });
+      }
+      return;
+    }
+
     if(width != m_lastBufferWidth || height != m_lastBufferHeight)
     {
       m_lastBufferWidth = width;
