@@ -7,11 +7,15 @@
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/StyleSheets.h"
 #include "tools/json.h"
+#include <yaml-cpp/yaml.h>
 
+#include <charconv>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
@@ -93,6 +97,92 @@ namespace Compose
 {
   using OrderedJson = nlohmann::ordered_json;
   using ValueAssignments = std::unordered_map<std::string, OrderedJson>;
+
+  static std::string toLowerCase(std::string input)
+  {
+    for(auto& c : input)
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return input;
+  }
+
+  static OrderedJson parseYamlScalarValue(const std::string& scalar)
+  {
+    const auto lowered = toLowerCase(scalar);
+    if(lowered == "null" || lowered == "~")
+      return nullptr;
+
+    if(lowered == "true" || lowered == "yes" || lowered == "on")
+      return true;
+
+    if(lowered == "false" || lowered == "no" || lowered == "off")
+      return false;
+
+    long long intValue = 0;
+    if(auto [ptr, ec] = std::from_chars(scalar.data(), scalar.data() + scalar.size(), intValue); ec == std::errc() && ptr == scalar.data() + scalar.size())
+      return intValue;
+
+    if(scalar.find_first_of(".eE") != std::string::npos)
+    {
+      double floatValue = 0.0;
+      if(auto [ptr, ec] = std::from_chars(scalar.data(), scalar.data() + scalar.size(), floatValue); ec == std::errc() && ptr == scalar.data() + scalar.size())
+        return floatValue;
+    }
+
+    return scalar;
+  }
+
+  static OrderedJson yamlNodeToOrderedJson(const YAML::Node& node)
+  {
+    if(!node.IsDefined() || node.IsNull())
+      return nullptr;
+
+    if(node.IsScalar())
+      return parseYamlScalarValue(node.Scalar());
+
+    if(node.IsSequence())
+    {
+      auto json = OrderedJson::array();
+      for(const auto& child : node)
+        json.emplace_back(yamlNodeToOrderedJson(child));
+      return json;
+    }
+
+    if(node.IsMap())
+    {
+      auto json = OrderedJson::object();
+      for(const auto& entry : node)
+      {
+        if(!entry.first.IsScalar())
+          throw std::invalid_argument("YAML style sheet keys must be scalar values");
+
+        json[entry.first.as<std::string>()] = yamlNodeToOrderedJson(entry.second);
+      }
+      return json;
+    }
+
+    throw std::invalid_argument("Unsupported YAML node type in style sheet");
+  }
+
+  static OrderedJson loadStyleSheetRootFromFile(const std::filesystem::path& file)
+  {
+    std::ifstream stream(file);
+    if(!stream.is_open())
+      throw std::invalid_argument("Could not open style sheet file: " + file.string());
+
+    auto extension = toLowerCase(file.extension().string());
+    if(extension == ".yaml" || extension == ".yml")
+    {
+      auto rootNode = YAML::LoadFile(file.string());
+      auto root = yamlNodeToOrderedJson(rootNode);
+      if(root.is_null())
+        root = OrderedJson::object();
+      return root;
+    }
+
+    OrderedJson root;
+    stream >> root;
+    return root;
+  }
 
   static bool isClassName(const std::string& key)
   {
@@ -653,19 +743,14 @@ namespace Compose
     return ret;
   }
 
-  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files)
+  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromFiles(const std::vector<std::filesystem::path>& files)
   {
     std::vector<std::unique_ptr<StyleSheet>> ret;
     OrderedJson mergedRoot = OrderedJson::object();
 
     for(const auto& file : files)
     {
-      std::ifstream stream(file);
-      if(!stream.is_open())
-        throw std::invalid_argument("Could not open style sheet file: " + file.string());
-
-      OrderedJson root;
-      stream >> root;
+      auto root = loadStyleSheetRootFromFile(file);
 
       if(!root.is_object())
         throw std::invalid_argument("Style sheet root must be an object");
@@ -684,5 +769,10 @@ namespace Compose
     }
 
     return ret;
+  }
+
+  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files)
+  {
+    return loadStyleSheetsFromFiles(files);
   }
 }

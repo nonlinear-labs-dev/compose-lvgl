@@ -73,5 +73,6 @@ namespace Compose
 
   void to_json(nlohmann::json& j, const RoundedCorner& in);
 
+  std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromFiles(const std::vector<std::filesystem::path>& files);
   std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files);
 }

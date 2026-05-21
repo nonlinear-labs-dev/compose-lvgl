@@ -13,7 +13,7 @@ namespace
   std::filesystem::path writeTempStyleSheet(const std::string& content)
   {
     const auto timestamp = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-    const auto path = std::filesystem::temp_directory_path() / std::filesystem::path("compose-lvgl-stylesheet-" + std::to_string(timestamp) + ".json");
+    const auto path = std::filesystem::temp_directory_path() / std::filesystem::path("compose-lvgl-stylesheet-" + std::to_string(timestamp) + ".yaml");
     std::ofstream out(path);
     REQUIRE(out.is_open());
     out << content;
@@ -46,7 +46,7 @@ TEST_CASE("StyleSheetJson parses dot-prefixed class names without dot", "[StyleS
 )json");
 
   const auto removeFile = [&] { std::filesystem::remove(path); };
-  const auto sheets = Compose::loadStyleSheetsFromJsonFiles({ path });
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   removeFile();
 
   REQUIRE(sheets.size() == 1);
@@ -69,7 +69,7 @@ TEST_CASE("StyleSheetJson preserves class order from file", "[StyleSheetJson]")
 )json");
 
   const auto removeFile = [&] { std::filesystem::remove(path); };
-  const auto sheets = Compose::loadStyleSheetsFromJsonFiles({ path });
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   removeFile();
 
   REQUIRE(sheets.size() == 1);
@@ -99,7 +99,7 @@ TEST_CASE("StyleSheetJson resolves @ assignments and &. merged classes", "[Style
 )json");
 
   const auto removeFile = [&] { std::filesystem::remove(path); };
-  const auto sheets = Compose::loadStyleSheetsFromJsonFiles({ path });
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   removeFile();
 
   REQUIRE(sheets.size() == 1);
@@ -133,7 +133,7 @@ TEST_CASE("StyleSheetJson parses border-width and border-color", "[StyleSheetJso
 )json");
 
   const auto removeFile = [&] { std::filesystem::remove(path); };
-  const auto sheets = Compose::loadStyleSheetsFromJsonFiles({ path });
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   removeFile();
 
   REQUIRE(sheets.size() == 1);
@@ -163,7 +163,7 @@ TEST_CASE("StyleSheetJson logs unknown properties and ignores them as classes", 
 
   std::stringstream err;
   auto* old = std::cerr.rdbuf(err.rdbuf());
-  const auto sheets = Compose::loadStyleSheetsFromJsonFiles({ path });
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   std::cerr.rdbuf(old);
   std::filesystem::remove(path);
 
