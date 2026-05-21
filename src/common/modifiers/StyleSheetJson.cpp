@@ -656,6 +656,7 @@ namespace Compose
   std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromJsonFiles(const std::vector<std::filesystem::path>& files)
   {
     std::vector<std::unique_ptr<StyleSheet>> ret;
+    OrderedJson mergedRoot = OrderedJson::object();
 
     for(const auto& file : files)
     {
@@ -669,15 +670,17 @@ namespace Compose
       if(!root.is_object())
         throw std::invalid_argument("Style sheet root must be an object");
 
-      for(const auto& [styleName, styleDef] : root.items())
-      {
-        if(styleName == ".")
-          logStyleSheetError("root", styleName, "class name cannot be empty");
-        else if(isClassName(styleName))
-          ret.emplace_back(parseStyleSheet(removePrefix(styleName), styleDef, {}, &ret));
-        else
-          ret.emplace_back(parseStyleSheet(styleName, styleDef, {}, &ret));
-      }
+      mergedRoot.update(root, true);
+    }
+
+    for(const auto& [styleName, styleDef] : mergedRoot.items())
+    {
+      if(styleName == ".")
+        logStyleSheetError("root", styleName, "class name cannot be empty");
+      else if(isClassName(styleName))
+        ret.emplace_back(parseStyleSheet(removePrefix(styleName), styleDef, {}, &ret));
+      else
+        ret.emplace_back(parseStyleSheet(styleName, styleDef, {}, &ret));
     }
 
     return ret;
