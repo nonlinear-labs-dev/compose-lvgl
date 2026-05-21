@@ -98,21 +98,11 @@ namespace Compose
 
     if(itemBuilder)
     {
-      auto numChildren = lv_obj_get_child_count(handle);
-
-      if(numChildren == 0 && idMap.size() > 0)
-      {
-        // let's create only one child for measurement
-        setupChildren(1);
-        ListItemContainer(lv_obj_get_child(handle, 0)).setChildId(itemBuilder, idMap.front());
-        return;
-      }
-
       auto itemExtend = getItemExtend();
       auto numItemsVisible = std::min<int>(idMap.size(), parentExtend / itemExtend + 2);
       setupChildren(numItemsVisible);
 
-      numChildren = lv_obj_get_child_count(handle);
+      auto numChildren = lv_obj_get_child_count(handle);
       auto firstItemIdx = scrollOffset / itemExtend;
       auto scrollPos = itemExtend * (scrollOffset / itemExtend);
 
@@ -216,10 +206,10 @@ namespace Compose
     return false;
   }
 
-  void ListPane::bruteForceUpdate(int32_t parentWidth, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+  void ListPane::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
                                   const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
   {
-    ensureState().bruteForceUpdate(parentWidth, scrollOffset, idMap, itemBuilder, emptyListPlaceholderBuilder);
+    ensureState().bruteForceUpdate(parentExtend, scrollOffset, idMap, itemBuilder, emptyListPlaceholderBuilder);
   }
 
   ListPane::State::State(ListPane &pane, Axis axis)
@@ -307,8 +297,7 @@ namespace Compose
         else
           lv_obj_scroll_to_y(handle, rowStart, LV_ANIM_OFF);
       }
-
-      if(rowEnd > vpEnd)
+      else if(rowEnd > vpEnd)
       {
         if(axis == Axis::Horizontal)
           lv_obj_scroll_by(handle, vpEnd - rowEnd, 0, LV_ANIM_OFF);
@@ -337,5 +326,4 @@ namespace Compose
     static constexpr auto c_key = "ListState";
     return *getData<State>(c_key);
   }
-
 }

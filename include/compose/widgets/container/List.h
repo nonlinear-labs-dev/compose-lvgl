@@ -61,7 +61,7 @@ namespace Compose
     template <typename... tArgs>
     explicit VisibleListItems(Widget &parent, Axis axis, tArgs... args)
         : Flex(parent, Scrollable::NO_SCROLL(), axis == Axis::Horizontal ? FlexFlow::HORIZONTAL() : FlexFlow::VERTICAL(),
-               axis == Axis::Horizontal ? Expand::VERTICAL() : Expand::HORIZONTAL(), SizeVariant::FIT_CONTENT(), Padding { 0 }, args...)
+               axis == Axis::Horizontal ? Expand::VERTICAL() : Expand::HORIZONTAL(), SizeVariant::FIT_CONTENT(), args...)
     {
       makeState(axis);
     }
@@ -96,7 +96,7 @@ namespace Compose
 
     template <typename... tArgs>
     explicit ListPane(Widget &parent, Axis axis, tArgs... args)
-        : Widget(parent, Padding { 0 }, Scrollable::NO_SCROLL(), Height::FIT_CONTENT(), std::forward<tArgs>(args)...)
+        : Widget(parent, Padding { 0 }, LayoutType::none(), args...)
     {
       makeState(axis);
     }
@@ -104,7 +104,7 @@ namespace Compose
     explicit ListPane(WidgetType *w);
 
     bool shouldClearBeforeAutorunCompose() const override;
-    void bruteForceUpdate(int32_t parentWidth, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+    void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
                           const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder);
 
     struct State
@@ -136,6 +136,7 @@ namespace Compose
         : Widget(parent, Scrollable::SCROLL(), std::forward<tArgs>(args)...)
     {
       makeState(axis);
+
       auto &state = ensureState();
       lv_obj_add_event_cb(getHandle(), onListChanged, LV_EVENT_SCROLL, &state);
       lv_obj_add_event_cb(getHandle(), onListChanged, LV_EVENT_SIZE_CHANGED, &state);
