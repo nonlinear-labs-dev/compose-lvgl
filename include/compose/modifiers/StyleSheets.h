@@ -2,6 +2,7 @@
 
 #include "BackgroundColor.h"
 #include "Border.h"
+#include "FlexFlow.h"
 #include "Font.h"
 #include "Margin.h"
 #include "Modifiers.h"
@@ -17,6 +18,7 @@
 #include <tuple>
 #include <type_traits>
 #include <functional>
+#include <stdexcept>
 
 #include "StyleSheetJson.h"
 
@@ -37,7 +39,7 @@ namespace Compose
 
   struct Style
   {
-    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom,
+    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom,
                                   Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
     MakeOptional<Properties>::type properties;
@@ -69,6 +71,13 @@ namespace Compose
     Style inherit(auto... names) const;
     Style inheritLowPrio(auto... names) const;
     Style inherit() const;
+    [[nodiscard]] nlohmann::json var(const std::string& name) const;
+
+    template <typename T> [[nodiscard]] T var(const std::string& name) const
+    {
+      return var(name).template get<T>();
+    }
+
     [[nodiscard]] std::string dump(bool onlyNonNullOptProperties = true) const;
 
    private:
@@ -106,6 +115,7 @@ namespace Compose
     std::string name;
     std::size_t nameHash;
     MakeOptional<Style::Properties>::type styles;
+    std::unordered_map<std::string, nlohmann::json> vars;
     std::vector<std::unique_ptr<StyleSheet>> children;
     StyleSheet* parent = nullptr;
   };
@@ -210,6 +220,22 @@ namespace Compose
   inline Style Style::inherit() const
   {
     return { .sheets = sheets };
+  }
+
+  inline nlohmann::json Style::var(const std::string& name) const
+  {
+    const nlohmann::json* result = nullptr;
+
+    for(const auto* sheet : sheets)
+    {
+      if(const auto it = sheet->vars.find(name); it != sheet->vars.end())
+        result = &it->second;
+    }
+
+    if(result)
+      return *result;
+
+    throw std::invalid_argument("style variable not found: " + name);
   }
 }
 

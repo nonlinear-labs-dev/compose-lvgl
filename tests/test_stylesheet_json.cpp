@@ -4,8 +4,6 @@
 
 #include <chrono>
 #include <fstream>
-#include <iostream>
-#include <sstream>
 #include <string>
 
 namespace
@@ -117,6 +115,8 @@ TEST_CASE("StyleSheetJson resolves @ assignments and &. merged classes", "[Style
   const auto color = std::get<std::optional<Compose::BackgroundColor>>(merged->styles);
   REQUIRE(color.has_value());
   REQUIRE(static_cast<Compose::Color>(color.value()) == Compose::Color::fromHEXString("#fff514"));
+  REQUIRE(merged->vars.contains("yellow"));
+  REQUIRE(merged->vars.at("yellow") == "#fff514");
 }
 
 TEST_CASE("StyleSheetJson parses border-width and border-color", "[StyleSheetJson]")
@@ -149,25 +149,81 @@ TEST_CASE("StyleSheetJson parses border-width and border-color", "[StyleSheetJso
   REQUIRE(borderColor->color == Compose::Color::fromHEXString("#112233"));
 }
 
-TEST_CASE("StyleSheetJson logs unknown properties and ignores them as classes", "[StyleSheetJson]")
+TEST_CASE("StyleSheetJson parses flex-flow", "[StyleSheetJson]")
 {
   const auto path = writeTempStyleSheet(R"json(
 {
   ".root": {
-    "unknown-property": {
-      "width": 10
+    ".horizontal": {
+      "flex-flow": "HORIZONTAL"
+    },
+    ".vertical-wrap-reverse": {
+      "flex-flow": "VERTICAL_WRAP_REVERSE"
     }
   }
 }
 )json");
 
-  std::stringstream err;
-  auto* old = std::cerr.rdbuf(err.rdbuf());
+  const auto removeFile = [&] { std::filesystem::remove(path); };
   const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
-  std::cerr.rdbuf(old);
+  removeFile();
+
+  REQUIRE(sheets.size() == 1);
+  const auto* horizontal = findChildByName(sheets[0], "horizontal");
+  REQUIRE(horizontal != nullptr);
+  const auto* verticalWrapReverse = findChildByName(sheets[0], "vertical-wrap-reverse");
+  REQUIRE(verticalWrapReverse != nullptr);
+
+  const auto horizontalFlow = std::get<std::optional<Compose::FlexFlow>>(horizontal->styles);
+  REQUIRE(horizontalFlow.has_value());
+  REQUIRE(horizontalFlow.value() == Compose::FlexFlow::HORIZONTAL());
+
+  const auto verticalWrapReverseFlow = std::get<std::optional<Compose::FlexFlow>>(verticalWrapReverse->styles);
+  REQUIRE(verticalWrapReverseFlow.has_value());
+  REQUIRE(verticalWrapReverseFlow.value() == Compose::FlexFlow::VERTICAL_WRAP_REVERSE());
+}
+
+TEST_CASE("StyleSheetJson treats unknown properties as style variables", "[StyleSheetJson]")
+{
+  const auto path = writeTempStyleSheet(R"json(
+{
+  ".root": {
+    "unknown-property": 10
+  }
+}
+)json");
+
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
   std::filesystem::remove(path);
 
   REQUIRE(sheets.size() == 1);
-  REQUIRE(findChildByName(sheets[0], "unknown-property") == nullptr);
-  REQUIRE(err.str().find("unknown property") != std::string::npos);
+  REQUIRE(sheets[0].vars.contains("unknown-property"));
+  REQUIRE(sheets[0].vars.at("unknown-property") == 10);
+}
+
+TEST_CASE("Style::var converts variables to target types", "[StyleSheetJson]")
+{
+  const auto path = writeTempStyleSheet(R"json(
+{
+  ".root": {
+    "black": "#000000",
+    "num-columns": 9,
+    ".content": {
+      "num-columns": 12
+    }
+  }
+}
+)json");
+
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
+  std::filesystem::remove(path);
+
+  REQUIRE(sheets.size() == 1);
+  Compose::Style style { .sheets = { sheets[0].get() } };
+  style.add("content");
+
+  const int numColumns = style.var("num-columns");
+  const Compose::Color black = style.var("black");
+  REQUIRE(numColumns == 12);
+  REQUIRE(black == Compose::Color::fromHEXString("#000000"));
 }

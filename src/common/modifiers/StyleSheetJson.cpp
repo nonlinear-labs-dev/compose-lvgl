@@ -91,6 +91,28 @@ namespace
 
     throw std::invalid_argument("invalid FlexAlign: " + value);
   }
+
+  Compose::FlexFlow parseFlexFlow(const std::string& value)
+  {
+    if(value == "HORIZONTAL")
+      return Compose::FlexFlow::HORIZONTAL();
+    if(value == "HORIZONTAL_REVERSE")
+      return Compose::FlexFlow::HORIZONTAL_REVERSE();
+    if(value == "HORIZONTAL_WRAP")
+      return Compose::FlexFlow::HORIZONTAL_WRAP();
+    if(value == "HORIZONTAL_WRAP_REVERSE")
+      return Compose::FlexFlow::HORIZONTAL_WRAP_REVERSE();
+    if(value == "VERTICAL")
+      return Compose::FlexFlow::VERTICAL();
+    if(value == "VERTICAL_REVERSE")
+      return Compose::FlexFlow::VERTICAL_REVERSE();
+    if(value == "VERTICAL_WRAP")
+      return Compose::FlexFlow::VERTICAL_WRAP();
+    if(value == "VERTICAL_WRAP_REVERSE")
+      return Compose::FlexFlow::VERTICAL_WRAP_REVERSE();
+
+    throw std::invalid_argument("invalid FlexFlow: " + value);
+  }
 }
 
 namespace Compose
@@ -548,6 +570,33 @@ namespace Compose
     out = parseFlexAlign(j.get<std::string>());
   }
 
+  void to_json(nlohmann::json& j, const FlexFlow& in)
+  {
+    if(in == FlexFlow::HORIZONTAL())
+      j = "HORIZONTAL";
+    else if(in == FlexFlow::HORIZONTAL_REVERSE())
+      j = "HORIZONTAL_REVERSE";
+    else if(in == FlexFlow::HORIZONTAL_WRAP())
+      j = "HORIZONTAL_WRAP";
+    else if(in == FlexFlow::HORIZONTAL_WRAP_REVERSE())
+      j = "HORIZONTAL_WRAP_REVERSE";
+    else if(in == FlexFlow::VERTICAL())
+      j = "VERTICAL";
+    else if(in == FlexFlow::VERTICAL_REVERSE())
+      j = "VERTICAL_REVERSE";
+    else if(in == FlexFlow::VERTICAL_WRAP())
+      j = "VERTICAL_WRAP";
+    else if(in == FlexFlow::VERTICAL_WRAP_REVERSE())
+      j = "VERTICAL_WRAP_REVERSE";
+    else
+      j = static_cast<int>(in.it);
+  }
+
+  void from_json(const nlohmann::json& j, FlexFlow& out)
+  {
+    out = parseFlexFlow(j.get<std::string>());
+  }
+
   void to_json(nlohmann::json& j, const Scrollable& in)
   {
     j = in.it == Scrollable::SCROLLABLE ? "SCROLL" : "NO_SCROLL";
@@ -602,6 +651,7 @@ namespace Compose
     addProperty(ret, "text-align", std::get<std::optional<TextAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "vertical-align", std::get<std::optional<VerticalAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "flex-align", std::get<std::optional<FlexAlign>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "flex-flow", std::get<std::optional<FlexFlow>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "width", std::get<std::optional<Width>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "height", std::get<std::optional<Height>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "margin", std::get<std::optional<Margin>>(properties), onlyNonNullOptProperties);
@@ -620,7 +670,7 @@ namespace Compose
     return ret.dump();
   }
 
-  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
+  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
                                     MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
@@ -642,6 +692,9 @@ namespace Compose
 
     if(key == "flex-align")
       return value.get<FlexAlign>();
+
+    if(key == "flex-flow")
+      return value.get<FlexFlow>();
 
     if(key == "width")
       return value.get<Width>();
@@ -705,7 +758,11 @@ namespace Compose
         if(assignmentName.empty())
           logStyleSheetError(name, key, "value assignment name cannot be empty");
         else
+        {
           assignments[assignmentName] = value;
+          std::unordered_set<std::string> resolutionPath;
+          ret->vars[assignmentName] = nlohmann::json(resolveAssignedValue(value, assignments, resolutionPath));
+        }
       }
     }
 
@@ -736,7 +793,7 @@ namespace Compose
         if(auto modifier = parseModifier(key, nlohmann::json(resolvedValue)))
           std::visit([&](auto&& m) { ret->apply(std::forward<decltype(m)>(m)); }, modifier.value());
         else
-          logStyleSheetError(name, key, "unknown property");
+          ret->vars[key] = nlohmann::json(resolvedValue);
       }
     }
 
