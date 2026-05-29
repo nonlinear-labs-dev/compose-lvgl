@@ -183,6 +183,40 @@ TEST_CASE("StyleSheetJson parses flex-flow", "[StyleSheetJson]")
   REQUIRE(verticalWrapReverseFlow.value() == Compose::FlexFlow::VERTICAL_WRAP_REVERSE());
 }
 
+TEST_CASE("StyleSheetJson parses expand", "[StyleSheetJson]")
+{
+  const auto path = writeTempStyleSheet(R"json(
+{
+  ".root": {
+    ".grow-both": {
+      "expand": "BOTH"
+    },
+    ".grow-horizontal": {
+      "expand": "HORIZONTAL"
+    }
+  }
+}
+)json");
+
+  const auto removeFile = [&] { std::filesystem::remove(path); };
+  const auto sheets = Compose::loadStyleSheetsFromFiles({ path });
+  removeFile();
+
+  REQUIRE(sheets.size() == 1);
+  const auto* growBoth = findChildByName(sheets[0], "grow-both");
+  REQUIRE(growBoth != nullptr);
+  const auto* growHorizontal = findChildByName(sheets[0], "grow-horizontal");
+  REQUIRE(growHorizontal != nullptr);
+
+  const auto growBothExpand = std::get<std::optional<Compose::Expand>>(growBoth->styles);
+  REQUIRE(growBothExpand.has_value());
+  REQUIRE(growBothExpand.value() == Compose::Expand::BOTH());
+
+  const auto growHorizontalExpand = std::get<std::optional<Compose::Expand>>(growHorizontal->styles);
+  REQUIRE(growHorizontalExpand.has_value());
+  REQUIRE(growHorizontalExpand.value() == Compose::Expand::HORIZONTAL());
+}
+
 TEST_CASE("StyleSheetJson treats unknown properties as style variables", "[StyleSheetJson]")
 {
   const auto path = writeTempStyleSheet(R"json(

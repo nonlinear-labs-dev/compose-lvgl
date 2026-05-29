@@ -9,6 +9,7 @@ namespace Compose
   struct StyleSheet;
   struct RoundedCorner;
   struct Scrollable;
+  struct Expand;
   struct FlexFlow;
   struct FlexAlign;
   struct VerticalAlign;
@@ -71,6 +72,9 @@ namespace Compose
 
   void to_json(nlohmann::json& j, const FlexFlow& in);
   void from_json(const nlohmann::json& j, FlexFlow& out);
+
+  void to_json(nlohmann::json& j, const Expand& in);
+  void from_json(const nlohmann::json& j, Expand& out);
 
   void to_json(nlohmann::json& j, const Scrollable& in);
   void from_json(const nlohmann::json& j, Scrollable& out);

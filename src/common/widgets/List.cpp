@@ -310,9 +310,9 @@ namespace Compose
   void List::State::bruteForceUpdate()
   {
     if(axis == Axis::Horizontal)
-      pane.bruteForceUpdate(lv_obj_get_width(handle), lv_obj_get_scroll_left(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
+      pane.bruteForceUpdate(lv_obj_get_content_width(handle), lv_obj_get_scroll_left(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
     else
-      pane.bruteForceUpdate(lv_obj_get_height(handle), lv_obj_get_scroll_top(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
+      pane.bruteForceUpdate(lv_obj_get_content_height(handle), lv_obj_get_scroll_top(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
   }
 
   void List::makeState(Axis axis)

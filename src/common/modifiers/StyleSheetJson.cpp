@@ -113,6 +113,20 @@ namespace
 
     throw std::invalid_argument("invalid FlexFlow: " + value);
   }
+
+  Compose::Expand parseExpand(const std::string& value)
+  {
+    if(value == "VERTICAL")
+      return Compose::Expand::VERTICAL();
+    if(value == "HORIZONTAL")
+      return Compose::Expand::HORIZONTAL();
+    if(value == "NONE")
+      return Compose::Expand::NONE();
+    if(value == "BOTH")
+      return Compose::Expand::BOTH();
+
+    throw std::invalid_argument("invalid Expand: " + value);
+  }
 }
 
 namespace Compose
@@ -597,6 +611,25 @@ namespace Compose
     out = parseFlexFlow(j.get<std::string>());
   }
 
+  void to_json(nlohmann::json& j, const Expand& in)
+  {
+    if(in == Expand::VERTICAL())
+      j = "VERTICAL";
+    else if(in == Expand::HORIZONTAL())
+      j = "HORIZONTAL";
+    else if(in == Expand::NONE())
+      j = "NONE";
+    else if(in == Expand::BOTH())
+      j = "BOTH";
+    else
+      j = nlohmann::json { { "vertical", in.vertical }, { "horizontal", in.horizontal } };
+  }
+
+  void from_json(const nlohmann::json& j, Expand& out)
+  {
+    out = parseExpand(j.get<std::string>());
+  }
+
   void to_json(nlohmann::json& j, const Scrollable& in)
   {
     j = in.it == Scrollable::SCROLLABLE ? "SCROLL" : "NO_SCROLL";
@@ -652,6 +685,7 @@ namespace Compose
     addProperty(ret, "vertical-align", std::get<std::optional<VerticalAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "flex-align", std::get<std::optional<FlexAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "flex-flow", std::get<std::optional<FlexFlow>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "expand", std::get<std::optional<Expand>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "width", std::get<std::optional<Width>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "height", std::get<std::optional<Height>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "margin", std::get<std::optional<Margin>>(properties), onlyNonNullOptProperties);
@@ -670,7 +704,7 @@ namespace Compose
     return ret.dump();
   }
 
-  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
+  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
                                     MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
@@ -695,6 +729,9 @@ namespace Compose
 
     if(key == "flex-flow")
       return value.get<FlexFlow>();
+
+    if(key == "expand")
+      return value.get<Expand>();
 
     if(key == "width")
       return value.get<Width>();
