@@ -39,8 +39,8 @@ namespace Compose
 
   struct Style
   {
-    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight,
-                                  MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, FlexGap, Expand, Width, Height, Margin, MarginLeft,
+                                  MarginRight, MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
     MakeOptional<Properties>::type properties;
     std::vector<const StyleSheet*> sheets;

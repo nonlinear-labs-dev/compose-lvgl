@@ -11,6 +11,7 @@ namespace Compose
   struct Scrollable;
   struct Expand;
   struct FlexFlow;
+  struct FlexGap;
   struct FlexAlign;
   struct VerticalAlign;
   struct TextAlign;
@@ -72,6 +73,9 @@ namespace Compose
 
   void to_json(nlohmann::json& j, const FlexFlow& in);
   void from_json(const nlohmann::json& j, FlexFlow& out);
+
+  void to_json(nlohmann::json& j, const FlexGap& in);
+  void from_json(const nlohmann::json& j, FlexGap& out);
 
   void to_json(nlohmann::json& j, const Expand& in);
   void from_json(const nlohmann::json& j, Expand& out);

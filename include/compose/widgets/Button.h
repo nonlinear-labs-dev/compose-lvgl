@@ -30,7 +30,7 @@ namespace Compose
         : Widget(lv_button_create(parent.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
-      (setModifier(args), ...);
+      setModifiers(this, parent, std::forward<tArgs>(args)...);
     }
 
     void setModifier(ButtonType t) const;

@@ -611,6 +611,28 @@ namespace Compose
     out = parseFlexFlow(j.get<std::string>());
   }
 
+  void to_json(nlohmann::json& j, const FlexGap& in)
+  {
+    j = nlohmann::json { { "row", in.row }, { "column", in.column } };
+  }
+
+  void from_json(const nlohmann::json& j, FlexGap& out)
+  {
+    if(j.is_number_integer())
+    {
+      out = FlexGap { j.get<int>(), j.get<int>() };
+      return;
+    }
+
+    if(j.is_object())
+    {
+      out = FlexGap { j.value("row", 0), j.value("column", 0) };
+      return;
+    }
+
+    throw std::invalid_argument("FlexGap must be int or { row, column }");
+  }
+
   void to_json(nlohmann::json& j, const Expand& in)
   {
     if(in == Expand::VERTICAL())
@@ -685,6 +707,7 @@ namespace Compose
     addProperty(ret, "vertical-align", std::get<std::optional<VerticalAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "flex-align", std::get<std::optional<FlexAlign>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "flex-flow", std::get<std::optional<FlexFlow>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "flex-gap", std::get<std::optional<FlexGap>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "expand", std::get<std::optional<Expand>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "width", std::get<std::optional<Width>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "height", std::get<std::optional<Height>>(properties), onlyNonNullOptProperties);
@@ -704,8 +727,8 @@ namespace Compose
     return ret.dump();
   }
 
-  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight,
-                                    MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, FlexGap, Expand, Width, Height, Margin, MarginLeft,
+                                    MarginRight, MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
   {
@@ -729,6 +752,9 @@ namespace Compose
 
     if(key == "flex-flow")
       return value.get<FlexFlow>();
+
+    if(key == "flex-gap")
+      return value.get<FlexGap>();
 
     if(key == "expand")
       return value.get<Expand>();

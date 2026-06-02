@@ -44,9 +44,9 @@ namespace Compose
         lv_area_t widgetCoords;
         lv_obj_get_coords(handle, &widgetCoords);
         return TouchEvent {
-            .pointerId = pointerId,
-            .position = { point.x - widgetCoords.x1, point.y - widgetCoords.y1 },
-            .activeTouchCount = activeTouchCount(indev),
+          .pointerId = pointerId,
+          .position = { point.x - widgetCoords.x1, point.y - widgetCoords.y1 },
+          .activeTouchCount = activeTouchCount(indev),
         };
       }
 
@@ -74,7 +74,8 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e) {
+            [](lv_event_t *e)
+            {
               Reactive::Deferrer def;
               const auto user_data = static_cast<ClickData *>(lv_event_get_user_data(e));
               const auto indev = lv_event_get_indev(e);
@@ -109,7 +110,7 @@ namespace Compose
     }
   };
 
-  using LeftClick = ClickHandler<LV_EVENT_SHORT_CLICKED>;
+  using LeftClick = ClickHandler<LV_EVENT_CLICKED>;
   using LongClick = ClickHandler<LV_EVENT_LONG_PRESSED>;
 
   struct Touch
@@ -119,7 +120,8 @@ namespace Compose
 
     template <typename tCB> static CB makeCallback(tCB &&cb)
     {
-      return [cb = std::forward<tCB>(cb)](uint32_t pointerId, Position position, size_t activeTouchCount) mutable {
+      return [cb = std::forward<tCB>(cb)](uint32_t pointerId, Position position, size_t activeTouchCount) mutable
+      {
         if constexpr(std::is_invocable_v<tCB, uint32_t, Position, size_t>)
         {
           cb(pointerId, position, activeTouchCount);
@@ -142,8 +144,8 @@ namespace Compose
         }
         else
         {
-          static_assert(std::is_invocable_v<tCB, uint32_t, Position, size_t> || std::is_invocable_v<tCB, uint32_t, Position>
-                            || std::is_invocable_v<tCB, Position> || std::is_invocable_v<tCB, uint32_t> || std::is_invocable_v<tCB>,
+          static_assert(std::is_invocable_v<tCB, uint32_t, Position, size_t> || std::is_invocable_v<tCB, uint32_t, Position> || std::is_invocable_v<tCB, Position>
+                            || std::is_invocable_v<tCB, uint32_t> || std::is_invocable_v<tCB>,
                         "Touch callback must be invocable with (uint32_t, Position, size_t), (uint32_t, Position), (Position), (uint32_t) or ()");
         }
       };
@@ -159,7 +161,8 @@ namespace Compose
       {
         m_pressedHandler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e) {
+            [](lv_event_t *e)
+            {
               Reactive::Deferrer def;
               if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
               {
@@ -177,7 +180,8 @@ namespace Compose
 
         m_pressingHandler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e) {
+            [](lv_event_t *e)
+            {
               Reactive::Deferrer def;
               if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
               {
@@ -190,7 +194,8 @@ namespace Compose
             },
             LV_EVENT_PRESSING, this);
 
-        auto onRelease = [](lv_event_t *e) {
+        auto onRelease = [](lv_event_t *e)
+        {
           Reactive::Deferrer def;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -273,9 +278,9 @@ namespace Compose
       self.ensureDataForKeyExistsOwning<Data>("TouchData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
     }
 
-    CB m_begin = [](uint32_t, Position, size_t) {};
-    CB m_update = [](uint32_t, Position, size_t) {};
-    CB m_end = [](uint32_t, Position, size_t) {};
+    CB m_begin = [](uint32_t, Position, size_t) { };
+    CB m_update = [](uint32_t, Position, size_t) { };
+    CB m_end = [](uint32_t, Position, size_t) { };
     Begin begin { this };
     Update update { this };
     End end { this };
@@ -294,7 +299,8 @@ namespace Compose
       {
         m_handler = lv_obj_add_event_cb(
             handle,
-            [](lv_event_t *e) {
+            [](lv_event_t *e)
+            {
               Reactive::Deferrer def;
               const auto user_data = static_cast<StateChangeData *>(lv_event_get_user_data(e));
               const auto checked = lv_obj_has_state(user_data->m_handle, LV_STATE_CHECKED);
