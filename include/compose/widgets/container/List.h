@@ -2,7 +2,6 @@
 
 #include "Container.h"
 #include "compose/widgets/Widget.h"
-#include "tools/Log.h"
 
 #include <functional>
 #include <string>

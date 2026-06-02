@@ -6,7 +6,7 @@
 #include "compose/modifiers/Padding.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/StyleSheets.h"
-#include "tools/json.h"
+#include <nlohmann/json.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include <charconv>

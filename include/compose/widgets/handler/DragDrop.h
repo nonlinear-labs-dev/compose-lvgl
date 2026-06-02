@@ -7,7 +7,7 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <tools/json.h>
+#include <nlohmann/json.hpp>
 
 namespace Compose
 {
@@ -117,9 +117,9 @@ namespace Compose
     void operator<<(const std::function<void(Drag *it)> &cb);
 
     BaseWidget &self;
-    BeginCB m_begin = [] {};
-    UpdateCB m_update = [](int, int) {};
-    EndCB m_end = [] {};
+    BeginCB m_begin = [] { };
+    UpdateCB m_update = [](int, int) { };
+    EndCB m_end = [] { };
     Begin begin;
     Update update;
     End end;
@@ -217,7 +217,7 @@ namespace Compose
 
           lv_obj_t *m_handle;
           std::string m_type;
-          std::shared_ptr<Setter> m_setter = std::make_shared<Setter>([](const nlohmann::json &) {});
+          std::shared_ptr<Setter> m_setter = std::make_shared<Setter>([](const nlohmann::json &) { });
         };
 
         void operator<<(const Setter &cb);
