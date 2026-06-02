@@ -39,8 +39,8 @@ namespace Compose
 
   struct Style
   {
-    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight, MarginTop, MarginBottom,
-                                  Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+    using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight,
+                                  MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
     MakeOptional<Properties>::type properties;
     std::vector<const StyleSheet*> sheets;
@@ -205,7 +205,7 @@ namespace Compose
 
   Style Style::inherit(auto... classes) const
   {
-    Style ret { .sheets = sheets, .debug = debug };
+    Style ret = inherit();
     ret.appendSheets(ret.processClasses(classes...));
     return ret;
   }
@@ -219,7 +219,20 @@ namespace Compose
 
   inline Style Style::inherit() const
   {
-    return { .sheets = sheets };
+    Style ret {
+      .sheets = sheets,
+    };
+
+    if(auto v = std::get<std::optional<Width>>(properties))
+      ret.set(*v);
+
+    if(auto v = std::get<std::optional<Height>>(properties))
+      ret.set(*v);
+
+    if(auto v = std::get<std::optional<Font>>(properties))
+      ret.set(*v);
+
+    return ret;
   }
 
   inline nlohmann::json Style::var(const std::string& name) const

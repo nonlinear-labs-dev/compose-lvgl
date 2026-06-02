@@ -503,7 +503,7 @@ namespace Compose
 
   void from_json(const nlohmann::json& j, Font& out)
   {
-    out = Font {};
+    out = Font { };
     if(j.contains("size"))
       out.size = j.at("size").get<int>();
 
@@ -704,8 +704,8 @@ namespace Compose
     return ret.dump();
   }
 
-  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight, MarginTop,
-                                    MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+  using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, Expand, Width, Height, Margin, MarginLeft, MarginRight,
+                                    MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
   {
@@ -775,10 +775,10 @@ namespace Compose
     if(key == "scrollable")
       return value.get<Scrollable>();
 
-    return {};
+    return { };
   }
 
-  static std::unique_ptr<StyleSheet> parseStyleSheet(const std::string& name, const OrderedJson& definition, const ValueAssignments& inheritedAssignments = {},
+  static std::unique_ptr<StyleSheet> parseStyleSheet(const std::string& name, const OrderedJson& definition, const ValueAssignments& inheritedAssignments = { },
                                                      std::vector<std::unique_ptr<StyleSheet>>* sameContextSheets = nullptr)
   {
     if(!definition.is_object())
@@ -840,26 +840,35 @@ namespace Compose
   std::vector<std::unique_ptr<StyleSheet>> loadStyleSheetsFromFiles(const std::vector<std::filesystem::path>& files)
   {
     std::vector<std::unique_ptr<StyleSheet>> ret;
-    OrderedJson mergedRoot = OrderedJson::object();
 
-    for(const auto& file : files)
+    try
     {
-      auto root = loadStyleSheetRootFromFile(file);
+      OrderedJson mergedRoot = OrderedJson::object();
 
-      if(!root.is_object())
-        throw std::invalid_argument("Style sheet root must be an object");
+      for(const auto& file : files)
+      {
+        auto root = loadStyleSheetRootFromFile(file);
 
-      mergedRoot.update(root, true);
+        if(!root.is_object())
+          throw std::invalid_argument("Style sheet root must be an object");
+
+        mergedRoot.update(root, true);
+      }
+
+      for(const auto& [styleName, styleDef] : mergedRoot.items())
+      {
+        if(styleName == ".")
+          logStyleSheetError("root", styleName, "class name cannot be empty");
+        else if(isClassName(styleName))
+          ret.emplace_back(parseStyleSheet(removePrefix(styleName), styleDef, { }, &ret));
+        else
+          ret.emplace_back(parseStyleSheet(styleName, styleDef, { }, &ret));
+      }
     }
-
-    for(const auto& [styleName, styleDef] : mergedRoot.items())
+    catch(std::exception& e)
     {
-      if(styleName == ".")
-        logStyleSheetError("root", styleName, "class name cannot be empty");
-      else if(isClassName(styleName))
-        ret.emplace_back(parseStyleSheet(removePrefix(styleName), styleDef, {}, &ret));
-      else
-        ret.emplace_back(parseStyleSheet(styleName, styleDef, {}, &ret));
+      logStyleSheetError("root", "", "Error loading style sheets: " + std::string(e.what()));
+      return { };
     }
 
     return ret;
