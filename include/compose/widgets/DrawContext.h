@@ -13,6 +13,7 @@
 #include <memory>
 #include <optional>
 #include <compose/state/FontStorage.h>
+#include <compose/modifiers/SVGPath.h>
 
 namespace Glib
 {
@@ -136,6 +137,8 @@ namespace Compose
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
     virtual void drawSegmentedArc(const SegmentedArcDrawOptions &props) = 0;
     virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
+    virtual void drawSVG(const SVGPath &path, Rect dest, std::optional<Color> colorOverride = std::nullopt) = 0;
+    virtual void drawSVG(const SVGFileContent &content, Rect dest, std::optional<Color> colorOverride = std::nullopt) = 0;
 
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
@@ -174,6 +177,8 @@ namespace Compose
     void drawSegmentedArc(const SegmentedArcDrawOptions &props) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;
     void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride) override;
+    void drawSVG(const SVGPath &path, Rect dest, std::optional<Color> colorOverride) override;
+    void drawSVG(const SVGFileContent &content, Rect dest, std::optional<Color> colorOverride) override;
     void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) override;
     void flushLayer() override;
 

@@ -1,4 +1,6 @@
 #include <compose/widgets/DrawContext.h>
+#include <compose/SVGDocumentCache.h>
+#include <compose/SVGRender.h>
 #include "src/draw/lv_draw.h"
 #include "src/misc/lv_color.h"
 #include "src/misc/lv_area.h"
@@ -30,7 +32,7 @@ namespace Compose
   }
 
   LVGLDrawContext::LVGLDrawContext(tCanvas &ctx)
-      : m_layer {}
+      : m_layer { }
       , m_canvas(ctx)
   {
     lv_canvas_init_layer(&m_canvas, &m_layer);
@@ -104,7 +106,7 @@ namespace Compose
       {
         if(points.size() >= 2)
         {
-          auto fPoints = std::vector<lv_fpoint_t> {};
+          auto fPoints = std::vector<lv_fpoint_t> { };
           for(const auto &p : points)
           {
             fPoints.emplace_back(lv_fpoint_t { p.x, p.y });
@@ -822,6 +824,18 @@ namespace Compose
     }
 
     lv_obj_invalidate(&m_canvas);
+  }
+
+  void LVGLDrawContext::drawSVG(const SVGPath &path, Rect dest, std::optional<Color> colorOverride)
+  {
+    if(const auto *doc = SVGDocumentCache::documentFor(path))
+      renderDocumentToContext(*this, *doc, dest.pos, dest.size.w, dest.size.h, colorOverride);
+  }
+
+  void LVGLDrawContext::drawSVG(const SVGFileContent &content, Rect dest, std::optional<Color> colorOverride)
+  {
+    if(const auto *doc = SVGDocumentCache::documentFor(content))
+      renderDocumentToContext(*this, *doc, dest.pos, dest.size.w, dest.size.h, colorOverride);
   }
 
   void LVGLDrawContext::drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c)
