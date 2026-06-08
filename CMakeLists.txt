@@ -20,4 +20,4 @@ list(APPEND SOURCES src/common/widgets/DragDrop.cpp)
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ./include ${LIBS_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC reactive lvgl lunasvg nlohmann_json::nlohmann_json yaml-cpp ${LIBS_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC reactive lvgl lunasvg nlohmann_json::nlohmann_json yaml-cpp::yaml-cpp ${LIBS_LIBRARIES})
