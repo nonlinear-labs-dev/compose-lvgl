@@ -28,13 +28,21 @@ namespace Compose
 
       auto add(const auto &c)
       {
-        return *this;
-      }
-
-      auto add(const StyleClass &c)
-      {
-        auto r = std::tuple_cat(classes, std::make_tuple(c.name));
-        return StyleClassCollector<decltype(r)> { r };
+        using C = std::decay_t<decltype(c)>;
+        if constexpr(std::is_same_v<C, StyleClass>)
+        {
+          auto r = std::tuple_cat(classes, std::make_tuple(c.name));
+          return StyleClassCollector<decltype(r)> { r };
+        }
+        else if constexpr(std::is_convertible_v<C, std::string_view>)
+        {
+          auto r = std::tuple_cat(classes, std::make_tuple(std::string(c)));
+          return StyleClassCollector<decltype(r)> { r };
+        }
+        else
+        {
+          return *this;
+        }
       }
 
       template <typename tArgs> auto operator+(const tArgs &arg)
@@ -52,13 +60,13 @@ namespace Compose
 
     struct ModifierDispatcher
     {
-      static void dispatch(auto widget, const StyleClass &)
-      {
-      }
-
       static void dispatch(auto widget, auto &&m)
       {
-        widget->setModifier(std::move(m));
+        using M = std::decay_t<decltype(m)>;
+        if constexpr(!std::is_same_v<M, StyleClass> && !std::is_convertible_v<M, std::string_view>)
+        {
+          widget->setModifier(std::move(m));
+        }
       }
     };
   }
