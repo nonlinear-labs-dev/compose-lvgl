@@ -92,15 +92,10 @@ namespace Compose
       auto containerHandle = lv_obj_get_child(handle, 0);
       ListItemContainer container(containerHandle);
       container.setChildId(itemBuilder, std::nullopt);
-      if(!showingPlaceholder)
-      {
+      if(lv_obj_get_child_count(containerHandle) == 0)
         emptyListPlaceholderBuilder(container);
-        showingPlaceholder = true;
-      }
       return;
     }
-
-    showingPlaceholder = false;
 
     if(itemBuilder)
     {

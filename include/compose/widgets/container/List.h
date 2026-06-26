@@ -79,7 +79,6 @@ namespace Compose
       lv_obj_t *findItemForRecycling(const auto &range) const;
       int32_t getItemExtend() const;
       lv_obj_t *handle = nullptr;
-      mutable bool showingPlaceholder = false;
       Axis axis;
     };
 
