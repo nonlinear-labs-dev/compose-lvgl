@@ -15,7 +15,7 @@ namespace Compose
     }
   }
 
-  void Button::setModifier(const Font &t) const
+  void Button::setModifier(const Font t) const
   {
     if(const auto label = getOrCreateLabel())
     {
@@ -36,7 +36,7 @@ namespace Compose
     }
   }
 
-  void Button::setModifier(const TextAlign &t) const
+  void Button::setModifier(const TextAlign t) const
   {
     if(const auto label = getOrCreateLabel())
     {
