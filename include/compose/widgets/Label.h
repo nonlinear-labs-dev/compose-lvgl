@@ -64,7 +64,7 @@ namespace Compose
               lv_obj_set_height(handle, textHeight);
             }
           });
-      (setModifier(std::forward<tArgs>(args)), ...);
+      setModifiers(this, parent, std::forward<tArgs>(args)...);
     }
 
     explicit Label(WidgetType *w)
@@ -78,12 +78,12 @@ namespace Compose
     void operator<<(AutorunStringCB &&cb) const;
 
     void setModifier(Text s) const;
-    void setModifier(TextAlign a) const;
-    void setModifier(VerticalAlign v) const;
+    void setModifier(TextAlign a) const override;
+    void setModifier(VerticalAlign v) const override;
 
     void setModifier(PrimaryColor s) const override;
     void setModifier(BackgroundColor c) const override;
-    virtual void setModifier(Font s) const;
+    void setModifier(Font s) const override;
 
    private:
     void setLabelRenderingFunction() const;

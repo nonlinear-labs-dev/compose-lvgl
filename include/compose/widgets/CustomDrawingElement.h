@@ -35,7 +35,7 @@ namespace Compose
     explicit CustomDrawingElement(Widget& parent, tArgs&&... args)
         : CustomDrawingElement(parent)
     {
-      (setModifier(std::forward<tArgs>(args)), ...);
+      setModifiers(this, parent, std::forward<tArgs>(args)...);
     }
 
     void setDrawCall(tDrawCB&& draw) const;

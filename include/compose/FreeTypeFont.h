@@ -15,6 +15,7 @@ namespace Compose
   {
    public:
     FreeTypeFont(const std::string &fontPath, int height);
+    FreeTypeFont(std::vector<std::string> fontPaths, int height);
     virtual ~FreeTypeFont();
 
     typedef int32_t tCoordinate;
@@ -51,12 +52,13 @@ namespace Compose
       std::vector<uint8_t> pixels {};
     };
 
-    FT_Face m_face {};
+    std::vector<FT_Face> m_faces;
     int m_fontSize;
-    std::string m_fontPath;
+    std::vector<std::string> m_fontPaths;
     mutable std::unordered_map<std::uint32_t, CachedGlyph> m_glyphCache;
 
     const CachedGlyph &glyphFor(std::uint32_t codepoint) const;
     tCoordinate drawLetterFromCache(const CachedGlyph &g, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
+    [[nodiscard]] FT_Face findFaceForChar(char32_t c) const;
   };
 }

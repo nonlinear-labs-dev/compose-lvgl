@@ -3,17 +3,74 @@
 #include "compose/modifiers/Clickable.h"
 #include "compose/modifiers/FlexFlow.h"
 #include "compose/modifiers/Modifiers.h"
+#include "handler/DragDrop.h"
 #include "handler/Handlers.h"
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
-#include "nltools/Assert.h"
+#include "compose/modifiers/StyleSheets.h"
 
 #include <stdexcept>
 #include <type_traits>
 
 namespace Compose
 {
+  namespace Detail
+  {
+    template <typename Tuple> struct StyleClassCollector
+    {
+      Tuple classes;
+
+      StyleClassCollector(const Tuple &c)
+          : classes(c)
+      {
+      }
+
+      auto add(const auto &c)
+      {
+        using C = std::decay_t<decltype(c)>;
+        if constexpr(std::is_same_v<C, StyleClass>)
+        {
+          auto r = std::tuple_cat(classes, std::make_tuple(c.name));
+          return StyleClassCollector<decltype(r)> { r };
+        }
+        else if constexpr(std::is_convertible_v<C, std::string_view>)
+        {
+          auto r = std::tuple_cat(classes, std::make_tuple(std::string(c)));
+          return StyleClassCollector<decltype(r)> { r };
+        }
+        else
+        {
+          return *this;
+        }
+      }
+
+      template <typename tArgs> auto operator+(const tArgs &arg)
+      {
+        return add(arg);
+      }
+    };
+
+    template <typename... tArgs> void applyStyleClasses(Style &style, tArgs &&...args)
+    {
+      StyleClassCollector s(std::make_tuple());
+      auto classes = (s + ... + args);
+      std::apply([&](auto &...args) { style.add(args...); }, classes.classes);
+    }
+
+    struct ModifierDispatcher
+    {
+      static void dispatch(auto widget, auto &&m)
+      {
+        using M = std::decay_t<decltype(m)>;
+        if constexpr(!std::is_same_v<M, StyleClass> && !std::is_convertible_v<M, std::string_view>)
+        {
+          widget->setModifier(std::move(m));
+        }
+      }
+    };
+  }
+
   class Window;
 
   struct LayoutType
@@ -113,12 +170,20 @@ namespace Compose
       setDefaultWidthAndHeightAccordingToParent();
       Widget::setModifier(BackgroundColor::TRANSPARENT());
       setModifier(Clickable { false });
-      (setModifier(std::forward<tArgs>(args)), ...);
+      setModifiers(this, w, std::forward<tArgs>(args)...);
     }
 
     explicit Widget(WidgetType *w)
         : BaseWidget(w)
     {
+    }
+
+    template <typename... tArgs> static void setModifiers(auto self, BaseWidget &parentWidget, tArgs &&...args)
+    {
+      auto parentStyle = Widget(parentWidget.getHandle()).getStyle().inherit();
+      Detail::applyStyleClasses(parentStyle, args...);
+      self->setModifier(parentStyle);
+      (Detail::ModifierDispatcher::dispatch(self, std::move(args)), ...);
     }
 
     [[nodiscard]] int getWidth() const
@@ -142,6 +207,16 @@ namespace Compose
     {
       clearUserData();
       lv_obj_clean(getHandle());
+    }
+
+    [[nodiscard]] virtual bool shouldClearBeforeAutorunCompose() const
+    {
+      return true;
+    }
+
+    void setModifier(StyleClass c) const
+    {
+      applyStyle(getStyle().add(c.name));
     }
 
     void setModifier(OverflowBehaviour r) const
@@ -231,8 +306,7 @@ namespace Compose
       {
         try
         {
-          nltools_detailedAssertAlways(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE,
-                                       "position only works with LAYOUT_TYPE NONE");
+          assert(lv_obj_get_style_layout(parent, LV_PART_MAIN) == LV_LAYOUT_NONE);  // position only works with LAYOUT_TYPE NONE
         }
         catch([[maybe_unused]] std::exception &e)
         {
@@ -382,7 +456,36 @@ namespace Compose
 
       lv_obj_set_style_flex_grow(getHandle(), 0, LV_PART_MAIN);
       lv_obj_set_size(getHandle(), lv_pct(s.w), lv_pct(s.h));
-      lv_obj_update_layout(getHandle());
+    }
+
+    virtual void setModifier(Font s) const
+    {
+    }
+
+    virtual void setModifier(TextAlign a) const
+    {
+    }
+
+    virtual void setModifier(VerticalAlign v) const
+    {
+    }
+
+    void setModifier(const Style &style) const
+    {
+      auto &s = ensureDataForKeyExistsOwning<Style>(c_styleKey);
+      s = style;
+      applyStyle(s);
+    }
+
+    void applyStyle(const Style &style) const
+    {
+      auto doNothing = [] { };
+      std::apply([&](const auto &...a) { ((a.has_value() ? setModifier(a.value()) : doNothing()), ...); }, style.properties);
+    }
+
+    const Style &getStyle() const
+    {
+      return ensureDataForKeyExistsOwning<Style>(c_styleKey);
     }
 
     template <lv_flex_flow_t... values> static bool anyOf(lv_flex_flow_t v)
@@ -397,8 +500,7 @@ namespace Compose
 
     static bool isColumn(lv_flex_flow_t v)
     {
-      return anyOf<LV_FLEX_FLOW_COLUMN, LV_FLEX_FLOW_COLUMN_REVERSE, LV_FLEX_FLOW_COLUMN_WRAP,
-                   LV_FLEX_FLOW_COLUMN_WRAP_REVERSE>(v);
+      return anyOf<LV_FLEX_FLOW_COLUMN, LV_FLEX_FLOW_COLUMN_REVERSE, LV_FLEX_FLOW_COLUMN_WRAP, LV_FLEX_FLOW_COLUMN_WRAP_REVERSE>(v);
     }
 
     virtual void setModifier(Width w) const
@@ -420,7 +522,6 @@ namespace Compose
         }
       }
       lv_obj_set_width(getHandle(), w.it);
-      lv_obj_update_layout(getHandle());
     }
 
     virtual void setModifier(Height h) const
@@ -442,7 +543,6 @@ namespace Compose
         }
       }
       lv_obj_set_height(getHandle(), h.it);
-      lv_obj_update_layout(getHandle());
     }
 
     void setModifier(FlexGrow g) const
@@ -486,7 +586,16 @@ namespace Compose
     Pressed pressed { *this, c_pressedKey };
     Clicked clicked { *this, c_clickedKey };
     LongClick longClick { *this, c_longClickKey };
+    Touch touch { *this };
     StateChange stateChange { *this };
+    Drag drag { *this };
+    DragDrop dragDrop { *this };
+    TimerTick timerTick { *this };
+
+    [[nodiscard]] bool isCurrentDropTarget() const
+    {
+      return DragDropContext::get().isCurrentTarget(getHandle());
+    }
   };
 
   template <typename T> concept IsWidget = requires
@@ -501,7 +610,8 @@ namespace Compose
 
     lhs.doAutorun([cb = std::forward<tCB>(cb), w = lhs.getHandle()] {
       tComposeWidgetDecayed wrapper(w);
-      wrapper.clear();
+      if(wrapper.shouldClearBeforeAutorunCompose())
+        wrapper.clear();
       cb(tComposeWidgetDecayed(w));
     });
   }
@@ -516,6 +626,10 @@ namespace Compose
   });
 
 #define PRESSED it.pressed << [=]
+#define TOUCH() it.touch << [=](Compose::Touch * it)
+#define TOUCH_BEGIN it->begin << [=]
+#define TOUCH_UPDATE it->update << [=]
+#define TOUCH_END it->end << [=]
 #define SWALLOW_PRESSED()                                                                                              \
   PRESSED(auto)                                                                                                        \
   {                                                                                                                    \
@@ -525,12 +639,14 @@ namespace Compose
 #define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
-  it.leftClick << [handle = it.getHandle()](Position p) -> bool {                                                      \
+  it.pressed << [handle = it.getHandle()](Position p) -> bool {                                                        \
     nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
     return false;                                                                                                      \
   }
 
-#define WITH_STATE(type, name, factory)                                                                                \
-  auto &_state_ref_##name = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>(                                      \
-      "WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });  \
+#define WITH_STATE(type, name, factory)                                                                                                                                            \
+  auto &_state_ref_##name                                                                                                                                                          \
+      = it.ensureDataForKeyExistsOwning<Reactive::Var<type>>("WITH_STATE_" #name "_" #type, [inner_factory = factory] { return new Reactive::Var<type>(inner_factory()); });       \
   if(auto *name = &_state_ref_##name)
+
+#define TIMER_TICK it.timerTick << [=]

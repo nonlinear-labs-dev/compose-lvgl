@@ -26,6 +26,20 @@ namespace Compose
   class DrawContext
   {
    public:
+    class ScopedOffset
+    {
+     public:
+      ScopedOffset(DrawContext &context, Point offset);
+      ~ScopedOffset();
+      ScopedOffset(const ScopedOffset &) = delete;
+      ScopedOffset &operator=(const ScopedOffset &) = delete;
+      ScopedOffset(ScopedOffset &&other) noexcept;
+      ScopedOffset &operator=(ScopedOffset &&) = delete;
+
+     private:
+      DrawContext *m_context {};
+    };
+
     virtual ~DrawContext() = default;
 
     struct StrokeStyle
@@ -117,6 +131,9 @@ namespace Compose
     virtual void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
                                 std::optional<RoundedEnds> ends)
         = 0;
+    virtual void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
+                          std::optional<RoundedEnds> ends)
+        = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
                                      std::optional<RoundedEnds> ends)
@@ -143,6 +160,12 @@ namespace Compose
     virtual void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) = 0;
     virtual void drawText(const Glib::ustring &text, int x, int y, const FreeTypeFont &font, Color c) = 0;
     virtual void flushLayer() = 0;
+
+    [[nodiscard]] ScopedOffset offset(Point offset);
+
+   protected:
+    virtual void pushOffset(Point offset) = 0;
+    virtual void popOffset() = 0;
   };
 
   class LVGLDrawContext : public DrawContext
@@ -160,6 +183,8 @@ namespace Compose
                         std::optional<RoundedEnds> ends) override;
     void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
                         std::optional<RoundedEnds> ends) override;
+    void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
+                  std::optional<RoundedEnds> ends) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
                              std::optional<RoundedEnds> ends) override;
@@ -186,8 +211,13 @@ namespace Compose
     static void drawFontPixel(const lv_draw_buf_t &draw_buf, const Color &baseColor, int px, int py,
                               unsigned char coverage);
 
+    void pushOffset(Point offset) override;
+    void popOffset() override;
+
     lv_layer_t m_layer;
     tCanvas &m_canvas;
+    Point m_currentOffset {};
+    std::vector<Point> m_offsetStack;
   };
 
   extern std::unique_ptr<FontStorage> s_fontStorage;

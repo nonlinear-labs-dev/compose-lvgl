@@ -18,19 +18,31 @@ namespace
 namespace Compose
 {
   FreeTypeFont::FreeTypeFont(const std::string &fontPath, int height)
-      : m_fontSize(height)
-      , m_fontPath(fontPath)
+      : FreeTypeFont(std::vector<std::string> { fontPath }, height)
+  {
+  }
+
+  FreeTypeFont::FreeTypeFont(std::vector<std::string> fontPaths, int height)
+      : m_faces()
+      , m_fontSize(height)
+      , m_fontPaths(std::move(fontPaths))
   {
     if(!s_library)
       check(FT_Init_FreeType(&s_library), __LINE__);
 
-    check(FT_New_Face(s_library, fontPath.c_str(), 0, &m_face), __LINE__);
-    check(FT_Set_Pixel_Sizes(m_face, 0, height), __LINE__, height);
+    for(const auto &fontPath : m_fontPaths)
+    {
+      FT_Face face = nullptr;
+      check(FT_New_Face(s_library, fontPath.c_str(), 0, &face), __LINE__);
+      check(FT_Set_Pixel_Sizes(face, 0, height), __LINE__, height);
+      m_faces.push_back(face);
+    }
   }
 
   FreeTypeFont::~FreeTypeFont()
   {
-    FT_Done_Face(m_face);
+    for(const auto face : m_faces)
+      FT_Done_Face(face);
   }
 
   FreeTypeFont::CachedGlyph::CachedGlyph(const FT_GlyphSlot slot)
@@ -49,8 +61,9 @@ namespace Compose
   {
     if(const auto found = m_glyphCache.find(codepoint); found != m_glyphCache.end())
       return found->second;
-    check(FT_Load_Char(m_face, codepoint, FT_LOAD_RENDER), __LINE__, codepoint);
-    return m_glyphCache.emplace(codepoint, std::move(CachedGlyph(m_face->glyph))).first->second;
+    const auto face = findFaceForChar(codepoint);
+    check(FT_Load_Char(face, codepoint, FT_LOAD_RENDER), __LINE__, codepoint);
+    return m_glyphCache.emplace(codepoint, std::move(CachedGlyph(face->glyph))).first->second;
   }
 
   int FreeTypeFont::getStringWidth(const Glib::ustring &text) const
@@ -65,7 +78,7 @@ namespace Compose
 
   int FreeTypeFont::getFontHeight() const
   {
-    return static_cast<int>(m_face->size->metrics.height >> 6);
+    return static_cast<int>(m_faces.front()->size->metrics.height >> 6);
   }
 
   int FreeTypeFont::getFontSize() const
@@ -117,16 +130,25 @@ namespace Compose
 
   const std::string &FreeTypeFont::getFontPath() const
   {
-    return m_fontPath;
+    return m_fontPaths.front();
   }
 
   int FreeTypeFont::getAscenderPx() const
   {
-    return static_cast<int>(m_face->size->metrics.ascender >> 6);
+    return static_cast<int>(m_faces.front()->size->metrics.ascender >> 6);
   }
 
   int FreeTypeFont::getCapHeightPx() const
   {
     return static_cast<int>(glyphFor(static_cast<std::uint32_t>('H')).hori_bearing_y >> 6);
+  }
+
+  FT_Face FreeTypeFont::findFaceForChar(char32_t c) const
+  {
+    for(const auto face : m_faces)
+      if(FT_Get_Char_Index(face, c) != 0)
+        return face;
+
+    return m_faces.front();
   }
 }

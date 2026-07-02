@@ -25,6 +25,7 @@ class BaseWidget
   static constexpr auto c_clickedKey = "Click";
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_stateChangeKey = "StateChange";
+  static constexpr auto c_styleKey = "Style";
   static constexpr auto c_canvasData = "CanvasData";
   static constexpr auto c_labelData = "LabelData";
   static constexpr auto c_svgData = "SVGData";
@@ -145,7 +146,7 @@ class BaseWidget
     auto storage = ensureUserDataStorage();
     erase_if(storage->entries, [](const auto& it) {
       return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData
-          && it.first != c_svgData;
+          && it.first != c_svgData && it.first != c_styleKey;
     });
   }
 
@@ -193,6 +194,7 @@ class BaseWidget
       lv_obj_add_event_cb(
           m_widget,
           [](lv_event_t* e) {
+            Reactive::Deferrer deferrer;
             auto target = static_cast<lv_obj_t*>(lv_event_get_target(e));
             auto storage = static_cast<UserDataStorage*>(lv_obj_get_user_data(target));
 

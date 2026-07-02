@@ -250,17 +250,17 @@ namespace Compose
 
     static constexpr FlexAlign START_CENTER()
     {
-      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER };
+      return { LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
     }
 
     static constexpr FlexAlign END_CENTER()
     {
-      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER };
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER };
     }
 
     static constexpr FlexAlign END_START()
     {
-      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START };
+      return { LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START };
     }
 
     static constexpr FlexAlign SPACE_EVENLY()
@@ -364,6 +364,7 @@ namespace Compose
 #define ITEM_WIDTH(...) it.doAutorun([=] { it.setModifier(ItemWidth { __VA_ARGS__ }); });
 #define SCROLL_TO_ITEM(...) it.doAutorun([=] { it.scrollToItem(__VA_ARGS__); });
 #define TEXT(...) it.doAutorun([=] { it.setModifier(Text(__VA_ARGS__)); });
+#define STYLE(...) it.doAutorun([=] { it.setModifier(__VA_ARGS__); });
 #define FONT(...) it.doAutorun([=] { it.setModifier(Font { __VA_ARGS__ }); });
 #define SPACING(...) it.doAutorun([=] { it.setModifier(Spacing(__VA_ARGS__)); });
 #define ROW_SPACING(...) it.doAutorun([=] { it.setModifier(RowSpacing(__VA_ARGS__)); });

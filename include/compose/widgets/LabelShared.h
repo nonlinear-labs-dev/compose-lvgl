@@ -87,8 +87,7 @@ namespace Compose::LabelShared
     }
   }
 
-  inline int computeStartYSingle(int availableHeight, const FreeTypeFont& font, const Glib::ustring& text,
-                                 const VerticalAlign& a)
+  inline int computeStartYSingle(int availableHeight, const FreeTypeFont& font, const Glib::ustring& text, const VerticalAlign& a)
   {
     switch(a.it)
     {
@@ -102,8 +101,7 @@ namespace Compose::LabelShared
     }
   }
 
-  inline int computeStartYBlock(int availableHeight, int totalTextHeight, int lineHeight, const FreeTypeFont& font,
-                                const VerticalAlign& a)
+  inline int computeStartYBlock(int availableHeight, int totalTextHeight, int lineHeight, const FreeTypeFont& font, const VerticalAlign& a)
   {
     switch(a.it)
     {

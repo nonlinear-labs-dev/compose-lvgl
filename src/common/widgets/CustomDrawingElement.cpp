@@ -27,13 +27,16 @@ namespace Compose
               const auto w = lv_obj_get_width(handle);
               const auto h = lv_obj_get_height(handle);
 
-              LVGLDrawContext drawContext(*handle);
-              try
+              if(w > 0 && h > 0)
               {
-                canvasData.m_drawCallback(drawContext, w, h);
-              }
-              catch(std::exception &)
-              {
+                LVGLDrawContext drawContext(*handle);
+                try
+                {
+                  canvasData.m_drawCallback(drawContext, w, h);
+                }
+                catch(std::exception &)
+                {
+                }
               }
             });
   }

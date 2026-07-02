@@ -7,12 +7,21 @@
 #include <lvgl.h>
 
 #include <chrono>
-#include <thread>
 #include <reactive/Computations.h>
 #include <reactive/Deferrer.h>
 
 namespace Compose
 {
+  namespace
+  {
+    std::unique_ptr<Reactive::Deferrer> s_timerDeferrer;
+
+    void flushBeforeRefresh(lv_event_t*)
+    {
+      s_timerDeferrer.reset();
+    }
+  }
+
   Application::Application(Rect position, Rotation rotation)
       : m_position(position)
       , m_rotation(rotation)
