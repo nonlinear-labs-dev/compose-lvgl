@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include <vector>
-#include <nltools/Assert.h>
+#include <cassert>
 
 namespace Compose
 {
@@ -81,8 +81,7 @@ namespace Compose
 
     void ensureHandlers()
     {
-      nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle),
-                                   "VirtualList handle invalid while registering handlers");
+      assert(handle && lv_obj_is_valid(handle) && "VirtualList handle invalid while registering handlers");
 
       if(scrollHandler == nullptr)
         scrollHandler = lv_obj_add_event_cb(handle, onListChanged, LV_EVENT_SCROLL, this);
@@ -174,7 +173,7 @@ namespace Compose
 
     void rebuildRowContent(lv_obj_t *rowHandle, int modelIndex) const
     {
-      nltools_detailedAssertAlways(rowHandle && lv_obj_is_valid(rowHandle), "VirtualList row handle invalid");
+      assert(rowHandle && lv_obj_is_valid(rowHandle) && "VirtualList row handle invalid");
       Widget row(rowHandle);
 
       if(auto *storage = row.getUserDataStorage())
@@ -280,7 +279,7 @@ namespace Compose
         auto *recycled = rows.front();
         rows.erase(rows.begin());
         rows.push_back(recycled);
-        nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle), "VirtualList handle invalid during remap");
+        assert(handle && lv_obj_is_valid(handle) && "VirtualList handle invalid during remap");
         lv_obj_move_to_index(
             recycled, static_cast<int32_t>(lv_obj_get_child_count(handle)) - c_insertIndexBeforeBottomSpacerOffset);
         const auto modelIndex = appliedFirst + renderedItems - delta + step;
@@ -295,7 +294,7 @@ namespace Compose
         auto *recycled = rows.back();
         rows.pop_back();
         rows.insert(rows.begin(), recycled);
-        nltools_detailedAssertAlways(handle && lv_obj_is_valid(handle), "VirtualList handle invalid during remap");
+        assert(handle && lv_obj_is_valid(handle) && "VirtualList handle invalid during remap");
         lv_obj_move_to_index(recycled, c_insertIndexAfterTopSpacer);
         const auto modelIndex = appliedFirst + backwardSteps - step - 1;
         rebuildRowContent(recycled, modelIndex);
@@ -310,7 +309,7 @@ namespace Compose
         return;
       }
 
-      nltools_detailedAssertAlways(delta < 0, "VirtualList remap expected negative delta");
+      assert(delta < 0 && "VirtualList remap expected negative delta");
       recycleRowsBackward(appliedFirst, -delta);
     }
 
@@ -363,8 +362,7 @@ namespace Compose
     [[nodiscard]] lv_obj_t *currentValidHandle() const
     {
       auto *listHandle = handle;
-      nltools_detailedAssertAlways(listHandle && lv_obj_is_valid(listHandle),
-                                   "VirtualList handle invalid during refresh");
+      assert(listHandle && lv_obj_is_valid(listHandle) && "VirtualList handle invalid during refresh");
       return listHandle;
     }
 

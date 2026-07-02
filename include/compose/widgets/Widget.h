@@ -12,7 +12,7 @@
 
 #include <stdexcept>
 #include <type_traits>
-#include <nltools/Assert.h>
+#include <cassert>
 
 namespace Compose
 {
@@ -444,14 +444,12 @@ namespace Compose
       {
         if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
         {
-          nltools_detailedAssertAlways(false,
-                                       "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+          assert(false && "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
         }
 
         if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
         {
-          nltools_detailedAssertAlways(
-              false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+          assert(false && "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
         }
       }
 
@@ -512,8 +510,7 @@ namespace Compose
         {
           if(lv_obj_get_style_width(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            nltools_detailedAssertAlways(
-                false, "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
+            assert(false && "Percent/FULL child width under FIT_CONTENT parent width creates a layout loop");
           }
         }
 
@@ -533,8 +530,7 @@ namespace Compose
         {
           if(lv_obj_get_style_height(parent, LV_PART_MAIN) == LV_SIZE_CONTENT)
           {
-            nltools_detailedAssertAlways(
-                false, "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
+            assert(false && "Percent/FULL child height under FIT_CONTENT parent height creates a layout loop");
           }
         }
 
@@ -641,7 +637,7 @@ namespace Compose
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
   it.pressed << [handle = it.getHandle()](Position p) -> bool {                                                        \
-    nltools::Log::error(std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y));                     \
+    std::cerr << std::format("Clicked {} at {}/{}", BaseWidget(handle).getID(), p.x, p.y) << std::endl;             \
     return false;                                                                                                      \
   }
 

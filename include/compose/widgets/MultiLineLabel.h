@@ -6,7 +6,7 @@
 #include "compose/FreeTypeFont.h"
 #include <functional>
 #include <string>
-#include <nltools/TextWrap.h>
+#include <compose/TextWrap.h>
 
 namespace Compose
 {
@@ -50,7 +50,7 @@ namespace Compose
         if(wrapWidth > 0)
         {
           auto wrappedLines
-              = nltools::text::wrapText(text.text, wrapWidth, [&font](auto t) { return font.getStringWidth(t); });
+              = Compose::text::wrapText(text.text, wrapWidth, [&font](auto t) { return font.getStringWidth(t); });
 
           if(height == LV_SIZE_CONTENT)
           {

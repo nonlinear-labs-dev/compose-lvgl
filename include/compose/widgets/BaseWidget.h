@@ -1,10 +1,10 @@
 #pragma once
-#include "nltools-2/NotSyncedException.h"
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj.h"
 #include "src/misc/lv_types.h"
 
 #include <functional>
+#include <system_error>
 #include <optional>
 #include <unordered_map>
 #include <string>
@@ -163,8 +163,10 @@ class BaseWidget
       {
         cb();
       }
-      catch(const NotSyncedException& ignore)
+      catch(const std::system_error& e)
       {
+        if(e.code() != std::make_error_code(std::errc::resource_unavailable_try_again))
+          std::cerr << std::format("Computation::execute() failed: {}", e.what()) << std::endl;
       }
       catch(const std::exception& e)
       {

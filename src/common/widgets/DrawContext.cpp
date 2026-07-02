@@ -16,7 +16,7 @@
 #include <compose/FreeTypeFont.h>
 #include "src/widgets/canvas/lv_canvas_private.h"
 #include "compose/widgets/LabelShared.h"
-#include <nltools/Assert.h>
+#include <cassert>
 
 namespace Compose
 {
@@ -829,7 +829,7 @@ namespace Compose
     if(!dsc || !path)
       return;
 
-    nltools_detailedAssertAlways(std::holds_alternative<Point>(points[0]), "First Segment can't be QuadPathSegment");
+    assert(std::holds_alternative<Point>(points[0]) && "First Segment can't be QuadPathSegment");
 
     const auto [startX, startY] = std::get<Point>(points[0]);
     const auto first_point = lv_fpoint_t { static_cast<float>(startX), static_cast<float>(startY) };

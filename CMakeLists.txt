@@ -17,7 +17,7 @@ if (COMMAND addNLLibrary)
             DESCRIPTION "compose lvgl"
             VERSION 1.0.0
             EXTERNAL_LIBS freetype2 glibmm-2.4 giomm-2.4 yaml-cpp nlohmann_json ${LVGL_BACKEND_LIBS}
-            OUR_LIBS reactive nltools nltools-2 lvgl lunasvg
+            OUR_LIBS reactive lvgl lunasvg
             LIB_SOURCES src/common/*.cpp include/*.h ${LVGL_BACKEND_SPECIFIC_SOURCES}
             TEST_SOURCES tests/test_basewidget.cpp tests/test_stylesheet_json.cpp
             INSTALL_HEADERS_DIR include
@@ -48,5 +48,5 @@ else ()
     add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
     target_include_directories(${PROJECT_NAME} PUBLIC ./include ${LIBS_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PUBLIC reactive nltools lvgl lunasvg nlohmann_json::nlohmann_json yaml-cpp::yaml-cpp ${LIBS_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PUBLIC reactive lvgl lunasvg nlohmann_json::nlohmann_json yaml-cpp::yaml-cpp ${LIBS_LIBRARIES})
 endif ()

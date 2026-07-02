@@ -6,7 +6,7 @@
 #include <utility>
 #include <sstream>
 #include <vector>
-#include <nltools/Assert.h>
+#include <cassert>
 
 namespace Compose
 {
@@ -28,7 +28,7 @@ namespace Compose
           const auto vertAlign = cd.verticalAlign.get();
 
           const auto lines
-              = nltools::text::wrapText(displayText, w, [&](auto &text) { return font.getStringWidth(text); });
+              = Compose::text::wrapText(displayText, w, [&](auto &text) { return font.getStringWidth(text); });
           const auto lineHeight = font.getFontHeight();
           const auto totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
 
@@ -86,7 +86,7 @@ namespace Compose
 
   void MultiLineLabel::setModifier(Width w) const
   {
-    nltools_detailedAssertAlways(w.it != LV_SIZE_CONTENT, "Width::Fit_Content not allowed for Multi-LineLabels");
+    assert(w.it != LV_SIZE_CONTENT && "Width::Fit_Content not allowed for Multi-LineLabels");
     LabelShared::setWidth(*this, w);
   }
 

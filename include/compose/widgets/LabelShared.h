@@ -2,7 +2,7 @@
 #include "DrawContext.h"
 #include <compose/state/LabelData.h>
 #include <compose/FreeTypeFont.h>
-#include <nltools/Assert.h>
+#include <cassert>
 
 namespace Compose::LabelShared
 {
@@ -50,8 +50,7 @@ namespace Compose::LabelShared
 
   template <typename T> void setDrawCallCommon(const T& self, CustomDrawingElement::tDrawCB&& draw)
   {
-    nltools_detailedAssertAlways(!self.template doesDataForKeyExist<LabelData>(),
-                                 "CanvasData should not exist, setting a new render callback is prohibited");
+    assert(!self.template doesDataForKeyExist<LabelData>() && "CanvasData should not exist, setting a new render callback is prohibited");
     Widget(self.getHandle()).doAutorun([draw = std::move(draw), handle = self.getHandle()] {
       const Widget widget(handle);
 
