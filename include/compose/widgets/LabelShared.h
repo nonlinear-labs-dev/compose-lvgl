@@ -2,6 +2,7 @@
 #include "DrawContext.h"
 #include <compose/state/LabelData.h>
 #include <compose/FreeTypeFont.h>
+#include <nltools/Assert.h>
 
 namespace Compose::LabelShared
 {

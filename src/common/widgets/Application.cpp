@@ -30,16 +30,6 @@ namespace Compose
     lv_fs_posix_init();
   }
 
-  namespace
-  {
-    std::unique_ptr<Reactive::Deferrer> s_timerDeferrer;
-
-    void flushBeforeRefresh(lv_event_t*)
-    {
-      s_timerDeferrer.reset();
-    }
-  }
-
   void Application::runBlocking(const tCallback& callback) const
   {
     constexpr auto c_frameIntervalInMs = 16;

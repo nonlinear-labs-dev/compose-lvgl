@@ -16,6 +16,7 @@
 #include <compose/FreeTypeFont.h>
 #include "src/widgets/canvas/lv_canvas_private.h"
 #include "compose/widgets/LabelShared.h"
+#include <nltools/Assert.h>
 
 namespace Compose
 {
@@ -870,7 +871,7 @@ namespace Compose
 
     if(rc.radius <= 0)
     {
-      fillPolygon(stroke, fill, points);
+      fillPolygon(stroke, fill, toPathSegments(points));
       return;
     }
 

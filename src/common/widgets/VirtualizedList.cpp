@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <nltools/Assert.h>
 
 namespace Compose
 {
