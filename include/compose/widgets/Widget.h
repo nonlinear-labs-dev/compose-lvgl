@@ -633,6 +633,11 @@ namespace Compose
     return true;                                                                                                       \
   };
 #define CLICKED it.clicked << [=]
+#define SWALLOW_CLICKED()                                                                                              \
+  CLICKED(auto)                                                                                                        \
+  {                                                                                                                    \
+    return true;                                                                                                       \
+  };
 #define LONG_CLICK it.longClick << [=]
 #define STATE_CHANGE it.stateChange << [=]
 #define CLICK_TRACE()                                                                                                  \
