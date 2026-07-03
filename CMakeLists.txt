@@ -11,6 +11,18 @@ else ()
     set(LVGL_BACKEND_SPECIFIC_SOURCES "src/framebuffer/*.cpp")
 endif ()
 
+set(COMPOSE_DEFAULT_FONT_BASE_NAME "Nonlegible-Rubik" CACHE STRING "Default Font::baseName")
+set(COMPOSE_DEFAULT_FONT_FALLBACK_BASE_NAMES "" CACHE STRING "Default Font::fallbackBaseNames, semicolon separated")
+
+set(COMPOSE_DEFAULT_FONT_FALLBACK_INITIALIZER "\"\"")
+if (NOT COMPOSE_DEFAULT_FONT_FALLBACK_BASE_NAMES STREQUAL "")
+    set(quotedFallbacks ${COMPOSE_DEFAULT_FONT_FALLBACK_BASE_NAMES})
+    list(TRANSFORM quotedFallbacks PREPEND "\"")
+    list(TRANSFORM quotedFallbacks APPEND "\"")
+    list(JOIN quotedFallbacks ", " COMPOSE_DEFAULT_FONT_FALLBACK_INITIALIZER)
+endif ()
+configure_file(include/compose/FontDefaults.h.in ${CMAKE_CURRENT_BINARY_DIR}/configured/compose/FontDefaults.h)
+
 if (COMMAND addNLLibrary)
     addNLLibrary(
             NAME compose-lvgl
@@ -50,3 +62,5 @@ else ()
     target_include_directories(${PROJECT_NAME} PUBLIC ./include ${LIBS_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PUBLIC reactive lvgl lunasvg nlohmann_json::nlohmann_json yaml-cpp::yaml-cpp ${LIBS_LIBRARIES})
 endif ()
+
+target_include_directories(compose-lvgl PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/configured)

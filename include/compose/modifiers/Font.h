@@ -1,4 +1,5 @@
 #pragma once
+#include <compose/FontDefaults.h>
 #include <string>
 #include <vector>
 
@@ -20,8 +21,8 @@ namespace Compose
     } weight
         = FontWeight::Regular;
 
-    std::string baseName = "Nonlegible-Rubik";
-    std::vector<std::string> fallbackBaseNames { "" };
+    std::string baseName = COMPOSE_DEFAULT_FONT_BASE_NAME;
+    std::vector<std::string> fallbackBaseNames COMPOSE_DEFAULT_FONT_FALLBACK_BASE_NAMES;
 
     bool operator==(const Font &o) const noexcept
     {
