@@ -72,3 +72,4 @@ else ()
 endif ()
 
 target_include_directories(compose-lvgl PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/configured)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/configured/compose/FontDefaults.h DESTINATION include/compose)
