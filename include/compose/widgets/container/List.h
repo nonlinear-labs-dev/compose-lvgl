@@ -222,5 +222,5 @@ namespace Compose
 #define LIST(...) it.add(std::move(Compose::List(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::List &&it)
 #define LIST_ITEM_IDS() it.itemIds << [=]()
 #define LIST_ITEM_BY_ID it.itemById << [=]
-#define SCROLL_TO_ITEM() it.scrollTo << [=]()
+#define LIST_SCROLL_TO() it.scrollTo << [=]()
 #define EMPTY_LIST_PLACEHOLDER() it.emptyListPlaceholder << [=](Compose::Widget & it)
