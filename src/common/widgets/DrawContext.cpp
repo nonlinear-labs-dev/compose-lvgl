@@ -965,8 +965,6 @@ namespace Compose
     lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(color.r, color.g, color.b));
     lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(color.a * static_cast<float>(LV_OPA_COVER)));
     lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(translatedArcOptions.strokeWidth));
-    lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
-    lv_vector_dsc_set_stroke_cap(dsc.get(), LV_VECTOR_STROKE_CAP_ROUND);
 
     if(translatedArcOptions.dashes.has_value())
     {

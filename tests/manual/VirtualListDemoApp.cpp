@@ -8,8 +8,7 @@
 #include "compose/widgets/Application.h"
 #include "compose/widgets/Button.h"
 #include "compose/widgets/Label.h"
-#include "compose/widgets/container/HorizontalList.h"
-#include "compose/widgets/container/VerticalList.h"
+#include "compose/widgets/container/List.h"
 
 using namespace Compose;
 
@@ -45,11 +44,19 @@ int runVirtualListDemo()
 
       constexpr auto c_itemHeight = 28;
 
-      VERTICAL_LIST(ItemCount { c_itemCount }, Height::PX(220), Width::FULL(), BackgroundColor { Color::BLACK() })
+      LIST_BY_INDEX(Axis::Vertical, Height::PX(220), Width::FULL(), BackgroundColor { Color::BLACK() })
       {
-        ITEM_HEIGHT(c_itemHeight);
-        SCROLL_TO_ITEM(selectedItem->get());
-        LIST_ITEM(int idx)
+        LIST_SIZE()
+        {
+          return c_itemCount;
+        };
+
+        LIST_SCROLL_TO()
+        {
+          return static_cast<size_t>(selectedItem->get());
+        };
+
+        LIST_ITEM_BY_INDEX(Widget &item, size_t idx)
         {
           HEIGHT(c_itemHeight);
           FLEX_GROW(0);
@@ -64,11 +71,19 @@ int runVirtualListDemo()
         };
       };
 
-      HORIZONTAL_LIST(ItemCount { c_itemCount }, Height::PX(80), Width::FULL(), BackgroundColor { Color::BLACK() })
+      LIST_BY_INDEX(Axis::Horizontal, Height::PX(80), Width::FULL(), BackgroundColor { Color::BLACK() })
       {
-        ITEM_WIDTH(120);
-        SCROLL_TO_ITEM(selectedItem->get());
-        LIST_ITEM(int idx)
+        LIST_SIZE()
+        {
+          return c_itemCount;
+        };
+
+        LIST_SCROLL_TO()
+        {
+          return static_cast<size_t>(selectedItem->get());
+        };
+
+        LIST_ITEM_BY_INDEX(Widget &item, size_t idx)
         {
           WIDTH(120);
           FLEX_GROW(0);
