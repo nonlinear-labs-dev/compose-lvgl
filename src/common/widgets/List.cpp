@@ -2,22 +2,11 @@
 
 namespace Compose
 {
-  ListItemContainer::ListItemContainer(WidgetType *w)
-      : Widget(w)
-  {
-  }
-
-  ListItemContainer::State::State(const ListItemContainer &container, Axis axis)
-      : handle(container.getHandle())
-      , axis(axis)
-  {
-  }
-
-  void ListItemContainer::State::setChildId(const ItemBuilder &itemBuilder, const std::optional<ItemId> &id)
+  template <typename TId> void BasicListItemContainer<TId>::State::setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id)
   {
     if(std::exchange(childId, id) != id)
     {
-      ListItemContainer widget(handle);
+      BasicListItemContainer widget(handle);
       lv_obj_clean(handle);
       if(childId.has_value())
       {
@@ -26,48 +15,43 @@ namespace Compose
     }
   }
 
-  void ListItemContainer::makeState(Axis axis)
+  template <typename TId> void BasicListItemContainer<TId>::makeState(Axis axis)
   {
     static constexpr auto c_key = "ListPaneContainerState";
-    ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
+    this->template ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
   }
 
-  ListItemContainer::State &ListItemContainer::ensureState() const
+  template <typename TId> typename BasicListItemContainer<TId>::State &BasicListItemContainer<TId>::ensureState() const
   {
     static constexpr auto c_key = "ListPaneContainerState";
-    return *getData<State>(c_key);
+    return *(this->template getData<State>(c_key));
   }
 
-  void ListItemContainer::setChildId(const ItemBuilder &itemBuilder, const std::optional<ItemId> &id)
+  template <typename TId> void BasicListItemContainer<TId>::setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id)
   {
     ensureState().setChildId(itemBuilder, id);
   }
 
-  std::optional<ItemId> ListItemContainer::getChildId() const
+  template <typename TId> std::optional<TId> BasicListItemContainer<TId>::getChildId() const
   {
     return ensureState().childId;
   }
 
-  void VisibleListItems::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
-                                          const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
+  template <typename TId>
+  void BasicVisibleListItems<TId>::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model,
+                                                    const BasicItemBuilder<TId> &itemBuilder, const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
   {
-    ensureState().bruteForceUpdate(parentExtend, scrollOffset, idMap, itemBuilder, emptyListPlaceholderBuilder);
+    ensureState().bruteForceUpdate(parentExtend, scrollOffset, model, itemBuilder, emptyListPlaceholderBuilder);
   }
 
-  int32_t VisibleListItems::getItemExtend() const
+  template <typename TId> int32_t BasicVisibleListItems<TId>::getItemExtend() const
   {
     return ensureState().getItemExtend();
   }
 
-  VisibleListItems::State::State(const VisibleListItems &items, Axis axis)
-      : handle(items.getHandle())
-      , axis(axis)
+  template <typename TId> void BasicVisibleListItems<TId>::State::setupChildren(int numItemsVisible) const
   {
-  }
-
-  void VisibleListItems::State::setupChildren(int numItemsVisible) const
-  {
-    VisibleListItems self(handle);
+    BasicVisibleListItems self(handle);
 
     while(lv_obj_get_child_count(handle) > numItemsVisible)
     {
@@ -77,20 +61,20 @@ namespace Compose
 
     while(lv_obj_get_child_count(handle) < numItemsVisible)
     {
-      ListItemContainer container(self, axis);
+      BasicListItemContainer<TId> container(self, axis);
     }
   }
 
-  void VisibleListItems::State::bruteForceUpdate(int32_t parentExtend, int scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
-                                                 const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder) const
+  template <typename TId>
+  void BasicVisibleListItems<TId>::State::bruteForceUpdate(int32_t parentExtend, int scrollOffset, const ListModel<TId> &model,
+                                                           const BasicItemBuilder<TId> &itemBuilder,
+                                                           const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder) const
   {
-    VisibleListItems self(handle);
-
-    if(idMap.empty() && emptyListPlaceholderBuilder)
+    if(model.size() == 0 && emptyListPlaceholderBuilder)
     {
       setupChildren(1);
       auto containerHandle = lv_obj_get_child(handle, 0);
-      ListItemContainer container(containerHandle);
+      BasicListItemContainer<TId> container(containerHandle);
       container.setChildId(itemBuilder, std::nullopt);
       if(lv_obj_get_child_count(containerHandle) == 0)
         emptyListPlaceholderBuilder(container);
@@ -100,7 +84,7 @@ namespace Compose
     if(itemBuilder)
     {
       auto itemExtend = getItemExtend();
-      auto numItemsVisible = std::min<int>(idMap.size(), parentExtend / itemExtend + 2);
+      auto numItemsVisible = std::min<int>(model.size(), parentExtend / itemExtend + 2);
       setupChildren(numItemsVisible);
 
       auto numChildren = lv_obj_get_child_count(handle);
@@ -112,22 +96,20 @@ namespace Compose
       else
         lv_obj_set_pos(handle, 0, scrollPos);
 
-      auto range = idMap | std::views::drop(firstItemIdx) | std::views::take(numItemsVisible);
-
       for(auto itemIdx = firstItemIdx; itemIdx < firstItemIdx + numItemsVisible; ++itemIdx)
       {
         auto childIdx = itemIdx - firstItemIdx;
         if(childIdx < numChildren)
         {
-          auto itemId = itemIdx < idMap.size() ? std::optional { idMap[itemIdx] } : std::nullopt;
+          auto itemId = itemIdx < model.size() ? std::optional { model.at(itemIdx) } : std::nullopt;
 
           if(auto matchingChild = findItemFor(itemId))
           {
             lv_obj_move_to_index(matchingChild, childIdx);
           }
-          else if(auto recycle = findItemForRecycling(range))
+          else if(auto recycle = findItemForRecycling(model, firstItemIdx, numItemsVisible))
           {
-            ListItemContainer w(recycle);
+            BasicListItemContainer<TId> w(recycle);
             w.setChildId(itemBuilder, itemId);
             lv_obj_move_to_index(recycle, childIdx);
           }
@@ -140,13 +122,13 @@ namespace Compose
     }
   }
 
-  lv_obj_t *VisibleListItems::State::findItemFor(const std::optional<ItemId> &itemId) const
+  template <typename TId> lv_obj_t *BasicVisibleListItems<TId>::State::findItemFor(const std::optional<TId> &itemId) const
   {
     auto numChildren = lv_obj_get_child_count(handle);
     for(auto idx = 0; idx < numChildren; idx++)
     {
       auto childHandle = lv_obj_get_child(handle, idx);
-      ListItemContainer c(childHandle);
+      BasicListItemContainer<TId> c(childHandle);
       auto childId = c.getChildId();
       if(childId == itemId)
         return childHandle;
@@ -154,7 +136,7 @@ namespace Compose
     return nullptr;
   }
 
-  int32_t VisibleListItems::State::getItemExtend() const
+  template <typename TId> int32_t BasicVisibleListItems<TId>::State::getItemExtend() const
   {
     auto numChildren = lv_obj_get_child_count(handle);
     auto itemExtend = 1;
@@ -171,60 +153,58 @@ namespace Compose
     return itemExtend;
   }
 
-  lv_obj_t *VisibleListItems::State::findItemForRecycling(const auto &range) const
+  template <typename TId>
+  lv_obj_t *BasicVisibleListItems<TId>::State::findItemForRecycling(const ListModel<TId> &model, size_t firstVisible, size_t numVisible) const
   {
+    auto isVisible = [&](const TId &id) {
+      for(auto i = firstVisible; i < firstVisible + numVisible && i < model.size(); i++)
+        if(model.at(i) == id)
+          return true;
+      return false;
+    };
+
     auto numChildren = lv_obj_get_child_count(handle);
     for(auto idx = 0; idx < numChildren; idx++)
     {
       auto childHandle = lv_obj_get_child(handle, idx);
-      ListItemContainer c(childHandle);
+      BasicListItemContainer<TId> c(childHandle);
       auto childId = c.getChildId();
-      if(!childId.has_value() || std::ranges::find(range, childId) == std::ranges::end(range))
+      if(!childId.has_value() || !isVisible(childId.value()))
         return childHandle;
     }
     return nullptr;
   }
 
-  VisibleListItems::State &VisibleListItems::ensureState() const
+  template <typename TId> typename BasicVisibleListItems<TId>::State &BasicVisibleListItems<TId>::ensureState() const
   {
     static constexpr auto c_key = "VisibleListItemsState";
-    return *(getData<State>(c_key));
+    return *(this->template getData<State>(c_key));
   }
 
-  void VisibleListItems::makeState(Axis axis)
+  template <typename TId> void BasicVisibleListItems<TId>::makeState(Axis axis)
   {
     static constexpr auto c_key = "VisibleListItemsState";
-    ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
+    this->template ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
   }
 
-  ListPane::ListPane(WidgetType *w)
-      : Widget(w)
-  {
-  }
-
-  bool ListPane::shouldClearBeforeAutorunCompose() const
+  template <typename TId> bool BasicListPane<TId>::shouldClearBeforeAutorunCompose() const
   {
     return false;
   }
 
-  void ListPane::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
-                                  const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
+  template <typename TId>
+  void BasicListPane<TId>::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model, const BasicItemBuilder<TId> &itemBuilder,
+                                            const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
   {
-    ensureState().bruteForceUpdate(parentExtend, scrollOffset, idMap, itemBuilder, emptyListPlaceholderBuilder);
+    ensureState().bruteForceUpdate(parentExtend, scrollOffset, model, itemBuilder, emptyListPlaceholderBuilder);
   }
 
-  ListPane::State::State(ListPane &pane, Axis axis)
-      : handle(pane.getHandle())
-      , visibleItems(pane, axis)
-      , axis(axis)
-  {
-  }
-
-  void ListPane::State::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
-                                         const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
+  template <typename TId>
+  void BasicListPane<TId>::State::bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model,
+                                                   const BasicItemBuilder<TId> &itemBuilder, const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder)
   {
     const auto itemExtend = visibleItems.getItemExtend();
-    const auto contentExtend = std::max<int32_t>(parentExtend, idMap.size() * itemExtend);
+    const auto contentExtend = std::max<int32_t>(parentExtend, model.size() * itemExtend);
     const auto maxScroll = std::max(0, contentExtend - parentExtend);
 
     if(axis == Axis::Horizontal)
@@ -232,60 +212,45 @@ namespace Compose
     else
       lv_obj_set_height(handle, contentExtend);
 
-    visibleItems.bruteForceUpdate(parentExtend, std::clamp(scrollOffset, 0, maxScroll), idMap, itemBuilder, emptyListPlaceholderBuilder);
+    visibleItems.bruteForceUpdate(parentExtend, std::clamp(scrollOffset, 0, maxScroll), model, itemBuilder, emptyListPlaceholderBuilder);
   }
 
-  void ListPane::makeState(Axis axis)
+  template <typename TId> void BasicListPane<TId>::makeState(Axis axis)
   {
     static constexpr auto c_key = "ListPaneState";
-    ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
+    this->template ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
   }
 
-  ListPane::State &ListPane::ensureState()
+  template <typename TId> typename BasicListPane<TId>::State &BasicListPane<TId>::ensureState()
   {
     static constexpr auto c_key = "ListPaneState";
-    return *getData<State>(c_key);
+    return *(this->template getData<State>(c_key));
   }
 
-  List::List(WidgetType *w)
-      : Widget(w)
-  {
-  }
-
-  bool List::shouldClearBeforeAutorunCompose() const
+  template <typename TId> bool BasicList<TId>::shouldClearBeforeAutorunCompose() const
   {
     return false;
   }
 
-  void List::onListChanged(lv_event_t *e)
+  template <typename TId> void BasicList<TId>::onListChanged(lv_event_t *e)
   {
     static_cast<State *>(lv_event_get_user_data(e))->bruteForceUpdate();
   }
 
-  List::State::State(Widget &list, Axis axis)
-      : handle(list.getHandle())
-      , pane(list, axis)
-      , axis(axis)
+  template <typename TId> void BasicList<TId>::State::setModel(ListModel<TId> m)
   {
-  }
-
-  void List::State::setIdMap(std::vector<ItemId> map)
-  {
-    idMap = std::move(map);
+    model = std::move(m);
     bruteForceUpdate();
   }
 
-  void List::State::scrollTo(const ItemId &id)
+  template <typename TId> void BasicList<TId>::State::scrollTo(const TId &id)
   {
-    auto it = std::find(idMap.begin(), idMap.end(), id);
-    if(it != idMap.end())
+    if(auto modelIndex = model.indexOf(id))
     {
-      auto modelIndex = std::distance(idMap.begin(), it);
-
       const auto stride = this->pane.ensureState().visibleItems.getItemExtend();
       const auto viewportExtent = axis == Axis::Horizontal ? lv_obj_get_content_width(handle) : lv_obj_get_content_height(handle);
 
-      const auto rowStart = modelIndex * stride;
+      const auto rowStart = static_cast<int32_t>(*modelIndex) * stride;
       const auto rowEnd = rowStart + stride;
 
       auto vpStart = axis == Axis::Horizontal ? lv_obj_get_scroll_left(handle) : lv_obj_get_scroll_top(handle);
@@ -308,23 +273,32 @@ namespace Compose
     }
   }
 
-  void List::State::bruteForceUpdate()
+  template <typename TId> void BasicList<TId>::State::bruteForceUpdate()
   {
     if(axis == Axis::Horizontal)
-      pane.bruteForceUpdate(lv_obj_get_content_width(handle), lv_obj_get_scroll_left(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
+      pane.bruteForceUpdate(lv_obj_get_content_width(handle), lv_obj_get_scroll_left(handle), model, itemBuilder, emptyListPlaceholderBuilder);
     else
-      pane.bruteForceUpdate(lv_obj_get_content_height(handle), lv_obj_get_scroll_top(handle), idMap, itemBuilder, emptyListPlaceholderBuilder);
+      pane.bruteForceUpdate(lv_obj_get_content_height(handle), lv_obj_get_scroll_top(handle), model, itemBuilder, emptyListPlaceholderBuilder);
   }
 
-  void List::makeState(Axis axis)
+  template <typename TId> void BasicList<TId>::makeState(Axis axis)
   {
     static constexpr auto c_key = "ListState";
-    ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
+    this->template ensureDataForKeyExistsOwning<State>(c_key, [this, axis] { return new State(*this, axis); });
   }
 
-  List::State &List::ensureState()
+  template <typename TId> typename BasicList<TId>::State &BasicList<TId>::ensureState()
   {
     static constexpr auto c_key = "ListState";
-    return *getData<State>(c_key);
+    return *(this->template getData<State>(c_key));
   }
+
+  template class BasicListItemContainer<ItemId>;
+  template class BasicListItemContainer<size_t>;
+  template class BasicVisibleListItems<ItemId>;
+  template class BasicVisibleListItems<size_t>;
+  template class BasicListPane<ItemId>;
+  template class BasicListPane<size_t>;
+  template class BasicList<ItemId>;
+  template class BasicList<size_t>;
 }

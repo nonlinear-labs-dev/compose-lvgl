@@ -3,15 +3,18 @@
 #include "Container.h"
 #include "compose/widgets/Widget.h"
 
+#include <algorithm>
 #include <functional>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace Compose
 {
-  class VisibleListItems;
   using ItemId = std::string;
-  using ItemBuilder = std::function<void(Widget &, const ItemId &)>;
+  template <typename TId> using BasicItemBuilder = std::function<void(Widget &, const TId &)>;
+  using ItemBuilder = BasicItemBuilder<ItemId>;
   using EmptyListPlaceholderBuilder = std::function<void(Widget &)>;
 
   enum class Axis
@@ -20,37 +23,92 @@ namespace Compose
     Horizontal
   };
 
-  class ListItemContainer : public Widget
+  template <typename TId> struct ListModel;
+
+  template <> struct ListModel<ItemId>
+  {
+    std::vector<ItemId> ids;
+
+    size_t size() const
+    {
+      return ids.size();
+    }
+
+    const ItemId &at(size_t i) const
+    {
+      return ids[i];
+    }
+
+    std::optional<size_t> indexOf(const ItemId &id) const
+    {
+      auto it = std::find(ids.begin(), ids.end(), id);
+      if(it != ids.end())
+        return std::distance(ids.begin(), it);
+      return std::nullopt;
+    }
+  };
+
+  template <> struct ListModel<size_t>
+  {
+    size_t count = 0;
+
+    size_t size() const
+    {
+      return count;
+    }
+
+    size_t at(size_t i) const
+    {
+      return i;
+    }
+
+    std::optional<size_t> indexOf(size_t id) const
+    {
+      if(id < count)
+        return id;
+      return std::nullopt;
+    }
+  };
+
+  template <typename TId> class BasicListItemContainer : public Widget
   {
    public:
     using Widget::setModifier;
     using Widget::WidgetType;
 
     template <typename... tArgs>
-    explicit ListItemContainer(Widget &parent, Axis axis, tArgs... args)
+    explicit BasicListItemContainer(Widget &parent, Axis axis, tArgs... args)
         : Widget(parent, Padding { 0 }, Scrollable::NO_SCROLL(), SizeVariant::FIT_CONTENT(), std::forward<tArgs>(args)...)
     {
       makeState(axis);
     }
 
-    explicit ListItemContainer(WidgetType *w);
+    explicit BasicListItemContainer(WidgetType *w)
+        : Widget(w)
+    {
+    }
 
     struct State
     {
-      explicit State(const ListItemContainer &container, Axis axis);
-      void setChildId(const ItemBuilder &itemBuilder, const std::optional<ItemId> &id);
+      State(const BasicListItemContainer &container, Axis axis)
+          : handle(container.getHandle())
+          , axis(axis)
+      {
+      }
+
+      void setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id);
       lv_obj_t *handle = nullptr;
-      std::optional<ItemId> childId;
+      std::optional<TId> childId;
       Axis axis;
     };
 
     void makeState(Axis axis);
     State &ensureState() const;
-    void setChildId(const ItemBuilder &itemBuilder, const std::optional<ItemId> &id);
-    std::optional<ItemId> getChildId() const;
+    void setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id);
+    std::optional<TId> getChildId() const;
   };
 
-  class VisibleListItems : public Flex
+  template <typename TId> class BasicVisibleListItems : public Flex
   {
    public:
     using Flex::Flex;
@@ -58,25 +116,30 @@ namespace Compose
     using Widget::WidgetType;
 
     template <typename... tArgs>
-    explicit VisibleListItems(Widget &parent, Axis axis, tArgs... args)
+    explicit BasicVisibleListItems(Widget &parent, Axis axis, tArgs... args)
         : Flex(parent, Scrollable::NO_SCROLL(), axis == Axis::Horizontal ? FlexFlow::HORIZONTAL() : FlexFlow::VERTICAL(),
                axis == Axis::Horizontal ? Expand::VERTICAL() : Expand::HORIZONTAL(), SizeVariant::FIT_CONTENT(), args...)
     {
       makeState(axis);
     }
 
-    void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+    void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model, const BasicItemBuilder<TId> &itemBuilder,
                           const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder);
     int32_t getItemExtend() const;
 
     struct State
     {
-      State(const VisibleListItems &items, Axis axis);
+      State(const BasicVisibleListItems &items, Axis axis)
+          : handle(items.getHandle())
+          , axis(axis)
+      {
+      }
+
       void setupChildren(int numItemsVisible) const;
-      void bruteForceUpdate(int32_t parentExtend, int scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+      void bruteForceUpdate(int32_t parentExtend, int scrollOffset, const ListModel<TId> &model, const BasicItemBuilder<TId> &itemBuilder,
                             const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder) const;
-      lv_obj_t *findItemFor(const std::optional<ItemId> &itemId) const;
-      lv_obj_t *findItemForRecycling(const auto &range) const;
+      lv_obj_t *findItemFor(const std::optional<TId> &itemId) const;
+      lv_obj_t *findItemForRecycling(const ListModel<TId> &model, size_t firstVisible, size_t numVisible) const;
       int32_t getItemExtend() const;
       lv_obj_t *handle = nullptr;
       Axis axis;
@@ -86,33 +149,42 @@ namespace Compose
     void makeState(Axis axis);
   };
 
-  class ListPane : public Widget
+  template <typename TId> class BasicListPane : public Widget
   {
    public:
     using Widget::setModifier;
     using Widget::WidgetType;
 
     template <typename... tArgs>
-    explicit ListPane(Widget &parent, Axis axis, tArgs... args)
+    explicit BasicListPane(Widget &parent, Axis axis, tArgs... args)
         : Widget(parent, Padding { 0 }, LayoutType::none(), args...)
     {
       makeState(axis);
     }
 
-    explicit ListPane(WidgetType *w);
+    explicit BasicListPane(WidgetType *w)
+        : Widget(w)
+    {
+    }
 
     bool shouldClearBeforeAutorunCompose() const override;
-    void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+    void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model, const BasicItemBuilder<TId> &itemBuilder,
                           const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder);
 
     struct State
     {
-      State(ListPane &pane, Axis axis);
-      void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const std::vector<ItemId> &idMap, const ItemBuilder &itemBuilder,
+      State(BasicListPane &pane, Axis axis)
+          : handle(pane.getHandle())
+          , visibleItems(pane, axis)
+          , axis(axis)
+      {
+      }
+
+      void bruteForceUpdate(int32_t parentExtend, int32_t scrollOffset, const ListModel<TId> &model, const BasicItemBuilder<TId> &itemBuilder,
                             const EmptyListPlaceholderBuilder &emptyListPlaceholderBuilder);
 
       lv_obj_t *handle = nullptr;
-      VisibleListItems visibleItems;
+      BasicVisibleListItems<TId> visibleItems;
       Axis axis;
     };
 
@@ -120,17 +192,14 @@ namespace Compose
     State &ensureState();
   };
 
-  class List : public Widget
+  template <typename TId> class BasicList : public Widget
   {
    public:
+    using Widget::setModifier;
     using Widget::WidgetType;
 
-    using ItemBuilderById = std::function<void(Widget &, const ItemId &)>;
-    using EmptyListPlaceholderBuilder = std::function<void(Widget &)>;
-    using Widget::setModifier;
-
     template <typename... tArgs>
-    explicit List(Widget &parent, Axis axis, tArgs... args)
+    explicit BasicList(Widget &parent, Axis axis, tArgs... args)
         : Widget(parent, Scrollable::SCROLL(), std::forward<tArgs>(args)...)
     {
       makeState(axis);
@@ -140,22 +209,30 @@ namespace Compose
       lv_obj_add_event_cb(getHandle(), onListChanged, LV_EVENT_SIZE_CHANGED, &state);
     }
 
-    explicit List(WidgetType *w);
+    explicit BasicList(WidgetType *w)
+        : Widget(w)
+    {
+    }
 
     struct State
     {
-      State(Widget &list, Axis axis);
+      State(Widget &list, Axis axis)
+          : handle(list.getHandle())
+          , pane(list, axis)
+          , axis(axis)
+      {
+      }
 
       lv_obj_t *handle = nullptr;
-      std::vector<ItemId> idMap;
-      ListPane pane;
+      ListModel<TId> model;
+      BasicListPane<TId> pane;
       Axis axis;
 
-      ItemBuilder itemBuilder;
+      BasicItemBuilder<TId> itemBuilder;
       EmptyListPlaceholderBuilder emptyListPlaceholderBuilder;
 
-      void setIdMap(std::vector<ItemId> idMap);
-      void scrollTo(const ItemId &id);
+      void setModel(ListModel<TId> m);
+      void scrollTo(const TId &id);
 
       void setItemBuilder(auto &&cb)
       {
@@ -177,29 +254,9 @@ namespace Compose
     bool shouldClearBeforeAutorunCompose() const override;
     static void onListChanged(lv_event_t *e);
 
-    struct ItemIds
-    {
-      List *m_parent;
-
-      template <typename CB> void operator<<(CB &&cb) const
-      {
-        m_parent->doAutorun([h = m_parent->getHandle(), cb = std::move(cb)] { List(h).ensureState().setIdMap(cb()); });
-      }
-    } itemIds { this };
-
-    struct ItemById
-    {
-      List *m_parent;
-
-      template <typename CB> void operator<<(CB &&cb) const
-      {
-        m_parent->ensureState().setItemBuilder(std::move(cb));
-      }
-    } itemById { this };
-
     struct PlaceHolder
     {
-      List *m_parent;
+      BasicList *m_parent;
 
       template <typename CB> void operator<<(CB &&cb) const
       {
@@ -209,18 +266,75 @@ namespace Compose
 
     struct ScrollTo
     {
-      List *m_parent;
+      BasicList *m_parent;
 
       template <typename CB> void operator<<(CB &&cb) const
       {
-        m_parent->doAutorun([h = m_parent->getHandle(), cb = std::move(cb)] { List(h).ensureState().scrollTo(cb()); });
+        m_parent->doAutorun([h = m_parent->getHandle(), cb = std::move(cb)] { BasicList(h).ensureState().scrollTo(cb()); });
       }
     } scrollTo { this };
   };
+
+  class ListById : public BasicList<ItemId>
+  {
+   public:
+    using BasicList<ItemId>::BasicList;
+
+    struct ItemIds
+    {
+      ListById *m_parent;
+
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->doAutorun([h = m_parent->getHandle(), cb = std::move(cb)] { ListById(h).ensureState().setModel({ cb() }); });
+      }
+    } itemIds { this };
+
+    struct ItemById
+    {
+      ListById *m_parent;
+
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->ensureState().setItemBuilder(std::move(cb));
+      }
+    } itemById { this };
+  };
+
+  class ListByIndex : public BasicList<size_t>
+  {
+   public:
+    using BasicList<size_t>::BasicList;
+
+    struct Size
+    {
+      ListByIndex *m_parent;
+
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->doAutorun([h = m_parent->getHandle(), cb = std::move(cb)] { ListByIndex(h).ensureState().setModel({ cb() }); });
+      }
+    } size { this };
+
+    struct ItemByIndex
+    {
+      ListByIndex *m_parent;
+
+      template <typename CB> void operator<<(CB &&cb) const
+      {
+        m_parent->ensureState().setItemBuilder(std::move(cb));
+      }
+    } itemByIndex { this };
+  };
 }
 
-#define LIST(...) it.add(std::move(Compose::List(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::List &&it)
+#define LIST_BY_ID(...) it.add(std::move(Compose::ListById(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::ListById && it)
 #define LIST_ITEM_IDS() it.itemIds << [=]()
 #define LIST_ITEM_BY_ID it.itemById << [=]
+
+#define LIST_BY_INDEX(...) it.add(std::move(Compose::ListByIndex(it __VA_OPT__(, __VA_ARGS__)))) << [=](Compose::ListByIndex && it)
+#define LIST_SIZE() it.size << [=]()
+#define LIST_ITEM_BY_INDEX it.itemByIndex << [=]
+
 #define LIST_SCROLL_TO() it.scrollTo << [=]()
 #define EMPTY_LIST_PLACEHOLDER() it.emptyListPlaceholder << [=](Compose::Widget & it)
