@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "DrawContext.h"
 #include <compose/state/LabelData.h>
 #include <compose/FreeTypeFont.h>
@@ -80,6 +81,8 @@ namespace Compose::LabelShared
         return 0;
       case LV_TEXT_ALIGN_RIGHT:
         return availableWidth - textWidth;
+      case TextAlign::c_tail:
+        return std::min(0, availableWidth - textWidth);
       default:
       case LV_TEXT_ALIGN_CENTER:
       case LV_TEXT_ALIGN_AUTO:

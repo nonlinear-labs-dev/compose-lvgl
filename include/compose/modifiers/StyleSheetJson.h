@@ -64,6 +64,8 @@ namespace Compose
         return TextAlign::LEFT();
       if(value == "RIGHT")
         return TextAlign::RIGHT();
+      if(value == "TAIL")
+        return TextAlign::TAIL();
 
       throw std::invalid_argument("invalid TextAlign: " + value);
     }
