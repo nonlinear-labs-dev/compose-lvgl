@@ -32,6 +32,8 @@ namespace Compose
   struct MarginRight;
   struct MarginLeft;
   struct Margin;
+  struct PositionX;
+  struct PositionY;
   struct Height;
   struct Width;
   class Color;
@@ -245,6 +247,16 @@ namespace Compose
   template <typename tJson> void to_json(tJson& j, const MarginLeft& in)
   {
     j = in.margin;
+  }
+
+  template <typename tJson> void to_json(tJson& j, const PositionX& in)
+  {
+    j = in.it;
+  }
+
+  template <typename tJson> void to_json(tJson& j, const PositionY& in)
+  {
+    j = in.it;
   }
 
   template <typename tJson> void to_json(tJson& j, const MarginRight& in)
