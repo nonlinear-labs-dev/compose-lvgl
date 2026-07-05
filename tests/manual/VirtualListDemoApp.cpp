@@ -43,6 +43,7 @@ int runVirtualListDemo()
       };
 
       constexpr auto c_itemHeight = 28;
+      constexpr auto c_itemWidth = 600;
 
       LIST_BY_INDEX(Axis::Vertical, Height::PX(220), Width::FULL(), BackgroundColor { Color::BLACK() })
       {
@@ -56,14 +57,13 @@ int runVirtualListDemo()
           return static_cast<size_t>(selectedItem->get());
         };
 
-        LIST_ITEM_BY_INDEX(Widget &item, size_t idx)
+        LIST_ITEM_BY_INDEX(Widget &it, size_t idx)
         {
-          HEIGHT(c_itemHeight);
-          FLEX_GROW(0);
-          PADDING(10, 0, 10, 0);
+          FIXED_SIZE({ c_itemWidth, c_itemHeight });
+          PADDING(0, 0, 10, 10);
           BACKGROUND_COLOR(idx % 2 == 0 ? Color::RGB(16, 16, 16) : Color::RGB(24, 24, 24));
 
-          LABEL(SizePercentage::FULL(), TextAlign::LEFT(), VerticalAlign::CENTER(),
+          LABEL(Height { c_itemHeight }, Width::FULL(), TextAlign::LEFT(), VerticalAlign::CENTER(),
                 PrimaryColor { idx % 10 == 0 ? Color::GREEN() : Color::WHITE() })
           {
             TEXT(std::format("Item {}", idx));
@@ -83,14 +83,12 @@ int runVirtualListDemo()
           return static_cast<size_t>(selectedItem->get());
         };
 
-        LIST_ITEM_BY_INDEX(Widget &item, size_t idx)
+        LIST_ITEM_BY_INDEX(Widget &it, size_t idx)
         {
-          WIDTH(120);
-          FLEX_GROW(0);
           PADDING(10, 0, 10, 0);
           BACKGROUND_COLOR(idx % 2 == 0 ? Color::RGB(36, 36, 36) : Color::RGB(52, 52, 52));
 
-          LABEL(SizePercentage::FULL(), TextAlign::CENTER(), VerticalAlign::CENTER(),
+          LABEL(Width::PX(120), Height::PX(60), TextAlign::CENTER(), VerticalAlign::CENTER(),
                 PrimaryColor { idx % 10 == 0 ? Color::GREEN() : Color::WHITE() })
           {
             TEXT(std::format("Item {}", idx));

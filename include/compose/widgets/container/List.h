@@ -157,7 +157,7 @@ namespace Compose
 
     template <typename... tArgs>
     explicit BasicListPane(Widget &parent, Axis axis, tArgs... args)
-        : Widget(parent, Padding { 0 }, LayoutType::none(), args...)
+        : Widget(parent, Padding { 0 }, Scrollable::NO_SCROLL(), LayoutType::none(), args...)
     {
       makeState(axis);
     }
