@@ -317,6 +317,16 @@ namespace Compose
       lv_obj_set_pos(getHandle(), pos.x, pos.y);
     }
 
+    void setModifier(PositionX p) const
+    {
+      lv_obj_set_x(getHandle(), p.it);
+    }
+
+    void setModifier(PositionY p) const
+    {
+      lv_obj_set_y(getHandle(), p.it);
+    }
+
     void setModifier(FlexAlign align) const
     {
       lv_obj_set_flex_align(getHandle(), align.main, align.cross, align.track_cross);
