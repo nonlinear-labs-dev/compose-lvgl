@@ -35,4 +35,16 @@ namespace Compose
 
     bool operator==(const Position &) const = default;
   };
+
+  struct PositionX
+  {
+    int it = 0;
+    bool operator==(const PositionX &) const = default;
+  };
+
+  struct PositionY
+  {
+    int it = 0;
+    bool operator==(const PositionY &) const = default;
+  };
 }

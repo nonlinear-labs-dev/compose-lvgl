@@ -7,6 +7,7 @@
 #include "Margin.h"
 #include "Modifiers.h"
 #include "Padding.h"
+#include "Position.h"
 #include "PrimaryColor.h"
 #include "RoundedCorner.h"
 #include "Scrollable.h"
@@ -40,7 +41,7 @@ namespace Compose
   struct Style
   {
     using Properties = std::tuple<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, FlexGap, Expand, Width, Height, Margin, MarginLeft,
-                                  MarginRight, MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+                                  MarginRight, MarginTop, MarginBottom, Padding, PositionX, PositionY, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
     MakeOptional<Properties>::type properties;
     std::vector<const StyleSheet*> sheets;

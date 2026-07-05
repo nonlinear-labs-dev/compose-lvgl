@@ -233,6 +233,8 @@ namespace Compose
     addProperty(ret, "margin-top", std::get<std::optional<MarginTop>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "margin-bottom", std::get<std::optional<MarginBottom>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "padding", std::get<std::optional<Padding>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "x", std::get<std::optional<PositionX>>(properties), onlyNonNullOptProperties);
+    addProperty(ret, "y", std::get<std::optional<PositionY>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "border", std::get<std::optional<Border>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "border-width", std::get<std::optional<BorderWidth>>(properties), onlyNonNullOptProperties);
     addProperty(ret, "border-color", std::get<std::optional<BorderColor>>(properties), onlyNonNullOptProperties);
@@ -244,7 +246,7 @@ namespace Compose
   }
 
   using JsonModifier = std::variant<BackgroundColor, PrimaryColor, Font, TextAlign, VerticalAlign, FlexAlign, FlexFlow, FlexGap, Expand, Width, Height, Margin, MarginLeft,
-                                    MarginRight, MarginTop, MarginBottom, Padding, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
+                                    MarginRight, MarginTop, MarginBottom, Padding, PositionX, PositionY, Border, BorderWidth, BorderColor, BorderSides, RoundedCorner, Scrollable>;
 
   static std::optional<JsonModifier> parseModifier(const std::string& key, const nlohmann::json& value)
   {
@@ -298,6 +300,12 @@ namespace Compose
 
     if(key == "padding")
       return value.get<Padding>();
+
+    if(key == "x")
+      return PositionX { value.get<int>() };
+
+    if(key == "y")
+      return PositionY { value.get<int>() };
 
     if(key == "border")
       return value.get<Border>();
