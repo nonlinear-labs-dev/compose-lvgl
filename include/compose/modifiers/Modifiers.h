@@ -254,6 +254,15 @@ namespace Compose
   {
     lv_text_align_t it;
 
+    // compose extension beyond the LVGL enum: left-aligned while the text
+    // fits, tail stays visible once it overflows
+    static constexpr auto c_tail = static_cast<lv_text_align_t>(0xFF);
+
+    static constexpr TextAlign TAIL()
+    {
+      return { c_tail };
+    }
+
     static constexpr TextAlign CENTER()
     {
       return { LV_TEXT_ALIGN_CENTER };
