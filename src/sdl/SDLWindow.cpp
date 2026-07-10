@@ -86,9 +86,6 @@ namespace Compose
 
       std::ranges::sort(snapshot.points, {}, &TouchPoint::fingerId);
 
-      if(snapshot.points.size() != snapshot.activeTouchCount)
-        fprintf(stderr, "[click-probe] touch count %zu -> %zu\n", snapshot.activeTouchCount, snapshot.points.size());
-
       snapshot.activeTouchCount = snapshot.points.size();
 
       if(!snapshot.points.empty())
@@ -193,8 +190,6 @@ namespace Compose
       const auto sinceTouch = SDL_GetTicks() - snapshot.lastTouchTick;
       if(snapshot.activeTouchCount > 0 || (snapshot.lastTouchTick != 0 && sinceTouch < c_mouseSuppressionAfterTouchMs))
       {
-        if(wasPressed)
-          fprintf(stderr, "[click-probe] mouse press MUTED (touches=%zu, sinceTouch=%u)\n", snapshot.activeTouchCount, sinceTouch);
         data->state = LV_INDEV_STATE_RELEASED;
       }
       else if(wasPressed)
@@ -203,7 +198,6 @@ namespace Compose
         if(SDL_GetTicks() - lastLog > 500)
         {
           lastLog = SDL_GetTicks();
-          fprintf(stderr, "[click-probe] mouse press PASSED at %d,%d\n", data->point.x, data->point.y);
         }
       }
     }
