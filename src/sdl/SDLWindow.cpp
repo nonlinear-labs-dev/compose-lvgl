@@ -29,6 +29,7 @@ namespace Compose
     {
       uint32_t tick = 0;
       size_t activeTouchCount = 0;
+      uint32_t lastTouchTick = 0;
       uint32_t nextPointerId = 1;
       std::unordered_map<SDL_FingerID, uint32_t> pointerIds;
       std::vector<TouchPoint> points;
@@ -85,6 +86,9 @@ namespace Compose
 
       std::ranges::sort(snapshot.points, {}, &TouchPoint::fingerId);
       snapshot.activeTouchCount = snapshot.points.size();
+
+      if(!snapshot.points.empty())
+        snapshot.lastTouchTick = currentTick;
     }
 
     void readTouchSlot(lv_indev_t *indev, lv_indev_data_t *data)
@@ -161,6 +165,32 @@ namespace Compose
     }
   }
 
+  namespace
+  {
+    // The desktop drives the mouse pointer along with touchscreen input, so a
+    // tap would reach lvgl twice: via the touch indevs and again as a mouse
+    // click. Mute the mouse while fingers are down (plus a grace period, since
+    // the derived mouse events may trail the touch).
+    constexpr uint32_t c_mouseSuppressionAfterTouchMs = 150;
+    lv_indev_read_cb_t s_mouseRead = nullptr;
+    Snapshot *s_mouseFilterSnapshot = nullptr;
+    lv_display_t *s_mouseFilterDisplay = nullptr;
+
+    void readMouseSuppressedDuringTouch(lv_indev_t *indev, lv_indev_data_t *data)
+    {
+      s_mouseRead(indev, data);
+
+      auto &snapshot = *s_mouseFilterSnapshot;
+      refreshSnapshot(snapshot, s_mouseFilterDisplay);
+
+      const auto sinceTouch = SDL_GetTicks() - snapshot.lastTouchTick;
+      if(snapshot.activeTouchCount > 0 || (snapshot.lastTouchTick != 0 && sinceTouch < c_mouseSuppressionAfterTouchMs))
+      {
+        data->state = LV_INDEV_STATE_RELEASED;
+      }
+    }
+  }
+
   Window::Window(Rect position, Rotation rotation)
   {
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
@@ -179,5 +209,10 @@ namespace Compose
         m_touchIndevs.push_back(touchIndev);
       }
     }
+
+    s_mouseFilterSnapshot = &snapshot;
+    s_mouseFilterDisplay = m_display;
+    s_mouseRead = lv_indev_get_read_cb(m_mouse);
+    lv_indev_set_read_cb(m_mouse, readMouseSuppressedDuringTouch);
   }
 }
