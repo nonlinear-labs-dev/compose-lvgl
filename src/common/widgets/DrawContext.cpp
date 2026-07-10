@@ -1070,6 +1070,11 @@ namespace Compose
     if(!draw_buf || draw_buf->header.cf != LV_COLOR_FORMAT_ARGB8888)
       return;
 
+    // Direct pixel writes land in the canvas buffer, while queued lv_draw tasks
+    // are flushed into it only afterwards and would overpaint the bitmap. Flush
+    // the layer first so the blit stays on top, matching drawText's approach.
+    flushLayer();
+
     const auto canvas_width = draw_buf->header.w;
     const auto canvas_height = draw_buf->header.h;
     const auto canvas_stride = draw_buf->header.stride;
