@@ -111,6 +111,12 @@ namespace Compose
       }
     };
 
+    struct StrokeOptions
+    {
+      std::optional<LineDashOptions> dash {};
+      std::optional<RoundedEnds> ends {};
+    };
+
     struct QuadPathSegment
     {
       Point a;
@@ -120,26 +126,22 @@ namespace Compose
 
     static std::vector<tPathSegment> toPathSegments(const std::vector<Point> &arr);
 
-    virtual void drawLine(StrokeStyle style, Point p1, Point p2) = 0;
-    virtual void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
-                          std::optional<RoundedEnds> ends)
-        = 0;
+    virtual void drawLine(StrokeStyle style, Point p1, Point p2, const StrokeOptions &options) = 0;
+    void drawLine(StrokeStyle style, Point p1, Point p2);
     virtual void drawLines(StrokeStyle style, const std::vector<Point> &points) = 0;
-    virtual void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points,
-                                std::optional<LineDashOptions> dash, std::optional<RoundedEnds> ends)
+    virtual void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points, const StrokeOptions &options)
         = 0;
-    virtual void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
-                                std::optional<RoundedEnds> ends)
-        = 0;
+    void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, const StrokeOptions &options);
     virtual void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
                           std::optional<RoundedEnds> ends)
         = 0;
-    virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) = 0;
     virtual void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
-                                     std::optional<RoundedEnds> ends)
+                                     const StrokeOptions &options)
         = 0;
+    void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end);
     virtual void strokeRect(StrokeStyle style, Rect r) = 0;
-    virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) = 0;
+    virtual void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc, const StrokeOptions &options) = 0;
+    void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc);
     virtual void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
                                          int bottomRight)
         = 0;
@@ -175,21 +177,21 @@ namespace Compose
 
     explicit LVGLDrawContext(tCanvas &ctx);
     ~LVGLDrawContext() override;
-    void drawLine(StrokeStyle style, Point p1, Point p2) override;
-    void drawLine(StrokeStyle style, Point p1, Point p2, std::optional<LineDashOptions> dash,
-                  std::optional<RoundedEnds> ends) override;
+
+    using DrawContext::drawLine;
+    using DrawContext::drawQuadraticBezier;
+    using DrawContext::drawVectorLine;
+    using DrawContext::strokeRoundedRect;
+
+    void drawLine(StrokeStyle style, Point p1, Point p2, const StrokeOptions &options) override;
     void drawLines(StrokeStyle style, const std::vector<Point> &points) override;
-    void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points, std::optional<LineDashOptions> dash,
-                        std::optional<RoundedEnds> ends) override;
-    void drawVectorLine(StrokeStyle style, PointF p1, PointF p2, std::optional<LineDashOptions> dash,
-                        std::optional<RoundedEnds> ends) override;
+    void drawVectorLine(StrokeStyle style, const std::vector<PointF> &points, const StrokeOptions &options) override;
     void drawPath(StrokeStyle style, const std::vector<Point> &points, std::optional<LineDashOptions> dash,
                   std::optional<RoundedEnds> ends) override;
-    void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end) override;
     void drawQuadraticBezier(StrokeStyle style, Point start, Point control, Point end,
-                             std::optional<RoundedEnds> ends) override;
+                             const StrokeOptions &options) override;
     void strokeRect(StrokeStyle style, Rect rect) override;
-    void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc) override;
+    void strokeRoundedRect(StrokeStyle style, Rect r, RoundedCorner rc, const StrokeOptions &options) override;
     void strokeCustomRoundedRect(StrokeStyle style, Rect r, int topLeft, int topRight, int bottomLeft,
                                  int bottomRight) override;
     void fillRect(Color color, Rect rect) override;
