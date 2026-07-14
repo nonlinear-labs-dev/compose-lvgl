@@ -29,6 +29,7 @@ namespace Compose
    private:
     lv_display_t* m_display { nullptr };
     lv_indev_t* m_mouse { nullptr };
+    lv_indev_t* m_filteredMouse { nullptr };
     lv_indev_t* m_mouseWheel { nullptr };
     lv_indev_t* m_keyboard { nullptr };
     std::vector<lv_indev_t*> m_touchIndevs;

@@ -29,6 +29,7 @@ namespace Compose
     {
       uint32_t tick = 0;
       size_t activeTouchCount = 0;
+      uint32_t lastTouchTick = 0;
       uint32_t nextPointerId = 1;
       std::unordered_map<SDL_FingerID, uint32_t> pointerIds;
       std::vector<TouchPoint> points;
@@ -84,7 +85,11 @@ namespace Compose
       }
 
       std::ranges::sort(snapshot.points, {}, &TouchPoint::fingerId);
+
       snapshot.activeTouchCount = snapshot.points.size();
+
+      if(!snapshot.points.empty())
+        snapshot.lastTouchTick = currentTick;
     }
 
     void readTouchSlot(lv_indev_t *indev, lv_indev_data_t *data)
@@ -161,6 +166,43 @@ namespace Compose
     }
   }
 
+  namespace
+  {
+    // The desktop drives the mouse pointer along with touchscreen input, so a
+    // tap would reach lvgl twice: via the touch indevs and again as a mouse
+    // click. Mute the mouse while fingers are down (plus a grace period, since
+    // the derived mouse events may trail the touch).
+    constexpr uint32_t c_mouseSuppressionAfterTouchMs = 150;
+    lv_indev_read_cb_t s_mouseRead = nullptr;
+    lv_indev_t *s_realMouse = nullptr;
+    Snapshot *s_mouseFilterSnapshot = nullptr;
+    lv_display_t *s_mouseFilterDisplay = nullptr;
+
+    void readMouseSuppressedDuringTouch(lv_indev_t *, lv_indev_data_t *data)
+    {
+      s_mouseRead(s_realMouse, data);
+
+      const bool wasPressed = data->state == LV_INDEV_STATE_PRESSED;
+
+      auto &snapshot = *s_mouseFilterSnapshot;
+      refreshSnapshot(snapshot, s_mouseFilterDisplay);
+
+      const auto sinceTouch = SDL_GetTicks() - snapshot.lastTouchTick;
+      if(snapshot.activeTouchCount > 0 || (snapshot.lastTouchTick != 0 && sinceTouch < c_mouseSuppressionAfterTouchMs))
+      {
+        data->state = LV_INDEV_STATE_RELEASED;
+      }
+      else if(wasPressed)
+      {
+        static uint32_t lastLog = 0;
+        if(SDL_GetTicks() - lastLog > 500)
+        {
+          lastLog = SDL_GetTicks();
+        }
+      }
+    }
+  }
+
   Window::Window(Rect position, Rotation rotation)
   {
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
@@ -179,5 +221,20 @@ namespace Compose
         m_touchIndevs.push_back(touchIndev);
       }
     }
+
+    // lv_sdl_mouse_handler locates its indev by comparing the read cb against
+    // its private sdl_mouse_read, so that cb must stay untouched. Disable the
+    // SDL mouse indev instead (the handler still maintains its state) and let a
+    // separate filter indev poll that state through the original read cb.
+    s_mouseFilterSnapshot = &snapshot;
+    s_mouseFilterDisplay = m_display;
+    s_realMouse = m_mouse;
+    s_mouseRead = lv_indev_get_read_cb(m_mouse);
+    lv_indev_enable(m_mouse, false);
+
+    m_filteredMouse = lv_indev_create();
+    lv_indev_set_type(m_filteredMouse, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(m_filteredMouse, readMouseSuppressedDuringTouch);
+    lv_indev_set_display(m_filteredMouse, m_display);
   }
 }
