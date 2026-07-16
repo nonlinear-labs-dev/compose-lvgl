@@ -34,6 +34,8 @@ namespace Compose
     using Widget::setModifier;
     using Widget::Widget;
 
+    // Reactive callback handing back the bitmap to show for the given size.
+    // Returning null keeps the last shown bitmap.
     using tBitmapCB = std::function<CachedBitmapPtr(int, int)>;
 
     explicit BitmapCacheElement(WidgetType* w)
