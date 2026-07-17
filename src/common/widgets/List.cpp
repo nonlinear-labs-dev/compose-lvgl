@@ -1,4 +1,5 @@
 #include "compose/widgets/container/List.h"
+#include <algorithm>
 
 namespace Compose
 {
@@ -51,6 +52,10 @@ namespace Compose
 
   template <typename TId> void BasicVisibleListItems<TId>::State::setupChildren(int numItemsVisible) const
   {
+    // a not-yet-laid-out parent can report a negative extend; the unsigned
+    // child-count comparison would then spin creating children forever
+    numItemsVisible = std::max(0, numItemsVisible);
+
     BasicVisibleListItems self(handle);
 
     while(lv_obj_get_child_count(handle) > numItemsVisible)
