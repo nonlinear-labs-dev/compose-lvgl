@@ -2,6 +2,17 @@
 
 namespace Compose
 {
+  void Overlay::placeAbove(const Widget &reference, int gap) const
+  {
+    lv_obj_update_layout(lv_obj_get_screen(reference.getHandle()));
+    lv_obj_align_to(getHandle(), reference.getHandle(), LV_ALIGN_OUT_TOP_MID, 0, -gap);
+  }
+
+  void Overlay::transparentBackdrop() const
+  {
+    lv_obj_set_style_bg_opa(lv_obj_get_parent(getHandle()), LV_OPA_TRANSP, LV_PART_MAIN);
+  }
+
   Widget::WidgetType *Overlay::makeContent(Widget &creator)
   {
     auto anchor = lv_obj_create(creator.getHandle());
