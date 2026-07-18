@@ -31,6 +31,15 @@ namespace Compose
     {
     }
 
+    // Anchor the content just above a reference widget instead of centering it
+    // on the layer, e.g. a menu popping up from its button. Resolves the layout
+    // first so the reference already has coordinates to align against.
+    void placeAbove(const Widget &reference, int gap = 8) const;
+
+    // Drop the dimming of the screen-filling backdrop while keeping it clickable,
+    // so a menu-like overlay dismisses on a tap outside without darkening the UI.
+    void transparentBackdrop() const;
+
     using DismissedCB = std::function<bool(Position)>;
 
     struct Dismissed
