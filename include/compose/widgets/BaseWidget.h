@@ -27,6 +27,7 @@ class BaseWidget
   static constexpr auto c_stateChangeKey = "StateChange";
   static constexpr auto c_styleKey = "Style";
   static constexpr auto c_canvasData = "CanvasData";
+  static constexpr auto c_bitmapData = "BitmapData";
   static constexpr auto c_labelData = "LabelData";
   static constexpr auto c_svgData = "SVGData";
 
@@ -145,8 +146,8 @@ class BaseWidget
   {
     auto storage = ensureUserDataStorage();
     erase_if(storage->entries, [](const auto& it) {
-      return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_labelData
-          && it.first != c_svgData && it.first != c_styleKey;
+      return it.first != c_computationsKey && it.first != c_canvasData && it.first != c_bitmapData
+          && it.first != c_labelData && it.first != c_svgData && it.first != c_styleKey;
     });
   }
 
