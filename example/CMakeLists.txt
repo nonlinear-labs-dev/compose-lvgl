@@ -8,8 +8,6 @@ if (COMPOSE_EXAMPLES_DOWNLOAD_MISSING_DEPENDENCIES)
                 GIT_TAG v9.5.0
                 EXCLUDE_FROM_ALL
         )
-        set(CONFIG_LV_BUILD_EXAMPLES OFF)
-        set(CONFIG_LV_BUILD_DEMOS OFF)
         FetchContent_MakeAvailable(lvgl_imported)
         target_compile_definitions(lvgl PRIVATE LV_BUILD_CONF_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../sdl_lv_config.h")
     endif ()
