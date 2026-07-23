@@ -185,6 +185,18 @@ namespace Compose
     }
   }
 
+  void DragDropContext::cancelSource(lv_obj_t *self)
+  {
+    if(auto *source = m_source.get().get())
+    {
+      if(source->m_widget == self)
+      {
+        source->m_currentTarget = nullptr;
+        m_source = nullptr;
+      }
+    }
+  }
+
   void DragDropContext::addTarget(lv_obj_t *self, const std::string &type, const Setter &setter)
   {
     m_targets.push_back(std::make_unique<Target>(self, type, setter));
@@ -568,6 +580,7 @@ namespace Compose
   DragDrop::DragDropForContent::Source::Data::~Data()
   {
     restoreScrollableAncestors(this);
+    DragDropContext::get().cancelSource(m_handle);
 
     if(lv_obj_is_valid(m_handle))
     {
