@@ -24,6 +24,7 @@ namespace Compose
 
     void setSource(lv_obj_t *self, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter, const DragWidgetBuilder &dragWidgetBuilder);
     void resetSource(lv_obj_t *self);
+    void cancelSource(lv_obj_t *self);
     void addTarget(lv_obj_t *self, const std::string &type, const Setter &setter);
     void removeTarget(lv_obj_t *self, const std::string &type);
     void onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY);
