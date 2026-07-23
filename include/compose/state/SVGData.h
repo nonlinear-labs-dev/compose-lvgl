@@ -3,7 +3,7 @@
 #include <memory>
 #include <reactive/Var.h>
 #include <compose/widgets/CustomDrawingElement.h>
-#include <lunasvg/lunasvg.h>
+#include <lunasvg.h>
 
 namespace Compose
 {

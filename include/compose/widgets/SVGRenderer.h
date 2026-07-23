@@ -1,7 +1,7 @@
 #pragma once
+#include <compose/state/SVGData.h>
+
 #include "CustomDrawingElement.h"
-#include "compose/state/SVGData.h"
-#include <string>
 
 namespace Compose
 {

@@ -1,0 +1,14 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "debug-examples",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "LV_BUILD_CONF_PATH" : "${sourceDir}/sdl_lv_conf.h",
+        "COMPOSE_BUILD_EXAMPLES": "On",
+        "COMPOSE_EXAMPLES_DOWNLOAD_MISSING_DEPENDENCIES": "On"
+      }
+    }
+  ]
+}
