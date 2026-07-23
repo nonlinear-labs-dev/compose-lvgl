@@ -39,3 +39,7 @@ add_executable(compose-lvgl-virtual-list-demo src/virtual-list-demo/VirtualListD
 target_link_libraries(compose-lvgl-virtual-list-demo PRIVATE compose-lvgl)
 target_sources(compose-lvgl-virtual-list-demo PRIVATE src/virtual-list-demo/VirtualListDemoApp.cpp)
 target_compile_features(compose-lvgl-virtual-list-demo PRIVATE cxx_std_23)
+
+add_executable(compose-svg-demo src/svg_demo.cpp)
+target_link_libraries(compose-svg-demo PRIVATE compose-lvgl)
+target_compile_features(compose-svg-demo PRIVATE cxx_std_23)
