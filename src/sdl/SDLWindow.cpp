@@ -9,6 +9,7 @@
 #include <compose/input/TouchIndev.h>
 
 #include <algorithm>
+#include <limits>
 #include <unordered_map>
 #include <vector>
 
@@ -173,6 +174,7 @@ namespace Compose
     // click. Mute the mouse while fingers are down (plus a grace period, since
     // the derived mouse events may trail the touch).
     constexpr uint32_t c_mouseSuppressionAfterTouchMs = 150;
+    constexpr uint32_t c_mousePointerId = std::numeric_limits<uint32_t>::max();
     lv_indev_read_cb_t s_mouseRead = nullptr;
     lv_indev_t *s_realMouse = nullptr;
     Snapshot *s_mouseFilterSnapshot = nullptr;
@@ -236,5 +238,13 @@ namespace Compose
     lv_indev_set_type(m_filteredMouse, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(m_filteredMouse, readMouseSuppressedDuringTouch);
     lv_indev_set_display(m_filteredMouse, m_display);
+
+    // Touch handlers ignore an indev without this data, so on the desktop they
+    // would never run. The mouse is one finger: it keeps an id no touch can
+    // reach, and shares the touch counter, which stays zero while it is used.
+    static TouchIndevData mouseData;
+    mouseData.pointerId = c_mousePointerId;
+    mouseData.activeTouchCount = &snapshot.activeTouchCount;
+    lv_indev_set_driver_data(m_filteredMouse, &mouseData);
   }
 }

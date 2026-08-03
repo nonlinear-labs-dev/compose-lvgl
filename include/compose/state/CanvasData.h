@@ -11,6 +11,7 @@ namespace Compose
     CanvasData(lv_obj_t* handle, CustomDrawingElement::tDrawCB cb);
     ~CanvasData();
     void ensureBuffer();
+    void setBuffer(int width, int height);
 
     using tBufferPtr = std::unique_ptr<lv_draw_buf_t, decltype(&lv_draw_buf_destroy)>;
 
