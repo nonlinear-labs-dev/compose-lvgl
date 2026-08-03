@@ -59,6 +59,9 @@ namespace Compose
       Setter m_setter;
     };
 
+    // Only the query methods subscribe to this (get()). The mutating paths peek(),
+    // because they also run from destructors nested inside foreign autoruns, which
+    // would otherwise subscribe those autoruns to every drag.
     Reactive::Var<std::unique_ptr<Source>> m_source;
     std::vector<std::unique_ptr<Target>> m_targets;
   };

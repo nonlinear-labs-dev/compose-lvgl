@@ -143,7 +143,7 @@ namespace Compose
   void DragDropContext::setSource(lv_obj_t *self, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter,
                                   const DragWidgetBuilder &dragWidgetBuilder)
   {
-    if(!m_source.get())
+    if(!m_source.peek())
     {
       m_source = std::make_unique<Source>(self, type, offsetX, offsetY, rootX, rootY, getter, dragWidgetBuilder);
     }
@@ -151,7 +151,7 @@ namespace Compose
 
   void DragDropContext::resetSource(lv_obj_t *self)
   {
-    if(auto *source = m_source.get().get())
+    if(auto *source = m_source.peek().get())
     {
       if(source->m_widget == self)
       {
@@ -187,7 +187,7 @@ namespace Compose
 
   void DragDropContext::cancelSource(lv_obj_t *self)
   {
-    if(auto *source = m_source.get().get())
+    if(auto *source = m_source.peek().get())
     {
       if(source->m_widget == self)
       {
@@ -209,7 +209,7 @@ namespace Compose
 
   void DragDropContext::onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY)
   {
-    if(auto *source = m_source.get().get())
+    if(auto *source = m_source.peek().get())
     {
       if(source->m_widget == dragSource)
       {
@@ -613,6 +613,7 @@ namespace Compose
     const auto key = sourceKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
     owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    lv_obj_set_flag(self->ownerHandle, LV_OBJ_FLAG_CLICKABLE, true);
   }
 
   DragDrop::DragDropForContent::Target::Target(DragDropForContent *self)
