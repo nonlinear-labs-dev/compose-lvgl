@@ -33,7 +33,7 @@ namespace Compose
       {
         m_lastBufferWidth = width;
         m_lastBufferHeight = height;
-        m_buffer.modify([](auto& f) { f.reset(nullptr); });
+        setBuffer(1, 1);
       }
       return;
     }
@@ -42,10 +42,7 @@ namespace Compose
     {
       m_lastBufferWidth = width;
       m_lastBufferHeight = height;
-      auto newBuffer = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
-      lv_draw_buf_clear(newBuffer, nullptr);
-      lv_canvas_set_buffer(m_handle, newBuffer->data, width, height, LV_COLOR_FORMAT_ARGB8888);
-      m_buffer.modify([=](auto& f) { f.reset(newBuffer); });
+      setBuffer(width, height);
 
       Reactive::Computation::untracked(
           [=, this]
@@ -60,6 +57,17 @@ namespace Compose
             }
           });
     }
+  }
+
+  // The canvas keeps pointing at whatever buffer it was given, so the old one
+  // may only die once the new one is in place - a zero sized widget therefore
+  // gets a minimal buffer rather than none at all.
+  void CanvasData::setBuffer(int width, int height)
+  {
+    auto newBuffer = lv_draw_buf_create(width, height, LV_COLOR_FORMAT_ARGB8888, LV_STRIDE_AUTO);
+    lv_draw_buf_clear(newBuffer, nullptr);
+    lv_canvas_set_buffer(m_handle, newBuffer->data, width, height, LV_COLOR_FORMAT_ARGB8888);
+    m_buffer.modify([=](auto& f) { f.reset(newBuffer); });
   }
 
   CanvasData::~CanvasData()
