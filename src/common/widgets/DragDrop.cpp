@@ -132,6 +132,22 @@ namespace Compose
 
       self->m_suppressedScrollables.clear();
     }
+
+    int scaleOffset(int offset, int32_t draggedSize, int32_t proxySize)
+    {
+      if(draggedSize <= 0)
+        return offset;
+
+      return static_cast<int>((offset * proxySize + draggedSize / 2) / draggedSize);
+    }
+
+    // The grab point is measured in the dragged widget. A proxy of a different size has to map it
+    // into its own geometry, otherwise it does not stay under the finger.
+    std::pair<int, int> grabPointInProxy(lv_obj_t *dragged, lv_obj_t *proxy, int offsetX, int offsetY)
+    {
+      return { scaleOffset(offsetX, lv_obj_get_width(dragged), lv_obj_get_width(proxy)),
+               scaleOffset(offsetY, lv_obj_get_height(dragged), lv_obj_get_height(proxy)) };
+    }
   }
 
   DragDropContext &DragDropContext::get()
@@ -294,6 +310,7 @@ namespace Compose
       Widget w(m_dragWidget);
       m_dragWidgetBuilder(w);
       lv_obj_update_layout(m_dragWidget);
+      m_dragWidgetOffset = grabPointInProxy(widget, m_dragWidget, offsetX, offsetY);
     }
     else
     {
@@ -314,7 +331,7 @@ namespace Compose
 #endif
     }
 
-    lv_obj_set_pos(m_dragWidget, rootX - offsetX, rootY - offsetY);
+    lv_obj_set_pos(m_dragWidget, rootX - m_dragWidgetOffset.first, rootY - m_dragWidgetOffset.second);
   }
 
   DragDropContext::Source::~Source()
