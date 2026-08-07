@@ -5,6 +5,7 @@
 #include "reactive/Deferrer.h"
 
 #include "src/core/lv_obj.h"
+#include "src/lv_init.h"
 #include "src/misc/cache/instance/lv_image_cache.h"
 #include "src/widgets/canvas/lv_canvas.h"
 #include "src/widgets/image/lv_image.h"
@@ -20,8 +21,13 @@ namespace Compose
 
   CachedBitmap::~CachedBitmap()
   {
-    lv_image_cache_drop(buffer);
-    lv_draw_buf_destroy(buffer);
+    // Application-side caches outlive the ui: closing the SDL window makes the driver
+    // call lv_deinit(), which already freed the image cache and every draw buffer.
+    if(lv_is_initialized())
+    {
+      lv_image_cache_drop(buffer);
+      lv_draw_buf_destroy(buffer);
+    }
   }
 
   CachedBitmapPtr renderBitmap(int width, int height, const std::function<void(DrawContext&, int, int)>& draw)
