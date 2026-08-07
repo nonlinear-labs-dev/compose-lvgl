@@ -7,6 +7,7 @@
 #include "src/display/lv_display.h"
 #include "src/indev/lv_indev.h"
 #include <compose/input/TouchIndev.h>
+#include <reactive/Deferrer.h>
 
 #include <algorithm>
 #include <limits>
@@ -211,6 +212,11 @@ namespace Compose
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
     SDL_Init(SDL_INIT_EVERYTHING);
     m_display = lv_sdl_window_create(position.size.w, position.size.h);
+
+    // The SDL driver deletes the display straight from the window-close event. Leak a
+    // Deferrer before any widget dies, so tearing down the tree never re-runs autoruns
+    // against vars it is freeing - the same shield a programmatic quit installs.
+    lv_display_add_event_cb(m_display, [](lv_event_t *) { new Reactive::Deferrer(); }, LV_EVENT_DELETE, nullptr);
     m_mouse = lv_sdl_mouse_create();
     m_mouseWheel = lv_sdl_mousewheel_create();
     m_keyboard = lv_sdl_keyboard_create();
