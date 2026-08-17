@@ -205,8 +205,7 @@ namespace Compose
     // into its own geometry, otherwise it does not stay under the finger.
     std::pair<int, int> grabPointInProxy(lv_obj_t *dragged, lv_obj_t *proxy, int offsetX, int offsetY)
     {
-      return { scaleOffset(offsetX, lv_obj_get_width(dragged), lv_obj_get_width(proxy)),
-               scaleOffset(offsetY, lv_obj_get_height(dragged), lv_obj_get_height(proxy)) };
+      return { scaleOffset(offsetX, lv_obj_get_width(dragged), lv_obj_get_width(proxy)), scaleOffset(offsetY, lv_obj_get_height(dragged), lv_obj_get_height(proxy)) };
     }
   }
 
@@ -249,7 +248,7 @@ namespace Compose
           }
         }
 
-        source->m_currentTarget = nullptr;
+        setCurrentTarget(*source, nullptr);
         m_source = nullptr;
 
         if(deferredDrop)
@@ -267,20 +266,48 @@ namespace Compose
     {
       if(source->m_widget == self)
       {
-        source->m_currentTarget = nullptr;
+        setCurrentTarget(*source, nullptr);
         m_source = nullptr;
       }
     }
   }
 
-  void DragDropContext::addTarget(lv_obj_t *self, const std::string &type, const Setter &setter)
+  void DragDropContext::addTarget(lv_obj_t *self, const std::string &type, const Setter &setter, const DragOver &dragOver)
   {
-    m_targets.push_back(std::make_unique<Target>(self, type, setter));
+    m_targets.push_back(std::make_unique<Target>(self, type, setter, dragOver));
   }
 
+  // A target that disappears mid drag cannot react to being left, so its hover is dropped silently.
   void DragDropContext::removeTarget(lv_obj_t *self, const std::string &type)
   {
+    if(auto *source = m_source.peek().get())
+      if(source->m_currentTarget == self)
+        source->m_currentTarget = nullptr;
+
     std::erase_if(m_targets, [=](const auto &target) { return target->m_widget == self && target->m_type == type; });
+  }
+
+  void DragDropContext::setCurrentTarget(Source &source, lv_obj_t *target)
+  {
+    if(source.m_currentTarget != target)
+    {
+      notifyDragOver(source.m_currentTarget, source.m_type, std::nullopt);
+      source.m_currentTarget = target;
+      notifyDragOver(target, source.m_type, source.m_getter());
+    }
+  }
+
+  // The callback is copied out first: it may rebuild widgets and thus change m_targets.
+  void DragDropContext::notifyDragOver(lv_obj_t *widget, const std::string &type, const std::optional<nlohmann::json> &content)
+  {
+    DragOver dragOver;
+
+    for(const auto &target : m_targets)
+      if(target->m_widget == widget && target->m_type == type)
+        dragOver = target->m_dragOver;
+
+    if(dragOver)
+      dragOver(content);
   }
 
   void DragDropContext::onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY)
@@ -313,7 +340,7 @@ namespace Compose
           candidate = lv_obj_get_parent(candidate);
         }
 
-        source->m_currentTarget = currentTarget;
+        setCurrentTarget(*source, currentTarget);
       }
     }
   }
@@ -341,7 +368,7 @@ namespace Compose
     {
       return source->m_type;
     }
-    return {};
+    return { };
   }
 
   DragDropContext::Source::Source(lv_obj_t *widget, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter,
@@ -409,10 +436,11 @@ namespace Compose
     }
   }
 
-  DragDropContext::Target::Target(lv_obj_t *widget, const std::string &type, const Setter &setter)
+  DragDropContext::Target::Target(lv_obj_t *widget, const std::string &type, const Setter &setter, const DragOver &dragOver)
       : m_widget(widget)
       , m_type(type)
       , m_setter(setter)
+      , m_dragOver(dragOver)
   {
   }
 
@@ -424,7 +452,8 @@ namespace Compose
   {
     m_pressHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e) {
+        [](lv_event_t *e)
+        {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -446,7 +475,8 @@ namespace Compose
 
     m_pressingHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e) {
+        [](lv_event_t *e)
+        {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -477,7 +507,8 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
-    auto endDrag = [](lv_event_t *e) {
+    auto endDrag = [](lv_event_t *e)
+    {
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
@@ -560,7 +591,8 @@ namespace Compose
   {
     m_pressHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e) {
+        [](lv_event_t *e)
+        {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
           {
@@ -588,7 +620,8 @@ namespace Compose
 
     m_pressingHandler = lv_obj_add_event_cb(
         m_handle,
-        [](lv_event_t *e) {
+        [](lv_event_t *e)
+        {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
             if(auto *indev = lv_event_get_indev(e))
@@ -597,7 +630,8 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
-    auto endDrag = [](lv_event_t *e) {
+    auto endDrag = [](lv_event_t *e)
+    {
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
         if(lv_event_get_indev(e) == self->m_draggingIndev)
@@ -667,7 +701,9 @@ namespace Compose
       : m_handle(handle)
       , m_type(std::move(type))
   {
-    DragDropContext::get().addTarget(m_handle, m_type, [setter = m_setter](const nlohmann::json &content) { (*setter)(content); });
+    DragDropContext::get().addTarget(
+        m_handle, m_type, [setter = m_setter](const nlohmann::json &content) { (*setter)(content); },
+        [dragOver = m_dragOver](const std::optional<nlohmann::json> &content) { (*dragOver)(content); });
   }
 
   DragDrop::DragDropForContent::Target::Data::~Data()
@@ -680,12 +716,30 @@ namespace Compose
     *m_setter = setter;
   }
 
+  void DragDrop::DragDropForContent::Target::Data::setDragOver(const DragOver &dragOver)
+  {
+    *m_dragOver = dragOver;
+  }
+
   void DragDrop::DragDropForContent::Target::operator<<(const Setter &cb)
   {
     const auto key = targetKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
     auto &data = owner.ensureDataForKeyExistsOwning<Data>(key, [this] { return new Data(self->ownerHandle, self->type); });
     data.setSetter(cb);
+  }
+
+  DragDrop::DragDropForContent::DragOverTarget::DragOverTarget(DragDropForContent *self)
+      : self(self)
+  {
+  }
+
+  void DragDrop::DragDropForContent::DragOverTarget::operator<<(const Callback &cb)
+  {
+    const auto key = targetKeyForType(self->type);
+    BaseWidget owner(self->ownerHandle);
+    auto &data = owner.ensureDataForKeyExistsOwning<Target::Data>(key, [this] { return new Target::Data(self->ownerHandle, self->type); });
+    data.setDragOver(cb);
   }
 
   DragDrop::DragDropForContent::BuildDragWidget::BuildDragWidget(DragDropForContent *self)
@@ -713,6 +767,7 @@ namespace Compose
   DragDrop::DragDropForContent::DragDropForContent(lv_obj_t *ownerHandle, std::string type)
       : ownerHandle(ownerHandle)
       , type(std::move(type))
+      , dragOver(this)
       , buildDragWidget(this)
   {
   }
