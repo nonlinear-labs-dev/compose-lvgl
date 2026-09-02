@@ -47,7 +47,6 @@ namespace Compose
       m_steps.pop_front();
     }
 
-    // Every fresh touch is a new pointer, so drag&drop can tell one from the next.
     if(m_current.pressed && !wasPressed)
       m_indevData.pointerId = ++m_lastPointerId;
 
