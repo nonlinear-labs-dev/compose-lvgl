@@ -5,12 +5,10 @@
 
 #include <cstdint>
 #include <deque>
+#include <limits>
 
 namespace Compose
 {
-  // Feeds synthetic touch points into lvgl. Steps are consumed one per lvgl
-  // read, and the last one is held while the queue is empty, so a press can be
-  // kept down across reads to hold a gesture.
   class InjectedTouch
   {
    public:
@@ -21,7 +19,6 @@ namespace Compose
       int32_t y = 0;
     };
 
-    // Attaches to the display in use, so callers need no lvgl types of their own.
     InjectedTouch();
     ~InjectedTouch();
 
@@ -29,7 +26,6 @@ namespace Compose
     InjectedTouch &operator=(const InjectedTouch &) = delete;
 
     void enqueue(Step step);
-    [[nodiscard]] bool isIdle() const;
 
    private:
     static void read(lv_indev_t *indev, lv_indev_data_t *data);
@@ -39,7 +35,7 @@ namespace Compose
     std::deque<Step> m_steps;
     size_t m_activeTouchCount = 0;
     Step m_current;
-    uint32_t m_lastPointerId = 0;
+    uint32_t m_lastPointerId = std::numeric_limits<uint32_t>::max() - 1;
     lv_indev_t *m_indev = nullptr;
   };
 }

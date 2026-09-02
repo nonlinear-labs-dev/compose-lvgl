@@ -1,5 +1,6 @@
 #include "compose/input/InjectedTouch.h"
 
+#include "lvgl.h"
 #include "src/display/lv_display.h"
 #include "src/indev/lv_indev.h"
 
@@ -19,17 +20,13 @@ namespace Compose
 
   InjectedTouch::~InjectedTouch()
   {
-    lv_indev_delete(m_indev);
+    if(lv_is_initialized())
+      lv_indev_delete(m_indev);
   }
 
   void InjectedTouch::enqueue(Step step)
   {
     m_steps.push_back(step);
-  }
-
-  bool InjectedTouch::isIdle() const
-  {
-    return m_steps.empty();
   }
 
   void InjectedTouch::read(lv_indev_t *indev, lv_indev_data_t *data)
@@ -47,9 +44,8 @@ namespace Compose
       m_steps.pop_front();
     }
 
-    // Every fresh touch is a new pointer, so drag&drop can tell one from the next.
     if(m_current.pressed && !wasPressed)
-      m_indevData.pointerId = ++m_lastPointerId;
+      m_indevData.pointerId = --m_lastPointerId;
 
     m_activeTouchCount = m_current.pressed ? 1 : 0;
     data->state = m_current.pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
