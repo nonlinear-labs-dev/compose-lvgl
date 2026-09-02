@@ -27,11 +27,6 @@ namespace Compose
     m_steps.push_back(step);
   }
 
-  bool InjectedTouch::isIdle() const
-  {
-    return m_steps.empty();
-  }
-
   void InjectedTouch::read(lv_indev_t *indev, lv_indev_data_t *data)
   {
     static_cast<InjectedTouch *>(getTouchIndevData(indev)->context)->readNext(data);
@@ -48,7 +43,7 @@ namespace Compose
     }
 
     if(m_current.pressed && !wasPressed)
-      m_indevData.pointerId = ++m_lastPointerId;
+      m_indevData.pointerId = --m_lastPointerId;
 
     m_activeTouchCount = m_current.pressed ? 1 : 0;
     data->state = m_current.pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
