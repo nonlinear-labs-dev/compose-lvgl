@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseWidget.h"
 #include "compose/modifiers/Clickable.h"
+#include "compose/modifiers/ExtClickArea.h"
 #include "compose/modifiers/FlexFlow.h"
 #include "compose/modifiers/Modifiers.h"
 #include "handler/DragDrop.h"
@@ -588,6 +589,11 @@ namespace Compose
     void setModifier(const Clickable &c) const
     {
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_CLICKABLE, static_cast<bool>(c));
+    }
+
+    void setModifier(const ExtClickArea &e) const
+    {
+      lv_obj_set_ext_click_area(getHandle(), e.size);
     }
 
     Pressed pressed { *this, c_pressedKey };
