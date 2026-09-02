@@ -364,6 +364,7 @@ namespace Compose
 #define SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::SCROLLABLE)); })
 #define SCROLLABLE_V(...) it.doAutorun([=] { it.setModifier(Scrollable::fromBool(__VA_ARGS__)); })
 #define CLICKABLE(b) it.doAutorun([=] { it.setModifier(Clickable(b)); })
+#define EXT_CLICK_AREA(px) it.doAutorun([=] { it.setModifier(ExtClickArea(px)); })
 #define NOT_SCROLLABLE() it.doAutorun([=] { it.setModifier(Scrollable(Scrollable::FIXED)); })
 #define BUTTON_TYPE(...) it.doAutorun([=] { it.setModifier(ButtonType(__VA_ARGS__)); })
 #define LAYOUT_TYPE(...) it.doAutorun([=] { it.setModifier(LayoutType(__VA_ARGS__)); })
