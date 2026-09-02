@@ -1,5 +1,6 @@
 #include "compose/input/InjectedTouch.h"
 
+#include "lvgl.h"
 #include "src/display/lv_display.h"
 #include "src/indev/lv_indev.h"
 
@@ -19,7 +20,8 @@ namespace Compose
 
   InjectedTouch::~InjectedTouch()
   {
-    lv_indev_delete(m_indev);
+    if(lv_is_initialized())
+      lv_indev_delete(m_indev);
   }
 
   void InjectedTouch::enqueue(Step step)
