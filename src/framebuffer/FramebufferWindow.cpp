@@ -328,7 +328,7 @@ namespace Compose
     {
       if(mtState->fd >= 0)
       {
-        close(mtState->fd);
+        ::close(mtState->fd);
       }
       delete mtState;
     };
