@@ -26,6 +26,8 @@ namespace Compose
       return m_display;
     }
 
+    void close();
+
    private:
     lv_display_t* m_display { nullptr };
     lv_indev_t* m_mouse { nullptr };
