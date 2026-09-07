@@ -1,14 +1,15 @@
-#include <format>
 #include <filesystem>
+#include <format>
 #include <stdexcept>
 
 #define SDL_MAIN_HANDLED
 
 #include "VirtualListDemoApp.h"
-#include "compose/widgets/Application.h"
-#include "compose/widgets/Button.h"
-#include "compose/widgets/Label.h"
-#include "compose/widgets/container/List.h"
+
+#include <compose/widgets/Application.h>
+#include <compose/widgets/Button.h>
+#include <compose/widgets/Label.h>
+#include <compose/widgets/container/List.h>
 
 using namespace Compose;
 
@@ -27,7 +28,7 @@ static std::string findDemoFontPath(const Font &font)
 
 int runVirtualListDemo()
 {
-  constexpr int c_itemCount = 10000;
+  constexpr size_t c_itemCount = 10000;
   USE_FONT_STORAGE(findDemoFontPath);
 
   auto selectedItem = std::make_shared<Reactive::Var<int>>(0);

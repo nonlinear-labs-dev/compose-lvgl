@@ -1,6 +1,6 @@
 #pragma once
 #include <compose/modifiers/SVGPath.h>
-#include <lunasvg/lunasvg.h>
+#include <lunasvg.h>
 
 namespace Compose
 {

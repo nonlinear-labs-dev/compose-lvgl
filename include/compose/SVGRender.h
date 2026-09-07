@@ -1,7 +1,7 @@
 #pragma once
 #include <compose/modifiers/Color.h>
 #include <compose/modifiers/Rect.h>
-#include <lunasvg/lunasvg.h>
+#include <lunasvg.h>
 #include <optional>
 
 namespace Compose

@@ -1,54 +1,63 @@
 #include <compose/widgets/ConfirmationMessageBox.h>
 
+#include <utility>
+
 #include "reactive/Deferrer.h"
 
-#include <cstdint>
 #include "src/widgets/msgbox/lv_msgbox.h"
 #include "src/widgets/label/lv_label.h"
 
-static constexpr uint32_t c_black = 0x000000;
-static constexpr uint32_t c_white = 0xFFFFFF;
-static constexpr uint32_t c_msgBoxBackground = 0x171717;
-static constexpr uint32_t c_panelBackground = 0x1F1F1F;
-static constexpr uint32_t c_separatorBorder = 0x3A3A3A;
-static constexpr uint32_t c_closeButtonText = 0xB9B9B9;
-static constexpr uint32_t c_closeButtonActive = 0x2B2B2B;
-static constexpr uint32_t c_messageText = 0xD5D5D5;
-static constexpr uint32_t c_yesButtonBackground = 0x3A3A3A;
-static constexpr uint32_t c_yesButtonPressed = 0x4A4A4A;
-static constexpr uint32_t c_noButtonBackground = 0x262626;
-static constexpr uint32_t c_noButtonPressed = 0x333333;
+namespace
+{
+  constexpr uint32_t c_black = 0x000000;
+  constexpr uint32_t c_white = 0xFFFFFF;
+  constexpr uint32_t c_msgBoxBackground = 0x171717;
+  constexpr uint32_t c_panelBackground = 0x1F1F1F;
+  constexpr uint32_t c_separatorBorder = 0x3A3A3A;
+  constexpr uint32_t c_closeButtonText = 0xB9B9B9;
+  constexpr uint32_t c_closeButtonActive = 0x2B2B2B;
+  constexpr uint32_t c_messageText = 0xD5D5D5;
+  constexpr uint32_t c_yesButtonBackground = 0x3A3A3A;
+  constexpr uint32_t c_yesButtonPressed = 0x4A4A4A;
+  constexpr uint32_t c_noButtonBackground = 0x262626;
+  constexpr uint32_t c_noButtonPressed = 0x333333;
 
-static Compose::ConfirmationCallback s_callback;
+  Compose::ConfirmationCallback s_callback;
+
+  constexpr lv_style_selector_t buildStyleSelector(const lv_part_t part, const lv_state_t state)
+  {
+    return static_cast<lv_style_selector_t>(part) | static_cast<lv_state_t>(state);
+  }
+}
 
 static void styleFooterButton(lv_obj_t *button, lv_color_t baseBgColor, lv_color_t pressedBgColor)
 {
   lv_obj_remove_style_all(button);
-  lv_obj_set_style_bg_color(button, baseBgColor, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_grad_color(button, baseBgColor, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_grad_dir(button, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_bg_opa(button, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_border_width(button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_outline_width(button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-  lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_bg_color(button, baseBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_bg_grad_color(button, baseBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_bg_grad_dir(button, LV_GRAD_DIR_NONE, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_bg_opa(button, LV_OPA_COVER, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_border_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_outline_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
+  lv_obj_set_style_shadow_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
   lv_obj_set_style_radius(button, 3, LV_PART_MAIN);
-  lv_obj_set_style_text_color(button, lv_color_hex(c_white), LV_PART_MAIN | LV_STATE_DEFAULT);
+  lv_obj_set_style_text_color(button, lv_color_hex(c_white), buildStyleSelector(LV_PART_MAIN , LV_STATE_DEFAULT));
   lv_obj_set_style_pad_left(button, 16, LV_PART_MAIN);
   lv_obj_set_style_pad_right(button, 16, LV_PART_MAIN);
   lv_obj_set_style_pad_top(button, 6, LV_PART_MAIN);
   lv_obj_set_style_pad_bottom(button, 6, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(button, pressedBgColor, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(button, pressedBgColor, LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_bg_grad_color(button, pressedBgColor, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_grad_color(button, pressedBgColor, LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_text_color(button, lv_color_hex(c_white), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_text_color(button, lv_color_hex(c_white), LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_border_width(button, 0, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_border_width(button, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_outline_width(button, 0, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_outline_width(button, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_shadow_width(button, 0, LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_bg_color(button, pressedBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_bg_color(button, pressedBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_bg_grad_color(button, pressedBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_bg_grad_color(button, pressedBgColor, buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_text_color(button, lv_color_hex(c_white), buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_text_color(button, lv_color_hex(c_white), buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_border_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_border_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_outline_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_outline_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_shadow_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_shadow_width(button, 0, buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
   lv_obj_remove_flag(button, LV_OBJ_FLAG_SCROLLABLE);
 }
 
@@ -102,10 +111,10 @@ static void styleMessageBox(lv_obj_t *msgBox, lv_obj_t *closeButton, lv_obj_t *t
   lv_obj_set_style_pad_all(closeButton, 0, LV_PART_MAIN);
   lv_obj_set_style_radius(closeButton, 2, LV_PART_MAIN);
   lv_obj_set_style_text_color(closeButton, lv_color_hex(c_closeButtonText), LV_PART_MAIN);
-  lv_obj_set_style_bg_color(closeButton, lv_color_hex(c_closeButtonActive), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_bg_color(closeButton, lv_color_hex(c_closeButtonActive), LV_PART_MAIN | LV_STATE_FOCUSED);
-  lv_obj_set_style_text_color(closeButton, lv_color_hex(c_white), LV_PART_MAIN | LV_STATE_PRESSED);
-  lv_obj_set_style_text_color(closeButton, lv_color_hex(c_white), LV_PART_MAIN | LV_STATE_FOCUSED);
+  lv_obj_set_style_bg_color(closeButton, lv_color_hex(c_closeButtonActive), buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_bg_color(closeButton, lv_color_hex(c_closeButtonActive), buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
+  lv_obj_set_style_text_color(closeButton, lv_color_hex(c_white), buildStyleSelector(LV_PART_MAIN , LV_STATE_PRESSED));
+  lv_obj_set_style_text_color(closeButton, lv_color_hex(c_white), buildStyleSelector(LV_PART_MAIN , LV_STATE_FOCUSED));
   lv_obj_set_size(closeButton, 20, 20);
   lv_obj_remove_flag(closeButton, LV_OBJ_FLAG_SCROLLABLE);
 
@@ -128,11 +137,11 @@ static void styleMessageBox(lv_obj_t *msgBox, lv_obj_t *closeButton, lv_obj_t *t
     lv_obj_set_style_border_side(footer, LV_BORDER_SIDE_TOP, LV_PART_MAIN);
     lv_obj_set_style_border_color(footer, lv_color_hex(c_separatorBorder), LV_PART_MAIN);
     lv_obj_set_style_border_width(footer, 1, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(footer, LV_OPA_TRANSP, LV_PART_ITEMS | LV_STATE_ANY);
-    lv_obj_set_style_border_width(footer, 0, LV_PART_ITEMS | LV_STATE_ANY);
-    lv_obj_set_style_outline_width(footer, 0, LV_PART_ITEMS | LV_STATE_ANY);
-    lv_obj_set_style_shadow_width(footer, 0, LV_PART_ITEMS | LV_STATE_ANY);
-    lv_obj_set_style_bg_grad_dir(footer, LV_GRAD_DIR_NONE, LV_PART_ITEMS | LV_STATE_ANY);
+    lv_obj_set_style_bg_opa(footer, LV_OPA_TRANSP, buildStyleSelector(LV_PART_ITEMS , LV_STATE_ANY));
+    lv_obj_set_style_border_width(footer, 0, buildStyleSelector(LV_PART_ITEMS , LV_STATE_ANY));
+    lv_obj_set_style_outline_width(footer, 0, buildStyleSelector(LV_PART_ITEMS , LV_STATE_ANY));
+    lv_obj_set_style_shadow_width(footer, 0, buildStyleSelector(LV_PART_ITEMS , LV_STATE_ANY));
+    lv_obj_set_style_bg_grad_dir(footer, LV_GRAD_DIR_NONE, buildStyleSelector(LV_PART_ITEMS , LV_STATE_ANY));
     lv_obj_set_style_pad_left(footer, 8, LV_PART_MAIN);
     lv_obj_set_style_pad_right(footer, 8, LV_PART_MAIN);
     lv_obj_set_style_pad_top(footer, 8, LV_PART_MAIN);
@@ -167,9 +176,9 @@ static void no(lv_event_t *e)
 
 void Compose::confirm(const std::string &title, const std::string &text, ConfirmationCallback callback)
 {
-  s_callback = callback;
+  s_callback = std::move(callback);
 
-  auto *mbox1 = lv_msgbox_create(NULL);
+  auto *mbox1 = lv_msgbox_create(nullptr);
 
   lv_msgbox_add_title(mbox1, title.c_str());
   auto *textLabel = lv_msgbox_add_text(mbox1, text.c_str());
