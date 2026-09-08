@@ -1,3 +1,4 @@
+#include "compose/widgets/Screen.h"
 #include <compose/widgets/Window.h>
 #include <SDL.h>
 #include "src/drivers/sdl/lv_sdl_keyboard.h"
@@ -204,6 +205,11 @@ namespace Compose
         }
       }
     }
+  }
+
+  std::optional<Size> framebufferSize(const std::string &)
+  {
+    return {};
   }
 
   Window::Window(Rect position, Rotation rotation, std::string)
