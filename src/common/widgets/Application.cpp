@@ -50,9 +50,10 @@ namespace Compose
     }
   }
 
-  Application::Application(Rect position, Rotation rotation)
+  Application::Application(Rect position, Rotation rotation, std::string screenDevice)
       : m_position(position)
       , m_rotation(rotation)
+      , m_screenDevice(std::move(screenDevice))
   {
     lv_init();
     lv_fs_posix_init();
@@ -62,7 +63,7 @@ namespace Compose
   {
     constexpr auto c_frameIntervalInMs = 16;
 
-    Window window { m_position, m_rotation };
+    Window window { m_position, m_rotation, m_screenDevice };
     lv_display_add_event_cb(window.getDisplay(), flushBeforeRefresh, LV_EVENT_REFR_START, nullptr);
 
     // The default theme attaches state-selective styles (e.g. scrollbar_scrolled) to every

@@ -14,7 +14,7 @@ namespace Compose
    public:
     using tCallback = std::function<void(Window &)>;
 
-    explicit Application(Rect position, Rotation rotation = Rotation::None);
+    explicit Application(Rect position, Rotation rotation = Rotation::None, std::string screenDevice = "/dev/fb0");
 
     void runBlocking(const tCallback &callback) const;
 
@@ -26,6 +26,7 @@ namespace Compose
    private:
     Rect m_position;
     Rotation m_rotation;
+    std::string m_screenDevice;
   };
 }
 
