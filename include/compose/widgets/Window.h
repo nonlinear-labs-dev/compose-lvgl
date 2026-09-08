@@ -4,6 +4,7 @@
 #include "container/Container.h"
 #include "src/misc/lv_types.h"
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace Compose
@@ -12,7 +13,7 @@ namespace Compose
   class Window
   {
    public:
-    explicit Window(Rect position, Rotation rotation = Rotation::None);
+    explicit Window(Rect position, Rotation rotation = Rotation::None, std::string screenDevice = "/dev/fb0");
     ~Window();
 
     template <typename T> static T&& add(T&& it)

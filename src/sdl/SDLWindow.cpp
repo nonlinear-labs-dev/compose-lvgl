@@ -206,7 +206,7 @@ namespace Compose
     }
   }
 
-  Window::Window(Rect position, Rotation rotation)
+  Window::Window(Rect position, Rotation rotation, std::string)
   {
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
