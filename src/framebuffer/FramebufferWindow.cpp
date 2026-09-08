@@ -1,7 +1,9 @@
 #include <compose/widgets/Window.h>
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
+#include "compose/widgets/Screen.h"
 #include "src/drivers/evdev/lv_evdev.h"
+#include <linux/fb.h>
 #include "src/display/lv_display.h"
 #include "src/indev/lv_indev.h"
 #include <compose/input/TouchIndev.h>
@@ -259,6 +261,24 @@ namespace Compose
       lv_indev_add_event_cb(indev, releaseTouchSlot, LV_EVENT_DELETE, indev);
       return indev;
     }
+  }
+
+  std::optional<Size> framebufferSize(const std::string &device)
+  {
+    std::optional<Size> result;
+    const int fd = open(device.c_str(), O_RDONLY);
+
+    if(fd >= 0)
+    {
+      fb_var_screeninfo info {};
+
+      if(ioctl(fd, FBIOGET_VSCREENINFO, &info) == 0)
+        result = Size { static_cast<int>(info.xres), static_cast<int>(info.yres) };
+
+      close(fd);
+    }
+
+    return result;
   }
 
   Window::Window(Rect position, Rotation rotation, std::string screenDevice)
