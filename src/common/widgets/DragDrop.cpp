@@ -629,6 +629,7 @@ namespace Compose
       lv_obj_remove_event_dsc(m_handle, m_pressingHandler);
       lv_obj_remove_event_dsc(m_handle, m_releaseHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
+      lv_obj_remove_event_dsc(m_handle, m_indevResetHandler);
     }
   }
 
