@@ -206,13 +206,9 @@ namespace Compose
 
       auto &slotState = state.slots[slot->slot];
       const auto fingerOnSlot = slotState.trackingId >= 0 ? static_cast<uint32_t>(slotState.trackingId) : static_cast<uint32_t>(slot->slot);
+      const auto stillTheSameFinger = !slot->reportedPressed || fingerOnSlot == slot->currentPointerId;
 
-      // The kernel hands a freed slot to the next finger, which can happen between two
-      // polls. Reporting that as one long press would leave the old finger without its
-      // release and the new one without its press, so let go of the old one first.
-      const auto tookOverSlot = slot->reportedPressed && fingerOnSlot != slot->currentPointerId;
-
-      if(slotState.active && !tookOverSlot)
+      if(slotState.active && stillTheSameFinger)
       {
         slot->currentPointerId = fingerOnSlot;
         slot->common.pointerId = slot->currentPointerId;

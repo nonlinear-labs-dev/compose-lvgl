@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <ranges>
 #include <utility>
 #include <limits>
 #include <unordered_map>
@@ -58,16 +59,13 @@ namespace Compose
 
     std::optional<int> findFreeSlot(const Snapshot &snapshot)
     {
-      for(int slot = 0; slot < c_maxTouchPoints; slot++)
-        if(std::ranges::none_of(snapshot.slots, [slot](const auto &taken) { return taken.second == slot; }))
-          return slot;
+      const auto isTaken = [&snapshot](int slot) { return std::ranges::any_of(snapshot.slots, [slot](const auto &taken) { return taken.second == slot; }); };
+      const auto slots = std::views::iota(0, c_maxTouchPoints);
+      const auto free = std::ranges::find_if_not(slots, isTaken);
 
-      return std::nullopt;
+      return free == slots.end() ? std::nullopt : std::optional(*free);
     }
 
-    // An indev must keep reporting the same finger for as long as it is down. Handing
-    // out slots by position in the list would move a finger to another indev whenever
-    // a neighbour is lifted, and the drag would follow the wrong one.
     void keepEveryFingerOnItsSlot(Snapshot &snapshot)
     {
       std::erase_if(snapshot.slots, [&snapshot](const auto &taken) { return isGone(snapshot, taken.first); });
@@ -82,10 +80,8 @@ namespace Compose
     const TouchPoint *pointOnSlot(const Snapshot &snapshot, int slot)
     {
       const auto taken = std::ranges::find(snapshot.slots, slot, &std::pair<const SDL_FingerID, int>::second);
-      if(taken == snapshot.slots.end())
-        return nullptr;
+      const auto point = taken == snapshot.slots.end() ? snapshot.points.end() : std::ranges::find(snapshot.points, taken->first, &TouchPoint::fingerId);
 
-      const auto point = std::ranges::find(snapshot.points, taken->first, &TouchPoint::fingerId);
       return point == snapshot.points.end() ? nullptr : &*point;
     }
 
