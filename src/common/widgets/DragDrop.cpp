@@ -158,6 +158,15 @@ namespace Compose
         DragDropContext::get().setSource(self->m_handle, self->m_type, self->m_offset.x, self->m_offset.y, point.x, point.y, self->m_getter, self->m_dragWidgetBuilder);
     }
 
+    void letGoOfTheDrag(SourceData *self)
+    {
+      restoreScrollableAncestors(self);
+      self->m_draggingIndev = nullptr;
+      self->m_startPos.reset();
+      self->m_startDecision = StartDecision::Undecided;
+      DragDropContext::get().resetSource(self->m_handle);
+    }
+
     void followDraggingFinger(SourceData *self, lv_indev_t *indev)
     {
       lv_point_t point;
@@ -527,7 +536,6 @@ namespace Compose
     cb(this);
 
     self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
-    lv_obj_set_flag(self.getHandle(), LV_OBJ_FLAG_CLICKABLE, true);
   }
 
   DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder,
@@ -582,18 +590,21 @@ namespace Compose
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
         if(lv_event_get_indev(e) == self->m_draggingIndev)
-        {
-          restoreScrollableAncestors(self);
-          self->m_draggingIndev = nullptr;
-          self->m_startPos.reset();
-          self->m_startDecision = StartDecision::Undecided;
-          auto *handle = self->m_handle;
-          DragDropContext::get().resetSource(handle);
-        }
+          letGoOfTheDrag(self);
     };
 
     m_releaseHandler = lv_obj_add_event_cb(m_handle, endDrag, LV_EVENT_RELEASED, this);
     m_pressLostHandler = lv_obj_add_event_cb(m_handle, endDrag, LV_EVENT_PRESS_LOST, this);
+
+    m_indevResetHandler = lv_obj_add_event_cb(
+        m_handle,
+        [](lv_event_t *e) {
+          Reactive::Deferrer deferrer;
+          if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+            if(lv_event_get_param(e) == self->m_draggingIndev)
+              letGoOfTheDrag(self);
+        },
+        LV_EVENT_INDEV_RESET, this);
   }
 
   DragDrop::DragDropForContent::Source::Data::~Data()

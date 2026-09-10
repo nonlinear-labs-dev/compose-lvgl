@@ -29,7 +29,6 @@ namespace Compose
         : Widget(lv_canvas_create(parent.getHandle()))
     {
       applyDefaultStyle(BaseWidget::getHandle());
-      setModifier(Clickable { false });
     }
 
     template <typename... tArgs>

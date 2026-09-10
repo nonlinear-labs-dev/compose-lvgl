@@ -198,6 +198,7 @@ namespace Compose
           lv_event_dsc_t *m_pressingHandler = nullptr;
           lv_event_dsc_t *m_releaseHandler = nullptr;
           lv_event_dsc_t *m_pressLostHandler = nullptr;
+          lv_event_dsc_t *m_indevResetHandler = nullptr;
         };
 
         void setModifier(StartAxis axis);
