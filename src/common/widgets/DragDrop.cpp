@@ -514,6 +514,7 @@ namespace Compose
 
               lv_point_t point;
               lv_indev_get_point(indev, &point);
+              self->m_draggingIndev = indev;
               self->m_startPos = point;
               self->m_startDecision = StartDecision::Undecided;
               restoreScrollableAncestors(self);
@@ -534,13 +535,8 @@ namespace Compose
           {
             if(auto *indev = lv_event_get_indev(e))
             {
-              if(hasMultiTouch(indev))
+              if(indev != self->m_draggingIndev)
               {
-                restoreScrollableAncestors(self);
-                self->m_startPos.reset();
-                self->m_startDecision = StartDecision::Undecided;
-                auto *handle = self->m_handle;
-                DragDropContext::get().resetSource(handle);
                 return;
               }
 
@@ -583,7 +579,13 @@ namespace Compose
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
       {
+        if(lv_event_get_indev(e) != self->m_draggingIndev)
+        {
+          return;
+        }
+
         restoreScrollableAncestors(self);
+        self->m_draggingIndev = nullptr;
         self->m_startPos.reset();
         self->m_startDecision = StartDecision::Undecided;
         auto *handle = self->m_handle;
