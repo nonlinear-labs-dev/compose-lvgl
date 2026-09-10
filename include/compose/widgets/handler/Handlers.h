@@ -232,11 +232,11 @@ namespace Compose
 
       ~Data()
       {
-        while(!m_activePointers.empty())
-        {
-          const auto &[pointerId, position] = *m_activePointers.begin();
-          endPointer(pointerId, position, 0);
-        }
+        const auto stillDown = std::move(m_activePointers);
+        m_activePointers.clear();
+
+        for(const auto &[pointerId, position] : stillDown)
+          m_end(pointerId, position, 0);
 
         if(lv_obj_is_valid(m_handle))
         {

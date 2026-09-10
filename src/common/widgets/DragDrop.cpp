@@ -158,13 +158,24 @@ namespace Compose
         DragDropContext::get().setSource(self->m_handle, self->m_type, self->m_offset.x, self->m_offset.y, point.x, point.y, self->m_getter, self->m_dragWidgetBuilder);
     }
 
-    void letGoOfTheDrag(SourceData *self)
+    void forgetTheDrag(SourceData *self)
     {
       restoreScrollableAncestors(self);
       self->m_draggingIndev = nullptr;
       self->m_startPos.reset();
       self->m_startDecision = StartDecision::Undecided;
+    }
+
+    void dropWhereTheFingerLetGo(SourceData *self)
+    {
+      forgetTheDrag(self);
       DragDropContext::get().resetSource(self->m_handle);
+    }
+
+    void abandonTheDrag(SourceData *self)
+    {
+      forgetTheDrag(self);
+      DragDropContext::get().cancelSource(self->m_handle);
     }
 
     void followDraggingFinger(SourceData *self, lv_indev_t *indev)
@@ -590,7 +601,7 @@ namespace Compose
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
         if(lv_event_get_indev(e) == self->m_draggingIndev)
-          letGoOfTheDrag(self);
+          dropWhereTheFingerLetGo(self);
     };
 
     m_releaseHandler = lv_obj_add_event_cb(m_handle, endDrag, LV_EVENT_RELEASED, this);
@@ -602,7 +613,7 @@ namespace Compose
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
             if(lv_event_get_param(e) == self->m_draggingIndev)
-              letGoOfTheDrag(self);
+              abandonTheDrag(self);
         },
         LV_EVENT_INDEV_RESET, this);
   }
