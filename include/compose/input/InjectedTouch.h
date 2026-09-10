@@ -3,6 +3,7 @@
 #include "compose/input/TouchIndev.h"
 #include "src/misc/lv_types.h"
 
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <limits>
@@ -12,6 +13,8 @@ namespace Compose
   class InjectedTouch
   {
    public:
+    static constexpr size_t c_maxFingers = 3;
+
     struct Step
     {
       bool pressed = false;
@@ -26,16 +29,24 @@ namespace Compose
     InjectedTouch &operator=(const InjectedTouch &) = delete;
 
     void enqueue(Step step);
+    void enqueue(size_t finger, Step step);
 
    private:
-    static void read(lv_indev_t *indev, lv_indev_data_t *data);
-    void readNext(lv_indev_data_t *data);
+    struct Finger
+    {
+      TouchIndevData indevData;
+      InjectedTouch *owner = nullptr;
+      std::deque<Step> steps;
+      Step current;
+      lv_indev_t *indev = nullptr;
+    };
 
-    TouchIndevData m_indevData;
-    std::deque<Step> m_steps;
+    static void read(lv_indev_t *indev, lv_indev_data_t *data);
+    void readNext(Finger &finger, lv_indev_data_t *data);
+    void countActiveTouches();
+
+    std::array<Finger, c_maxFingers> m_fingers;
     size_t m_activeTouchCount = 0;
-    Step m_current;
     uint32_t m_lastPointerId = std::numeric_limits<uint32_t>::max() - 1;
-    lv_indev_t *m_indev = nullptr;
   };
 }
