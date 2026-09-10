@@ -190,6 +190,7 @@ namespace Compose
           DragDropContext::DragWidgetBuilder m_dragWidgetBuilder;
           StartAxis::Direction m_startAxis = StartAxis::Any;
           StartDecision m_startDecision = StartDecision::Undecided;
+          lv_indev_t *m_draggingIndev = nullptr;
           std::optional<lv_point_t> m_startPos;
           lv_point_t m_offset;
           std::vector<lv_obj_t *> m_suppressedScrollables;
@@ -197,6 +198,7 @@ namespace Compose
           lv_event_dsc_t *m_pressingHandler = nullptr;
           lv_event_dsc_t *m_releaseHandler = nullptr;
           lv_event_dsc_t *m_pressLostHandler = nullptr;
+          lv_event_dsc_t *m_indevResetHandler = nullptr;
         };
 
         void setModifier(StartAxis axis);

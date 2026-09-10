@@ -95,6 +95,7 @@ namespace Compose
       MultiTouchState *state = nullptr;
       int slot = 0;
       uint32_t currentPointerId = 0;
+      bool reportedPressed = false;
     };
 
     uint64_t nowMs()
@@ -204,10 +205,14 @@ namespace Compose
       const auto height = lv_display_get_vertical_resolution(state.display);
 
       auto &slotState = state.slots[slot->slot];
-      if(slotState.active)
+      const auto fingerOnSlot = slotState.trackingId >= 0 ? static_cast<uint32_t>(slotState.trackingId) : static_cast<uint32_t>(slot->slot);
+      const auto stillTheSameFinger = !slot->reportedPressed || fingerOnSlot == slot->currentPointerId;
+
+      if(slotState.active && stillTheSameFinger)
       {
-        slot->currentPointerId = slotState.trackingId >= 0 ? static_cast<uint32_t>(slotState.trackingId) : static_cast<uint32_t>(slot->slot);
+        slot->currentPointerId = fingerOnSlot;
         slot->common.pointerId = slot->currentPointerId;
+        slot->reportedPressed = true;
         data->state = LV_INDEV_STATE_PRESSED;
         data->point = translatePoint(state, slotState, offsetX, offsetY, width, height);
         slotState.lastPoint = data->point;
@@ -215,6 +220,7 @@ namespace Compose
       else
       {
         slot->common.pointerId = slot->currentPointerId;
+        slot->reportedPressed = false;
         data->state = LV_INDEV_STATE_RELEASED;
         data->point = slotState.lastPoint;
       }

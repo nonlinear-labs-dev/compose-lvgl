@@ -202,26 +202,42 @@ namespace Compose
           {
             if(auto touchEvent = Detail::getTouchEvent(e, self->m_handle))
             {
-              if(self->m_activePointers.erase(touchEvent->pointerId) > 0)
-              {
-                self->m_end(touchEvent->pointerId, touchEvent->position, touchEvent->activeTouchCount);
-              }
+              self->endPointer(touchEvent->pointerId, touchEvent->position, touchEvent->activeTouchCount);
             }
           }
         };
 
         m_releasedHandler = lv_obj_add_event_cb(handle, onRelease, LV_EVENT_RELEASED, this);
         m_pressLostHandler = lv_obj_add_event_cb(handle, onRelease, LV_EVENT_PRESS_LOST, this);
+
+        m_indevResetHandler = lv_obj_add_event_cb(
+            handle,
+            [](lv_event_t *e)
+            {
+              Reactive::Deferrer def;
+              if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+              {
+                if(auto *indev = static_cast<lv_indev_t *>(lv_event_get_param(e)))
+                {
+                  if(const auto *touchData = getTouchIndevData(indev))
+                  {
+                    const auto position = self->m_activePointers.find(touchData->pointerId);
+                    if(position != self->m_activePointers.end())
+                      self->endPointer(touchData->pointerId, position->second, activeTouchCount(indev));
+                  }
+                }
+              }
+            },
+            LV_EVENT_INDEV_RESET, this);
       }
 
       ~Data()
       {
-        for(const auto &[pointerId, position] : m_activePointers)
-        {
-          m_end(pointerId, position, 0);
-        }
-
+        const auto stillDown = std::move(m_activePointers);
         m_activePointers.clear();
+
+        for(const auto &[pointerId, position] : stillDown)
+          m_end(pointerId, position, 0);
 
         if(lv_obj_is_valid(m_handle))
         {
@@ -229,7 +245,14 @@ namespace Compose
           lv_obj_remove_event_dsc(m_handle, m_pressingHandler);
           lv_obj_remove_event_dsc(m_handle, m_releasedHandler);
           lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
+          lv_obj_remove_event_dsc(m_handle, m_indevResetHandler);
         }
+      }
+
+      void endPointer(uint32_t pointerId, Position position, size_t activeTouches)
+      {
+        if(m_activePointers.erase(pointerId) > 0)
+          m_end(pointerId, position, activeTouches);
       }
 
       lv_obj_t *m_handle;
@@ -241,6 +264,7 @@ namespace Compose
       lv_event_dsc_t *m_pressingHandler = nullptr;
       lv_event_dsc_t *m_releasedHandler = nullptr;
       lv_event_dsc_t *m_pressLostHandler = nullptr;
+      lv_event_dsc_t *m_indevResetHandler = nullptr;
     };
 
     struct Begin

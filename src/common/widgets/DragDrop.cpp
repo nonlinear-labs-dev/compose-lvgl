@@ -133,6 +133,66 @@ namespace Compose
       self->m_suppressedScrollables.clear();
     }
 
+    using SourceData = DragDrop::DragDropForContent::Source::Data;
+    using StartDecision = SourceData::StartDecision;
+
+    void decideStartAxis(SourceData *self, int xDiff, int yDiff)
+    {
+      const auto matchesStartAxis = isDragStartAxisMatching(self->m_startAxis, xDiff, yDiff);
+      self->m_startDecision = matchesStartAxis ? StartDecision::AllowDrag : StartDecision::BlockDrag;
+
+      if(self->m_startDecision == StartDecision::AllowDrag && self->m_startAxis != DragDrop::DragDropForContent::Source::StartAxis::Any)
+        suppressScrollableAncestors(self);
+    }
+
+    void startDragWhenFarEnough(SourceData *self, lv_point_t point)
+    {
+      const auto xDiff = point.x - self->m_startPos->x;
+      const auto yDiff = point.y - self->m_startPos->y;
+      const auto distance = std::sqrt(xDiff * xDiff + yDiff * yDiff);
+
+      if(self->m_startDecision == StartDecision::Undecided && distance > c_dragAxisDecisionHysteresis)
+        decideStartAxis(self, xDiff, yDiff);
+
+      if(self->m_startDecision == StartDecision::AllowDrag && distance > c_dragDetectionHysteresis)
+        DragDropContext::get().setSource(self->m_handle, self->m_type, self->m_offset.x, self->m_offset.y, point.x, point.y, self->m_getter, self->m_dragWidgetBuilder);
+    }
+
+    void forgetTheDrag(SourceData *self)
+    {
+      restoreScrollableAncestors(self);
+      self->m_draggingIndev = nullptr;
+      self->m_startPos.reset();
+      self->m_startDecision = StartDecision::Undecided;
+    }
+
+    void dropWhereTheFingerLetGo(SourceData *self)
+    {
+      forgetTheDrag(self);
+      DragDropContext::get().resetSource(self->m_handle);
+    }
+
+    void abandonTheDrag(SourceData *self)
+    {
+      forgetTheDrag(self);
+      DragDropContext::get().cancelSource(self->m_handle);
+    }
+
+    void followDraggingFinger(SourceData *self, lv_indev_t *indev)
+    {
+      lv_point_t point;
+      lv_indev_get_point(indev, &point);
+
+      if(self->m_startPos)
+      {
+        if(!DragDropContext::get().isDragging())
+          startDragWhenFarEnough(self, point);
+
+        if(DragDropContext::get().isDragging())
+          DragDropContext::get().onDragOver(self->m_handle, findWidgetAt(lv_screen_active(), point), point.x, point.y);
+      }
+    }
+
     int scaleOffset(int offset, int32_t draggedSize, int32_t proxySize)
     {
       if(draggedSize <= 0)
@@ -513,6 +573,7 @@ namespace Compose
 
               lv_point_t point;
               lv_indev_get_point(indev, &point);
+              self->m_draggingIndev = indev;
               self->m_startPos = point;
               self->m_startDecision = StartDecision::Undecided;
               restoreScrollableAncestors(self);
@@ -530,68 +591,31 @@ namespace Compose
         [](lv_event_t *e) {
           Reactive::Deferrer deferrer;
           if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
-          {
             if(auto *indev = lv_event_get_indev(e))
-            {
-              if(hasMultiTouch(indev))
-              {
-                restoreScrollableAncestors(self);
-                self->m_startPos.reset();
-                self->m_startDecision = StartDecision::Undecided;
-                auto *handle = self->m_handle;
-                DragDropContext::get().resetSource(handle);
-                return;
-              }
-
-              lv_point_t point;
-              lv_indev_get_point(indev, &point);
-
-              if(self->m_startPos)
-              {
-                const auto xDiff = point.x - self->m_startPos->x;
-                const auto yDiff = point.y - self->m_startPos->y;
-                const auto distance = std::sqrt(xDiff * xDiff + yDiff * yDiff);
-                const auto isDragging = DragDropContext::get().isDragging();
-                if(!isDragging && self->m_startDecision == StartDecision::Undecided && distance > c_dragAxisDecisionHysteresis)
-                {
-                  const auto hasMatchingStartAxis = isDragStartAxisMatching(self->m_startAxis, xDiff, yDiff);
-                  self->m_startDecision = hasMatchingStartAxis ? StartDecision::AllowDrag : StartDecision::BlockDrag;
-                  if(self->m_startDecision == StartDecision::AllowDrag && self->m_startAxis != StartAxis::Any)
-                  {
-                    suppressScrollableAncestors(self);
-                  }
-                }
-
-                if(!isDragging && self->m_startDecision == StartDecision::AllowDrag && distance > c_dragDetectionHysteresis)
-                {
-                  DragDropContext::get().setSource(self->m_handle, self->m_type, self->m_offset.x, self->m_offset.y, point.x, point.y, self->m_getter, self->m_dragWidgetBuilder);
-                }
-
-                if(DragDropContext::get().isDragging())
-                {
-                  auto *targetWidget = findWidgetAt(lv_screen_active(), point);
-                  DragDropContext::get().onDragOver(self->m_handle, targetWidget, point.x, point.y);
-                }
-              }
-            }
-          }
+              if(indev == self->m_draggingIndev)
+                followDraggingFinger(self, indev);
         },
         LV_EVENT_PRESSING, this);
 
     auto endDrag = [](lv_event_t *e) {
       Reactive::Deferrer deferrer;
       if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
-      {
-        restoreScrollableAncestors(self);
-        self->m_startPos.reset();
-        self->m_startDecision = StartDecision::Undecided;
-        auto *handle = self->m_handle;
-        DragDropContext::get().resetSource(handle);
-      }
+        if(lv_event_get_indev(e) == self->m_draggingIndev)
+          dropWhereTheFingerLetGo(self);
     };
 
     m_releaseHandler = lv_obj_add_event_cb(m_handle, endDrag, LV_EVENT_RELEASED, this);
     m_pressLostHandler = lv_obj_add_event_cb(m_handle, endDrag, LV_EVENT_PRESS_LOST, this);
+
+    m_indevResetHandler = lv_obj_add_event_cb(
+        m_handle,
+        [](lv_event_t *e) {
+          Reactive::Deferrer deferrer;
+          if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+            if(lv_event_get_param(e) == self->m_draggingIndev)
+              abandonTheDrag(self);
+        },
+        LV_EVENT_INDEV_RESET, this);
   }
 
   DragDrop::DragDropForContent::Source::Data::~Data()
@@ -605,6 +629,7 @@ namespace Compose
       lv_obj_remove_event_dsc(m_handle, m_pressingHandler);
       lv_obj_remove_event_dsc(m_handle, m_releaseHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
+      lv_obj_remove_event_dsc(m_handle, m_indevResetHandler);
     }
   }
 
