@@ -11,6 +11,8 @@
 #include <reactive/Deferrer.h>
 
 #include <algorithm>
+#include <optional>
+#include <utility>
 #include <limits>
 #include <unordered_map>
 #include <vector>
@@ -35,6 +37,7 @@ namespace Compose
       uint32_t lastTouchTick = 0;
       uint32_t nextPointerId = 1;
       std::unordered_map<SDL_FingerID, uint32_t> pointerIds;
+      std::unordered_map<SDL_FingerID, int> slots;
       std::vector<TouchPoint> points;
     };
 
@@ -47,6 +50,44 @@ namespace Compose
       uint32_t currentPointerId = 0;
       lv_point_t lastPoint = { 0, 0 };
     };
+
+    bool isGone(const Snapshot &snapshot, SDL_FingerID finger)
+    {
+      return std::ranges::find(snapshot.points, finger, &TouchPoint::fingerId) == snapshot.points.end();
+    }
+
+    std::optional<int> findFreeSlot(const Snapshot &snapshot)
+    {
+      for(int slot = 0; slot < c_maxTouchPoints; slot++)
+        if(std::ranges::none_of(snapshot.slots, [slot](const auto &taken) { return taken.second == slot; }))
+          return slot;
+
+      return std::nullopt;
+    }
+
+    // An indev must keep reporting the same finger for as long as it is down. Handing
+    // out slots by position in the list would move a finger to another indev whenever
+    // a neighbour is lifted, and the drag would follow the wrong one.
+    void keepEveryFingerOnItsSlot(Snapshot &snapshot)
+    {
+      std::erase_if(snapshot.slots, [&snapshot](const auto &taken) { return isGone(snapshot, taken.first); });
+      std::erase_if(snapshot.pointerIds, [&snapshot](const auto &known) { return isGone(snapshot, known.first); });
+
+      for(const auto &point : snapshot.points)
+        if(!snapshot.slots.contains(point.fingerId))
+          if(const auto freeSlot = findFreeSlot(snapshot))
+            snapshot.slots.emplace(point.fingerId, *freeSlot);
+    }
+
+    const TouchPoint *pointOnSlot(const Snapshot &snapshot, int slot)
+    {
+      const auto taken = std::ranges::find(snapshot.slots, slot, &std::pair<const SDL_FingerID, int>::second);
+      if(taken == snapshot.slots.end())
+        return nullptr;
+
+      const auto point = std::ranges::find(snapshot.points, taken->first, &TouchPoint::fingerId);
+      return point == snapshot.points.end() ? nullptr : &*point;
+    }
 
     void refreshSnapshot(Snapshot &snapshot, lv_display_t *display)
     {
@@ -87,7 +128,7 @@ namespace Compose
         }
       }
 
-      std::ranges::sort(snapshot.points, {}, &TouchPoint::fingerId);
+      keepEveryFingerOnItsSlot(snapshot);
 
       snapshot.activeTouchCount = snapshot.points.size();
 
@@ -108,14 +149,13 @@ namespace Compose
 
       refreshSnapshot(*slot->snapshot, slot->display);
 
-      if(slot->slot < static_cast<int>(slot->snapshot->points.size()))
+      if(const auto *touchPoint = pointOnSlot(*slot->snapshot, slot->slot))
       {
-        const auto &touchPoint = slot->snapshot->points[slot->slot];
-        slot->currentPointerId = touchPoint.pointerId;
+        slot->currentPointerId = touchPoint->pointerId;
         slot->common.pointerId = slot->currentPointerId;
         data->state = LV_INDEV_STATE_PRESSED;
-        data->point = touchPoint.point;
-        slot->lastPoint = touchPoint.point;
+        data->point = touchPoint->point;
+        slot->lastPoint = touchPoint->point;
       }
       else
       {
