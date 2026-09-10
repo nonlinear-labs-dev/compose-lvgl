@@ -25,6 +25,7 @@ namespace Compose
       setLabelRenderingFunction();
       setModifier(Text { "" });
       applyDefaultStyle(BaseWidget::getHandle());
+      Label::setModifier(Clickable { false });
       Label::setModifier(BackgroundColor { Color::TRANSPARENT() });
       Label::setModifier(PrimaryColor { Color::WHITE() });
       setModifier(VerticalAlign::CENTER());

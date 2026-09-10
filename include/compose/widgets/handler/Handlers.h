@@ -277,6 +277,7 @@ namespace Compose
     {
       cb(this);
       self.ensureDataForKeyExistsOwning<Data>("TouchData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+      lv_obj_set_flag(self.getHandle(), LV_OBJ_FLAG_CLICKABLE, true);
     }
 
     CB m_begin = [](uint32_t, Position, size_t) { };

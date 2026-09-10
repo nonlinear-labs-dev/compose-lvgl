@@ -487,6 +487,7 @@ namespace Compose
     cb(this);
 
     self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+    lv_obj_set_flag(self.getHandle(), LV_OBJ_FLAG_CLICKABLE, true);
   }
 
   DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder,
