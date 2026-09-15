@@ -150,9 +150,14 @@ namespace Compose
     virtual void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
                                        int bottomRight)
         = 0;
-    virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> segments) = 0;
-    virtual void fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point> &segments);
-    virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) = 0;
+    virtual void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> segments,
+                             const StrokeOptions &options)
+        = 0;
+    void fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point> &segments,
+                     const StrokeOptions &options);
+    virtual void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc,
+                                    const StrokeOptions &options)
+        = 0;
     virtual void fillArc(const ArcDrawOptions &arcOptions) = 0;
     virtual void drawSegmentedArc(const SegmentedArcDrawOptions &props) = 0;
     virtual void putBitmap(const Bitmap &image, Point p, std::optional<Color> colorOverride = std::nullopt) = 0;
@@ -181,6 +186,7 @@ namespace Compose
     using DrawContext::drawLine;
     using DrawContext::drawQuadraticBezier;
     using DrawContext::drawVectorLine;
+    using DrawContext::fillPolygon;
     using DrawContext::strokeRoundedRect;
 
     void drawLine(StrokeStyle style, Point p1, Point p2, const StrokeOptions &options) override;
@@ -198,8 +204,10 @@ namespace Compose
     void fillRoundedRect(Color color, Rect r, RoundedCorner rc) override;
     void fillCustomRoundedRect(Color color, Rect rect, int topLeft, int topRight, int bottomLeft,
                                int bottomRight) override;
-    void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points) override;
-    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc) override;
+    void fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points,
+                     const StrokeOptions &options) override;
+    void fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc,
+                            const StrokeOptions &options) override;
     void fillArc(const ArcDrawOptions &arcOptions) override;
     void drawSegmentedArc(const SegmentedArcDrawOptions &props) override;
     void drawText(Text t, Font f, Rect r, Color c, TextAlign ta, VerticalAlign va) override;

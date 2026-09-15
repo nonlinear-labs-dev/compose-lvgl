@@ -194,6 +194,28 @@ namespace Compose
 
       return getBoundingArea(points, padding);
     }
+
+    void applyStroke(lv_vector_dsc_t &dsc, const DrawContext::StrokeStyle &stroke,
+                     const DrawContext::StrokeOptions &options)
+    {
+      lv_vector_dsc_set_stroke_color(&dsc, lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
+      lv_vector_dsc_set_stroke_opa(&dsc, static_cast<lv_opa_t>(stroke.color.a * 255.0));
+      lv_vector_dsc_set_stroke_width(&dsc, static_cast<float>(stroke.width));
+
+      if(options.ends.has_value())
+      {
+        const auto cap = (options.ends->start && options.ends->end) ? LV_VECTOR_STROKE_CAP_ROUND
+                                                                   : LV_VECTOR_STROKE_CAP_BUTT;
+        lv_vector_dsc_set_stroke_cap(&dsc, cap);
+      }
+
+      if(options.dash.has_value())
+      {
+        float dashes[2] = { static_cast<float>(options.dash->dashWidth),
+                            static_cast<float>(options.dash->dashGap) };
+        lv_vector_dsc_set_stroke_dash(&dsc, dashes, 2);
+      }
+    }
   }
 
   DrawContext::ScopedOffset::ScopedOffset(DrawContext &context, Point offset)
@@ -227,9 +249,10 @@ namespace Compose
     return ret;
   }
 
-  void DrawContext::fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point> &segments)
+  void DrawContext::fillPolygon(StrokeStyle stroke, Color fill, const std::vector<Point> &segments,
+                                const StrokeOptions &options)
   {
-    fillPolygon(stroke, fill, toPathSegments(segments));
+    fillPolygon(stroke, fill, toPathSegments(segments), options);
   }
 
   void DrawContext::drawLine(StrokeStyle style, Point p1, Point p2)
@@ -765,7 +788,8 @@ namespace Compose
     lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points)
+  void LVGLDrawContext::fillPolygon(StrokeStyle stroke, Color fill, std::vector<tPathSegment> points,
+                                    const StrokeOptions &options)
   {
     if(points.size() < 3)
       return;
@@ -810,22 +834,21 @@ namespace Compose
 
     lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
     lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    applyStroke(*dsc, stroke, options);
     lv_vector_dsc_add_path(dsc.get(), path.get());
 
     lv_draw_vector(dsc.get());
   }
 
-  void LVGLDrawContext::fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc)
+  void LVGLDrawContext::fillRoundedPolygon(StrokeStyle stroke, Color fill, std::vector<Point> points, RoundedCorner rc,
+                                           const StrokeOptions &options)
   {
     if(points.size() < 3)
       return;
 
     if(rc.radius <= 0)
     {
-      fillPolygon(stroke, fill, toPathSegments(points));
+      fillPolygon(stroke, fill, toPathSegments(points), options);
       return;
     }
 
@@ -877,9 +900,7 @@ namespace Compose
 
     lv_vector_dsc_set_fill_color(dsc.get(), lv_color_make(fill.r, fill.g, fill.b));
     lv_vector_dsc_set_fill_opa(dsc.get(), static_cast<lv_opa_t>(fill.a * 255.0));
-    lv_vector_dsc_set_stroke_color(dsc.get(), lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
-    lv_vector_dsc_set_stroke_opa(dsc.get(), static_cast<lv_opa_t>(stroke.color.a * 255.0));
-    lv_vector_dsc_set_stroke_width(dsc.get(), static_cast<float>(stroke.width));
+    applyStroke(*dsc, stroke, options);
 
     lv_vector_dsc_set_stroke_join(dsc.get(), LV_VECTOR_STROKE_JOIN_ROUND);
 
