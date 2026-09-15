@@ -18,6 +18,7 @@ namespace Compose
    public:
     using Getter = std::function<std::optional<nlohmann::json>()>;
     using Setter = std::function<void(const nlohmann::json &)>;
+    using DragOver = std::function<void(const std::optional<nlohmann::json> &)>;
     using DragWidgetBuilder = std::function<void(Widget &)>;
 
     static DragDropContext &get();
@@ -25,7 +26,7 @@ namespace Compose
     void setSource(lv_obj_t *self, const std::string &type, int offsetX, int offsetY, int rootX, int rootY, const Getter &getter, const DragWidgetBuilder &dragWidgetBuilder);
     void resetSource(lv_obj_t *self);
     void cancelSource(lv_obj_t *self);
-    void addTarget(lv_obj_t *self, const std::string &type, const Setter &setter);
+    void addTarget(lv_obj_t *self, const std::string &type, const Setter &setter, const DragOver &dragOver);
     void removeTarget(lv_obj_t *self, const std::string &type);
     void onDragOver(lv_obj_t *dragSource, lv_obj_t *targetProspect, int rootX, int rootY);
     [[nodiscard]] bool isCurrentTarget(lv_obj_t *widget) const;
@@ -53,11 +54,15 @@ namespace Compose
 
     struct Target
     {
-      Target(lv_obj_t *widget, const std::string &type, const Setter &setter);
+      Target(lv_obj_t *widget, const std::string &type, const Setter &setter, const DragOver &dragOver);
       lv_obj_t *m_widget;
       std::string m_type;
       Setter m_setter;
+      DragOver m_dragOver;
     };
+
+    void setCurrentTarget(Source &source, lv_obj_t *target);
+    void notifyDragOver(lv_obj_t *widget, const std::string &type, const std::optional<nlohmann::json> &content);
 
     // Only the query methods subscribe to this (get()). The mutating paths peek(),
     // because they also run from destructors nested inside foreign autoruns, which
@@ -214,22 +219,37 @@ namespace Compose
 
         explicit Target(DragDropForContent *self);
 
+        using DragOver = std::function<void(const std::optional<nlohmann::json> &)>;
+
         struct Data
         {
           Data(lv_obj_t *handle, std::string type);
           ~Data();
 
           void setSetter(const Setter &setter);
+          void setDragOver(const DragOver &dragOver);
 
           lv_obj_t *m_handle;
           std::string m_type;
           std::shared_ptr<Setter> m_setter = std::make_shared<Setter>([](const nlohmann::json &) { });
+          std::shared_ptr<DragOver> m_dragOver = std::make_shared<DragOver>([](const std::optional<nlohmann::json> &) { });
         };
 
         void operator<<(const Setter &cb);
 
         DragDropForContent *self;
       };
+
+      struct DragOverTarget
+      {
+        explicit DragOverTarget(DragDropForContent *self);
+
+        using Callback = std::function<void(const std::optional<nlohmann::json> &)>;
+
+        void operator<<(const Callback &cb);
+
+        DragDropForContent *self;
+      } dragOver;
 
       struct BuildDragWidget
       {
@@ -268,4 +288,5 @@ namespace Compose
 #define DRAG_DROP_VERTICAL(type) it.dragDrop(type, Compose::DragDrop::DragDropForContent::Source::StartAxis::VERTICAL()) << [=](Compose::DragDrop::DragDropForContent * it)
 #define DRAG_SOURCE() (*it->source) << [=]
 #define DROP_TARGET (*it->target) << [=]
+#define DRAG_OVER it->dragOver << [=]
 #define DRAG_PROXY_WIDGET() it->buildDragWidget << [=](Compose::Widget & it)
