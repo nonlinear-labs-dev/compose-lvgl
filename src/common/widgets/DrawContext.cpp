@@ -195,7 +195,7 @@ namespace Compose
       return getBoundingArea(points, padding);
     }
 
-    void applyStroke(lv_vector_dsc_t &dsc, const DrawContext::StrokeStyle &stroke,
+    void applyStroke(tVectorDsc &dsc, const DrawContext::StrokeStyle &stroke,
                      const DrawContext::StrokeOptions &options)
     {
       lv_vector_dsc_set_stroke_color(&dsc, lv_color_make(stroke.color.r, stroke.color.g, stroke.color.b));
