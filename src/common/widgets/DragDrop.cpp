@@ -280,6 +280,10 @@ namespace Compose
 
   void DragDropContext::removeTarget(lv_obj_t *self, const std::string &type)
   {
+    if(auto *source = m_source.peek().get())
+      if(source->m_currentTarget == self)
+        source->m_currentTarget = nullptr;
+
     std::erase_if(m_targets, [=](const auto &target) { return target->m_widget == self && target->m_type == type; });
   }
 
@@ -654,7 +658,8 @@ namespace Compose
   {
     const auto key = sourceKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
-    owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    auto &data = owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    data.m_getter = cb;
     lv_obj_set_flag(self->ownerHandle, LV_OBJ_FLAG_CLICKABLE, true);
   }
 
