@@ -688,7 +688,8 @@ namespace Compose
   {
     const auto key = sourceKeyForType(self->type);
     BaseWidget owner(self->ownerHandle);
-    owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    auto &data = owner.ensureDataForKeyExistsOwning<Data>(key, [this, cb] { return new Data(self->ownerHandle, self->type, cb, self->buildDragWidget.get(), m_startAxis); });
+    data.m_getter = cb;
     lv_obj_set_flag(self->ownerHandle, LV_OBJ_FLAG_CLICKABLE, true);
   }
 
