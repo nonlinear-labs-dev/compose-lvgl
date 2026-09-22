@@ -36,7 +36,7 @@ if (COMMAND addNLLibrary)
             EXTERNAL_LIBS freetype2 glibmm-2.4 giomm-2.4 yaml-cpp nlohmann_json ${LVGL_BACKEND_LIBS}
             OUR_LIBS reactive lvgl lunasvg
             LIB_SOURCES src/common/*.cpp include/*.h ${LVGL_BACKEND_SPECIFIC_SOURCES}
-            TEST_SOURCES tests/test_basewidget.cpp tests/test_stylesheet_json.cpp
+            TEST_SOURCES tests/test_basewidget.cpp tests/test_stylesheet_json.cpp tests/test_dragdrop.cpp
             INSTALL_HEADERS_DIR include
             IS_STATIC
             CPP_STANDARD 20
