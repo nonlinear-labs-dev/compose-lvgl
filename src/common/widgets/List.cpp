@@ -12,6 +12,7 @@ namespace Compose
       if(childId.has_value())
       {
         itemBuilder(widget, childId.value());
+        lv_obj_update_layout(widget.getHandle());
       }
     }
   }
@@ -91,6 +92,9 @@ namespace Compose
       auto itemExtend = getItemExtend();
       auto numItemsVisible = std::min<int>(model.size(), parentExtend / itemExtend + 2);
       setupChildren(numItemsVisible);
+
+      if(itemExtend == 1)
+        itemExtend = getItemExtend();
 
       auto numChildren = lv_obj_get_child_count(handle);
       auto firstItemIdx = scrollOffset / itemExtend;
