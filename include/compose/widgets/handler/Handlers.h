@@ -111,6 +111,7 @@ namespace Compose
   };
 
   using Pressed = EventHandler<LV_EVENT_PRESSED>;
+  using Released = EventHandler<LV_EVENT_RELEASED>;
   using Clicked = EventHandler<LV_EVENT_CLICKED>;
   using LongClick = EventHandler<LV_EVENT_LONG_PRESSED>;
 

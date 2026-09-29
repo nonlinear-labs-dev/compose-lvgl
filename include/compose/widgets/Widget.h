@@ -597,6 +597,7 @@ namespace Compose
     }
 
     Pressed pressed { *this, c_pressedKey };
+    Released released { *this, c_releasedKey };
     Clicked clicked { *this, c_clickedKey };
     LongClick longClick { *this, c_longClickKey };
     Touch touch { *this };
@@ -639,6 +640,7 @@ namespace Compose
   });
 
 #define PRESSED it.pressed << [=]
+#define RELEASED it.released << [=]
 #define TOUCH() it.touch << [=](Compose::Touch * it)
 #define TOUCH_BEGIN it->begin << [=]
 #define TOUCH_UPDATE it->update << [=]

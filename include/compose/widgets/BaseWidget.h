@@ -22,6 +22,7 @@ class BaseWidget
   static constexpr auto c_computationsKey = "Computations";
   static constexpr auto c_nameKey = "Name";
   static constexpr auto c_pressedKey = "Pressed";
+  static constexpr auto c_releasedKey = "Released";
   static constexpr auto c_clickedKey = "Click";
   static constexpr auto c_longClickKey = "LongClick";
   static constexpr auto c_stateChangeKey = "StateChange";
