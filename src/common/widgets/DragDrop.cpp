@@ -4,6 +4,7 @@
 #include <compose/input/TouchIndev.h>
 #include "reactive/Deferrer.h"
 #include "src/core/lv_obj_pos.h"
+#include "src/misc/lv_area_private.h"
 #include "src/misc/lv_async.h"
 
 #include <algorithm>
@@ -23,23 +24,21 @@ namespace Compose
 
     bool isPointInside(lv_obj_t *widget, const lv_point_t &point)
     {
-      bool inside = false;
+      lv_area_t coords;
+      lv_obj_get_coords(widget, &coords);
+      return lv_area_is_point_on(&coords, &point, 0);
+    }
 
-      if(!lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN))
-      {
-        lv_area_t coords;
-        lv_obj_get_coords(widget, &coords);
-        inside = point.x >= coords.x1 && point.x <= coords.x2 && point.y >= coords.y1 && point.y <= coords.y2;
-      }
-
-      return inside;
+    bool canChildrenContainPoint(lv_obj_t *widget, const lv_point_t &point)
+    {
+      return lv_obj_has_flag(widget, LV_OBJ_FLAG_OVERFLOW_VISIBLE) || isPointInside(widget, point);
     }
 
     lv_obj_t *findWidgetAt(lv_obj_t *widget, const lv_point_t &point)
     {
       lv_obj_t *result = nullptr;
 
-      if(!lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN))
+      if(!lv_obj_has_flag(widget, LV_OBJ_FLAG_HIDDEN) && canChildrenContainPoint(widget, point))
       {
         const auto children = lv_obj_get_child_count(widget);
 
