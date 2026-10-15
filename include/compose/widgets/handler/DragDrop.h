@@ -286,6 +286,7 @@ namespace Compose
 #define DRAG_END() it->end << [=]
 #define DRAG_DROP(type) it.dragDrop(type) << [=](Compose::DragDrop::DragDropForContent * it)
 #define DRAG_DROP_VERTICAL(type) it.dragDrop(type, Compose::DragDrop::DragDropForContent::Source::StartAxis::VERTICAL()) << [=](Compose::DragDrop::DragDropForContent * it)
+#define DRAG_DROP_HORIZONTAL(type) it.dragDrop(type, Compose::DragDrop::DragDropForContent::Source::StartAxis::HORIZONTAL()) << [=](Compose::DragDrop::DragDropForContent * it)
 #define DRAG_SOURCE() (*it->source) << [=]
 #define DROP_TARGET (*it->target) << [=]
 #define DRAG_OVER it->dragOver << [=]
