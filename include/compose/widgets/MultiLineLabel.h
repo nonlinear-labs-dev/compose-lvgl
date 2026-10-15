@@ -42,8 +42,9 @@ namespace Compose
         const auto text = labelData.text.get();
 
         auto wrapWidth = width;
-        if(wrapWidth <= 0 || wrapWidth == LV_SIZE_CONTENT)
+        if(wrapWidth <= 0 || LV_COORD_IS_SPEC(wrapWidth))
         {
+          lv_obj_update_layout(handle);
           wrapWidth = lv_obj_get_width(handle);
         }
 
