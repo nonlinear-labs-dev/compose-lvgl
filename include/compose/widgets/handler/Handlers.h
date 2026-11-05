@@ -301,7 +301,10 @@ namespace Compose
     void operator<<(const std::function<void(Touch *it)> &cb)
     {
       cb(this);
-      self.ensureDataForKeyExistsOwning<Data>("TouchData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+      auto &data = self.ensureDataForKeyExistsOwning<Data>("TouchData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+      data.m_begin = m_begin;
+      data.m_update = m_update;
+      data.m_end = m_end;
     }
 
     CB m_begin = [](uint32_t, Position, size_t) { };
