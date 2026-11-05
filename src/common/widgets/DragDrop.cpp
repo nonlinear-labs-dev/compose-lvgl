@@ -576,7 +576,10 @@ namespace Compose
   {
     cb(this);
 
-    self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+    auto &data = self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+    data.m_begin = m_begin;
+    data.m_update = m_update;
+    data.m_end = m_end;
   }
 
   DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder,
