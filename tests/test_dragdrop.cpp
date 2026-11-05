@@ -1,6 +1,6 @@
+#include "LVGLFixture.h"
 #include "compose/widgets/Widget.h"
 #include "compose/widgets/handler/DragDrop.h"
-#include "lvgl.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -11,30 +11,6 @@ namespace
   constexpr auto c_payloadKey = "uuid";
 
   using SourceData = Compose::DragDrop::DragDropForContent::Source::Data;
-
-  struct LVGLFixture
-  {
-    LVGLFixture()
-    {
-      if(!lv_is_initialized())
-        lv_init();
-
-      m_display = lv_display_create(800, 480);
-      m_root = lv_obj_create(nullptr);
-    }
-
-    ~LVGLFixture()
-    {
-      lv_obj_delete(m_root);
-      lv_display_delete(m_display);
-    }
-
-    LVGLFixture(const LVGLFixture &) = delete;
-    LVGLFixture &operator=(const LVGLFixture &) = delete;
-
-    lv_display_t *m_display = nullptr;
-    lv_obj_t *m_root = nullptr;
-  };
 
   void bindDragSource(Compose::Widget &widget, const std::string &payload)
   {
@@ -123,7 +99,7 @@ namespace
   };
 }
 
-TEST_CASE_METHOD(LVGLFixture, "Rebinding a drag source replaces its payload", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Rebinding a drag source replaces its payload", "[DragDrop]")
 {
   Compose::Widget widget(lv_obj_create(m_root));
 
@@ -134,7 +110,7 @@ TEST_CASE_METHOD(LVGLFixture, "Rebinding a drag source replaces its payload", "[
   CHECK(draggedPayloadOf(widget) == "second");
 }
 
-TEST_CASE_METHOD(LVGLFixture, "Content scrolled out of its container does not hide a drop target", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Content scrolled out of its container does not hide a drop target", "[DragDrop]")
 {
   lv_screen_load(m_root);
 
@@ -156,7 +132,7 @@ TEST_CASE_METHOD(LVGLFixture, "Content scrolled out of its container does not hi
   CHECK(target.isCurrentDropTarget());
 }
 
-TEST_CASE_METHOD(LVGLFixture, "A drop target overflowing a parent with visible overflow stays reachable", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "A drop target overflowing a parent with visible overflow stays reachable", "[DragDrop]")
 {
   lv_screen_load(m_root);
 
