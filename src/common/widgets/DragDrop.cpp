@@ -165,10 +165,20 @@ namespace Compose
       self->m_startDecision = StartDecision::Undecided;
     }
 
+    void endPressWithoutClicking(lv_indev_t *finger)
+    {
+      lv_indev_reset(finger, nullptr);
+    }
+
     void dropWhereTheFingerLetGo(SourceData *self)
     {
+      auto *finger = self->m_draggingIndev;
+      const auto wasDragging = DragDropContext::get().isDragging();
       forgetTheDrag(self);
       DragDropContext::get().resetSource(self->m_handle);
+
+      if(wasDragging)
+        endPressWithoutClicking(finger);
     }
 
     void abandonTheDrag(SourceData *self)

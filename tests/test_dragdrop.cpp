@@ -54,6 +54,15 @@ namespace
     return setArea(obj, area);
   }
 
+  void countClicks(Compose::Widget &widget, int &clicks)
+  {
+    widget.clicked << [&clicks](Compose::Position)
+    {
+      ++clicks;
+      return true;
+    };
+  }
+
   class TestFinger
   {
    public:
@@ -77,6 +86,12 @@ namespace
     {
       m_state = LV_INDEV_STATE_PRESSED;
       moveTo(point);
+    }
+
+    void release()
+    {
+      m_state = LV_INDEV_STATE_RELEASED;
+      lv_indev_read(m_indev);
     }
 
     void moveTo(const lv_point_t point)
@@ -150,4 +165,41 @@ TEST_CASE_METHOD(Compose::Test::LVGLFixture, "A drop target overflowing a parent
   finger.moveTo({ .x = 320, .y = 230 });
 
   CHECK(target.isCurrentDropTarget());
+}
+
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Releasing a dragged source does not click it", "[DragDrop]")
+{
+  lv_screen_load(m_root);
+
+  Compose::Widget source(placeAt(m_root, { .x1 = 0, .y1 = 420, .x2 = 199, .y2 = 469 }));
+  bindDragSource(source, "dragged");
+  auto clicks = 0;
+  countClicks(source, clicks);
+  lv_obj_update_layout(m_root);
+
+  TestFinger finger;
+  finger.pressAt({ .x = 100, .y = 445 });
+  finger.moveTo({ .x = 100, .y = 300 });
+  REQUIRE(Compose::DragDropContext::get().isDragging());
+  finger.release();
+
+  CHECK_FALSE(Compose::DragDropContext::get().isDragging());
+  CHECK(clicks == 0);
+}
+
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Releasing a drag source that was not dragged clicks it", "[DragDrop]")
+{
+  lv_screen_load(m_root);
+
+  Compose::Widget source(placeAt(m_root, { .x1 = 0, .y1 = 420, .x2 = 199, .y2 = 469 }));
+  bindDragSource(source, "dragged");
+  auto clicks = 0;
+  countClicks(source, clicks);
+  lv_obj_update_layout(m_root);
+
+  TestFinger finger;
+  finger.pressAt({ .x = 100, .y = 445 });
+  finger.release();
+
+  CHECK(clicks == 1);
 }
