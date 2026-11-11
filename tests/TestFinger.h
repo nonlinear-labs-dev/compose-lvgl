@@ -27,6 +27,12 @@ class TestFinger
     moveTo(point);
   }
 
+  void release()
+  {
+    m_state = LV_INDEV_STATE_RELEASED;
+    lv_indev_read(m_indev);
+  }
+
   void moveTo(const lv_point_t point)
   {
     m_point = point;

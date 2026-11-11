@@ -165,10 +165,20 @@ namespace Compose
       self->m_startDecision = StartDecision::Undecided;
     }
 
+    void endPressWithoutClicking(lv_indev_t *finger)
+    {
+      lv_indev_reset(finger, nullptr);
+    }
+
     void dropWhereTheFingerLetGo(SourceData *self)
     {
+      auto *finger = self->m_draggingIndev;
+      const auto wasDragging = DragDropContext::get().isDragging();
       forgetTheDrag(self);
       DragDropContext::get().resetSource(self->m_handle);
+
+      if(wasDragging)
+        endPressWithoutClicking(finger);
     }
 
     void abandonTheDrag(SourceData *self)
@@ -576,7 +586,10 @@ namespace Compose
   {
     cb(this);
 
-    self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+    auto &data = self.ensureDataForKeyExistsOwning<Data>("DragHandlerData", [this] { return new Data(self.getHandle(), m_begin, m_update, m_end); });
+    data.m_begin = m_begin;
+    data.m_update = m_update;
+    data.m_end = m_end;
   }
 
   DragDrop::DragDropForContent::Source::Data::Data(lv_obj_t *handle, std::string type, const Getter &getter, const DragDropContext::DragWidgetBuilder &dragWidgetBuilder,
