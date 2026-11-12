@@ -1,6 +1,7 @@
 #include <compose/widgets/Window.h>
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
+#include "src/drivers/display/drm/lv_linux_drm.h"
 #include "compose/widgets/Screen.h"
 #include "src/drivers/evdev/lv_evdev.h"
 #include <linux/fb.h>
@@ -12,6 +13,8 @@
 #include <array>
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <optional>
@@ -267,6 +270,38 @@ namespace Compose
       lv_indev_add_event_cb(indev, releaseTouchSlot, LV_EVENT_DELETE, indev);
       return indev;
     }
+
+    bool isConnectedScreen(const std::filesystem::directory_entry &connector)
+    {
+      const auto name = connector.path().filename().string();
+      std::string status;
+      std::ifstream(connector.path() / "status") >> status;
+      return name.starts_with("card") && name.find('-') != std::string::npos && status == "connected";
+    }
+
+    std::optional<std::string> cardWithConnectedScreen()
+    {
+      std::error_code noDrm;
+      const auto found = std::ranges::find_if(std::filesystem::directory_iterator("/sys/class/drm", noDrm),
+                                              isConnectedScreen);
+      const auto connector = found == std::filesystem::directory_iterator() ? std::string()
+                                                                            : found->path().filename().string();
+      return connector.empty() ? std::nullopt : std::optional("/dev/dri/" + connector.substr(0, connector.find('-')));
+    }
+
+    lv_display_t *createDisplay(const std::string &screenDevice)
+    {
+      if(const auto card = cardWithConnectedScreen())
+      {
+        auto *display = lv_linux_drm_create();
+        lv_linux_drm_set_file(display, card->c_str(), -1);
+        return display;
+      }
+
+      auto *display = lv_linux_fbdev_create();
+      lv_linux_fbdev_set_file(display, screenDevice.c_str());
+      return display;
+    }
   }
 
   std::optional<Size> framebufferSize(const std::string &device)
@@ -289,8 +324,7 @@ namespace Compose
 
   Window::Window(Rect position, Rotation rotation, std::string screenDevice)
   {
-    lv_disp_t *disp = lv_linux_fbdev_create();
-    lv_linux_fbdev_set_file(disp, screenDevice.c_str());
+    lv_disp_t *disp = createDisplay(screenDevice);
 
     lv_display_set_offset(disp, position.pos.x, position.pos.y);
     lv_display_set_resolution(disp, position.size.w, position.size.h);
