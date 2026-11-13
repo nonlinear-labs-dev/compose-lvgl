@@ -81,6 +81,7 @@ namespace Compose
         : Widget(parent, Padding { 0 }, Scrollable::NO_SCROLL(), SizeVariant::FIT_CONTENT(), std::forward<tArgs>(args)...)
     {
       makeState(axis);
+      letItemDrawBeyond();
     }
 
     explicit BasicListItemContainer(WidgetType *w)
@@ -97,12 +98,14 @@ namespace Compose
       }
 
       void setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id);
+      void buildItem(const BasicItemBuilder<TId> &itemBuilder, const TId &id) const;
       lv_obj_t *handle = nullptr;
       std::optional<TId> childId;
       Axis axis;
     };
 
     void makeState(Axis axis);
+    void letItemDrawBeyond() const;
     State &ensureState() const;
     void setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id);
     std::optional<TId> getChildId() const;

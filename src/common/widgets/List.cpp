@@ -1,20 +1,41 @@
 #include "compose/widgets/container/List.h"
+#include "src/core/lv_obj_draw_private.h"
 #include <algorithm>
 
 namespace Compose
 {
+  namespace
+  {
+    void extendDrawAreaToItem(lv_event_t *e)
+    {
+      if(auto *item = lv_obj_get_child(lv_event_get_current_target_obj(e), 0))
+        lv_event_set_ext_draw_size(e, lv_obj_get_ext_draw_size(item));
+    }
+  }
+
   template <typename TId> void BasicListItemContainer<TId>::State::setChildId(const BasicItemBuilder<TId> &itemBuilder, const std::optional<TId> &id)
   {
     if(std::exchange(childId, id) != id)
     {
-      BasicListItemContainer widget(handle);
       lv_obj_clean(handle);
       if(childId.has_value())
-      {
-        itemBuilder(widget, childId.value());
-        lv_obj_update_layout(widget.getHandle());
-      }
+        buildItem(itemBuilder, childId.value());
     }
+  }
+
+  template <typename TId> void BasicListItemContainer<TId>::State::buildItem(const BasicItemBuilder<TId> &itemBuilder, const TId &id) const
+  {
+    BasicListItemContainer container(handle);
+    Widget item(container, Padding { 0 }, Scrollable::NO_SCROLL(), SizeVariant::FIT_CONTENT());
+    itemBuilder(item, id);
+    lv_obj_update_layout(handle);
+    lv_obj_refresh_ext_draw_size(handle);
+  }
+
+  template <typename TId> void BasicListItemContainer<TId>::letItemDrawBeyond() const
+  {
+    lv_obj_add_flag(this->getHandle(), LV_OBJ_FLAG_OVERFLOW_VISIBLE);
+    lv_obj_add_event_cb(this->getHandle(), extendDrawAreaToItem, LV_EVENT_REFR_EXT_DRAW_SIZE, nullptr);
   }
 
   template <typename TId> void BasicListItemContainer<TId>::makeState(Axis axis)
