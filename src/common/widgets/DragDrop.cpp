@@ -151,6 +151,12 @@ namespace Compose
         suppressScrollableAncestors(self);
     }
 
+    void allowDragInAnyDirection(SourceData *self)
+    {
+      self->m_startDecision = StartDecision::AllowDrag;
+      suppressScrollableAncestors(self);
+    }
+
     void startDragWhenFarEnough(SourceData *self, lv_point_t point)
     {
       const auto xDiff = point.x - self->m_startPos->x;
@@ -661,6 +667,17 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
+    m_longPressHandler = lv_obj_add_event_cb(
+        m_handle,
+        [](lv_event_t *e)
+        {
+          Reactive::Deferrer deferrer;
+          if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+            if(lv_event_get_indev(e) == self->m_draggingIndev)
+              allowDragInAnyDirection(self);
+        },
+        LV_EVENT_LONG_PRESSED, this);
+
     auto endDrag = [](lv_event_t *e)
     {
       Reactive::Deferrer deferrer;
@@ -692,6 +709,7 @@ namespace Compose
     {
       lv_obj_remove_event_dsc(m_handle, m_pressHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressingHandler);
+      lv_obj_remove_event_dsc(m_handle, m_longPressHandler);
       lv_obj_remove_event_dsc(m_handle, m_releaseHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
       lv_obj_remove_event_dsc(m_handle, m_indevResetHandler);

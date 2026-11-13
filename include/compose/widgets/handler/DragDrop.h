@@ -203,6 +203,7 @@ namespace Compose
           std::vector<lv_obj_t *> m_suppressedScrollables;
           lv_event_dsc_t *m_pressHandler = nullptr;
           lv_event_dsc_t *m_pressingHandler = nullptr;
+          lv_event_dsc_t *m_longPressHandler = nullptr;
           lv_event_dsc_t *m_releaseHandler = nullptr;
           lv_event_dsc_t *m_pressLostHandler = nullptr;
           lv_event_dsc_t *m_indevResetHandler = nullptr;
