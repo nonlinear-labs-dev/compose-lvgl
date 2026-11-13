@@ -354,6 +354,7 @@ namespace Compose
 #define SVG_CONTENT(...) it.doAutorun([=] { it.setModifier(SVGFileContent { __VA_ARGS__ }); })
 #define READONLY(...) it.doAutorun([=] { it.setModifier(Readonly(__VA_ARGS__)); })
 #define ROUNDED_CORNERS(...) it.doAutorun([=] { it.setModifier(RoundedCorner(__VA_ARGS__)); })
+#define TRANSFORM_SIZE(...) it.doAutorun([=] { it.setModifier(TransformSize { __VA_ARGS__ }); })
 #define PADDING(...) it.doAutorun([=] { it.setModifier(Padding(__VA_ARGS__)); })
 #define XALIGN(...) it.doAutorun([=] { it.setModifier(XAlign(__VA_ARGS__)); })
 #define LETTER_SPACING(...) it.doAutorun([=] { it.setModifier(LetterSpacing(__VA_ARGS__)); })
