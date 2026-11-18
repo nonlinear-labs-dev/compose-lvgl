@@ -13,8 +13,6 @@
 #include <array>
 #include <chrono>
 #include <cstdio>
-#include <filesystem>
-#include <fstream>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <optional>
@@ -271,36 +269,23 @@ namespace Compose
       return indev;
     }
 
-    bool isConnectedScreen(const std::filesystem::directory_entry &connector)
+    lv_display_t *createDrmDisplay(const std::string &card)
     {
-      const auto name = connector.path().filename().string();
-      std::string status;
-      std::ifstream(connector.path() / "status") >> status;
-      return name.starts_with("card") && name.find('-') != std::string::npos && status == "connected";
+      auto *display = lv_linux_drm_create();
+      lv_linux_drm_set_file(display, card.c_str(), -1);
+      return display;
     }
 
-    std::optional<std::string> cardWithConnectedScreen()
+    lv_display_t *createFbdevDisplay(const std::string &framebuffer)
     {
-      std::error_code noDrm;
-      const auto found = std::ranges::find_if(std::filesystem::directory_iterator("/sys/class/drm", noDrm),
-                                              isConnectedScreen);
-      const auto connector = found == std::filesystem::directory_iterator() ? std::string()
-                                                                            : found->path().filename().string();
-      return connector.empty() ? std::nullopt : std::optional("/dev/dri/" + connector.substr(0, connector.find('-')));
+      auto *display = lv_linux_fbdev_create();
+      lv_linux_fbdev_set_file(display, framebuffer.c_str());
+      return display;
     }
 
     lv_display_t *createDisplay(const std::string &screenDevice)
     {
-      if(const auto card = cardWithConnectedScreen())
-      {
-        auto *display = lv_linux_drm_create();
-        lv_linux_drm_set_file(display, card->c_str(), -1);
-        return display;
-      }
-
-      auto *display = lv_linux_fbdev_create();
-      lv_linux_fbdev_set_file(display, screenDevice.c_str());
-      return display;
+      return screenDevice.starts_with("/dev/dri/") ? createDrmDisplay(screenDevice) : createFbdevDisplay(screenDevice);
     }
   }
 
