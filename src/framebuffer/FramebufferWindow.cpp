@@ -1,6 +1,7 @@
 #include <compose/widgets/Window.h>
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
+#include "src/drivers/display/drm/lv_linux_drm.h"
 #include "compose/widgets/Screen.h"
 #include "src/drivers/evdev/lv_evdev.h"
 #include <linux/fb.h>
@@ -267,6 +268,25 @@ namespace Compose
       lv_indev_add_event_cb(indev, releaseTouchSlot, LV_EVENT_DELETE, indev);
       return indev;
     }
+
+    lv_display_t *createDrmDisplay(const std::string &card)
+    {
+      auto *display = lv_linux_drm_create();
+      lv_linux_drm_set_file(display, card.c_str(), -1);
+      return display;
+    }
+
+    lv_display_t *createFbdevDisplay(const std::string &framebuffer)
+    {
+      auto *display = lv_linux_fbdev_create();
+      lv_linux_fbdev_set_file(display, framebuffer.c_str());
+      return display;
+    }
+
+    lv_display_t *createDisplay(const std::string &screenDevice)
+    {
+      return screenDevice.starts_with("/dev/dri/") ? createDrmDisplay(screenDevice) : createFbdevDisplay(screenDevice);
+    }
   }
 
   std::optional<Size> framebufferSize(const std::string &device)
@@ -289,8 +309,7 @@ namespace Compose
 
   Window::Window(Rect position, Rotation rotation, std::string screenDevice)
   {
-    lv_disp_t *disp = lv_linux_fbdev_create();
-    lv_linux_fbdev_set_file(disp, screenDevice.c_str());
+    lv_disp_t *disp = createDisplay(screenDevice);
 
     lv_display_set_offset(disp, position.pos.x, position.pos.y);
     lv_display_set_resolution(disp, position.size.w, position.size.h);
