@@ -1,6 +1,7 @@
+#include "LVGLFixture.h"
 #include "compose/widgets/Widget.h"
 #include "compose/widgets/handler/DragDrop.h"
-#include "lvgl.h"
+#include "TestFinger.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -11,30 +12,6 @@ namespace
   constexpr auto c_payloadKey = "uuid";
 
   using SourceData = Compose::DragDrop::DragDropForContent::Source::Data;
-
-  struct LVGLFixture
-  {
-    LVGLFixture()
-    {
-      if(!lv_is_initialized())
-        lv_init();
-
-      m_display = lv_display_create(800, 480);
-      m_root = lv_obj_create(nullptr);
-    }
-
-    ~LVGLFixture()
-    {
-      lv_obj_delete(m_root);
-      lv_display_delete(m_display);
-    }
-
-    LVGLFixture(const LVGLFixture &) = delete;
-    LVGLFixture &operator=(const LVGLFixture &) = delete;
-
-    lv_display_t *m_display = nullptr;
-    lv_obj_t *m_root = nullptr;
-  };
 
   void bindDragSource(Compose::Widget &widget, const std::string &payload)
   {
@@ -78,52 +55,17 @@ namespace
     return setArea(obj, area);
   }
 
-  class TestFinger
+  void countClicks(Compose::Widget &widget, int &clicks)
   {
-   public:
-    TestFinger()
-        : m_indev(lv_indev_create())
+    widget.clicked << [&clicks](Compose::Position)
     {
-      lv_indev_set_type(m_indev, LV_INDEV_TYPE_POINTER);
-      lv_indev_set_user_data(m_indev, this);
-      lv_indev_set_read_cb(m_indev, read);
-    }
-
-    ~TestFinger()
-    {
-      lv_indev_delete(m_indev);
-    }
-
-    TestFinger(const TestFinger &) = delete;
-    TestFinger &operator=(const TestFinger &) = delete;
-
-    void pressAt(const lv_point_t point)
-    {
-      m_state = LV_INDEV_STATE_PRESSED;
-      moveTo(point);
-    }
-
-    void moveTo(const lv_point_t point)
-    {
-      m_point = point;
-      lv_indev_read(m_indev);
-    }
-
-   private:
-    static void read(lv_indev_t *indev, lv_indev_data_t *data)
-    {
-      const auto *self = static_cast<TestFinger *>(lv_indev_get_user_data(indev));
-      data->point = self->m_point;
-      data->state = self->m_state;
-    }
-
-    lv_indev_t *m_indev;
-    lv_point_t m_point { .x = 0, .y = 0 };
-    lv_indev_state_t m_state = LV_INDEV_STATE_RELEASED;
-  };
+      ++clicks;
+      return true;
+    };
+  }
 }
 
-TEST_CASE_METHOD(LVGLFixture, "Rebinding a drag source replaces its payload", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Rebinding a drag source replaces its payload", "[DragDrop]")
 {
   Compose::Widget widget(lv_obj_create(m_root));
 
@@ -134,7 +76,7 @@ TEST_CASE_METHOD(LVGLFixture, "Rebinding a drag source replaces its payload", "[
   CHECK(draggedPayloadOf(widget) == "second");
 }
 
-TEST_CASE_METHOD(LVGLFixture, "Content scrolled out of its container does not hide a drop target", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Content scrolled out of its container does not hide a drop target", "[DragDrop]")
 {
   lv_screen_load(m_root);
 
@@ -156,7 +98,7 @@ TEST_CASE_METHOD(LVGLFixture, "Content scrolled out of its container does not hi
   CHECK(target.isCurrentDropTarget());
 }
 
-TEST_CASE_METHOD(LVGLFixture, "A drop target overflowing a parent with visible overflow stays reachable", "[DragDrop]")
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "A drop target overflowing a parent with visible overflow stays reachable", "[DragDrop]")
 {
   lv_screen_load(m_root);
 
@@ -174,4 +116,41 @@ TEST_CASE_METHOD(LVGLFixture, "A drop target overflowing a parent with visible o
   finger.moveTo({ .x = 320, .y = 230 });
 
   CHECK(target.isCurrentDropTarget());
+}
+
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Releasing a dragged source does not click it", "[DragDrop]")
+{
+  lv_screen_load(m_root);
+
+  Compose::Widget source(placeAt(m_root, { .x1 = 0, .y1 = 420, .x2 = 199, .y2 = 469 }));
+  bindDragSource(source, "dragged");
+  auto clicks = 0;
+  countClicks(source, clicks);
+  lv_obj_update_layout(m_root);
+
+  TestFinger finger;
+  finger.pressAt({ .x = 100, .y = 445 });
+  finger.moveTo({ .x = 100, .y = 300 });
+  REQUIRE(Compose::DragDropContext::get().isDragging());
+  finger.release();
+
+  CHECK_FALSE(Compose::DragDropContext::get().isDragging());
+  CHECK(clicks == 0);
+}
+
+TEST_CASE_METHOD(Compose::Test::LVGLFixture, "Releasing a drag source that was not dragged clicks it", "[DragDrop]")
+{
+  lv_screen_load(m_root);
+
+  Compose::Widget source(placeAt(m_root, { .x1 = 0, .y1 = 420, .x2 = 199, .y2 = 469 }));
+  bindDragSource(source, "dragged");
+  auto clicks = 0;
+  countClicks(source, clicks);
+  lv_obj_update_layout(m_root);
+
+  TestFinger finger;
+  finger.pressAt({ .x = 100, .y = 445 });
+  finger.release();
+
+  CHECK(clicks == 1);
 }
