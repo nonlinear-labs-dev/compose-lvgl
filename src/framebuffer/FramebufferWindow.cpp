@@ -1,7 +1,7 @@
 #include <compose/widgets/Window.h>
+#include "DrmScreen.h"
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
-#include "src/drivers/display/drm/lv_linux_drm.h"
 #include "compose/widgets/Screen.h"
 #include "src/drivers/evdev/lv_evdev.h"
 #include <linux/fb.h>
@@ -16,12 +16,9 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <optional>
-#include <span>
 #include <string>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <xf86drm.h>
-#include <xf86drmMode.h>
 
 #include <fcntl.h>
 #include <linux/input-event-codes.h>
@@ -272,13 +269,6 @@ namespace Compose
       return indev;
     }
 
-    lv_display_t *createDrmDisplay(const std::string &card)
-    {
-      auto *display = lv_linux_drm_create();
-      lv_linux_drm_set_file(display, card.c_str(), -1);
-      return display;
-    }
-
     lv_display_t *createFbdevDisplay(const std::string &framebuffer)
     {
       auto *display = lv_linux_fbdev_create();
@@ -294,51 +284,6 @@ namespace Compose
     lv_display_t *createDisplay(const std::string &screenDevice)
     {
       return isDrmCard(screenDevice) ? createDrmDisplay(screenDevice) : createFbdevDisplay(screenDevice);
-    }
-
-    std::optional<Size> connectorSize(int fd, uint32_t connectorId)
-    {
-      std::optional<Size> result;
-
-      if(auto *connector = drmModeGetConnector(fd, connectorId))
-      {
-        if(connector->connection == DRM_MODE_CONNECTED && connector->count_modes > 0)
-          result = Size { static_cast<int>(connector->modes[0].hdisplay), static_cast<int>(connector->modes[0].vdisplay) };
-
-        drmModeFreeConnector(connector);
-      }
-
-      return result;
-    }
-
-    std::optional<Size> firstConnectedSize(int fd)
-    {
-      std::optional<Size> result;
-
-      if(auto *resources = drmModeGetResources(fd))
-      {
-        for(auto connectorId : std::span(resources->connectors, resources->count_connectors))
-          if(!result)
-            result = connectorSize(fd, connectorId);
-
-        drmModeFreeResources(resources);
-      }
-
-      return result;
-    }
-
-    std::optional<Size> drmScreenSize(const std::string &card)
-    {
-      std::optional<Size> result;
-      const int fd = open(card.c_str(), O_RDWR | O_CLOEXEC);
-
-      if(fd >= 0)
-      {
-        result = firstConnectedSize(fd);
-        close(fd);
-      }
-
-      return result;
     }
 
     std::optional<Size> fbdevScreenSize(const std::string &framebuffer)
