@@ -9,8 +9,9 @@
 #include "compose/modifiers/OverflowBehaviour.h"
 #include "compose/modifiers/RoundedCorner.h"
 #include "compose/modifiers/Scrollable.h"
-#include "compose/modifiers/TransformSize.h"
+#include "compose/modifiers/ScrollChain.h"
 #include "compose/modifiers/StyleSheets.h"
+#include "compose/modifiers/TransformSize.h"
 
 #include <stdexcept>
 #include <type_traits>
@@ -230,6 +231,11 @@ namespace Compose
     void setModifier(Scrollable r) const
     {
       lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_SCROLLABLE, r.it == Scrollable::SCROLLABLE);
+    }
+
+    void setModifier(ScrollChain c) const
+    {
+      lv_obj_set_flag(getHandle(), LV_OBJ_FLAG_SCROLL_CHAIN, c.it == ScrollChain::CHAINED);
     }
 
     void setColor(Color col) const

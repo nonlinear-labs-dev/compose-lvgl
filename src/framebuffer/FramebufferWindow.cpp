@@ -1,6 +1,7 @@
 #include <compose/widgets/Window.h>
 #include <lvgl.h>
 #include "src/drivers/display/fb/lv_linux_fbdev.h"
+#include "src/drivers/display/drm/lv_linux_drm.h"
 #include "compose/widgets/Screen.h"
 #include "src/drivers/evdev/lv_evdev.h"
 #include <linux/fb.h>
@@ -15,9 +16,12 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <optional>
+#include <span>
 #include <string>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #include <fcntl.h>
 #include <linux/input-event-codes.h>
@@ -267,30 +271,103 @@ namespace Compose
       lv_indev_add_event_cb(indev, releaseTouchSlot, LV_EVENT_DELETE, indev);
       return indev;
     }
+
+    lv_display_t *createDrmDisplay(const std::string &card)
+    {
+      auto *display = lv_linux_drm_create();
+      lv_linux_drm_set_file(display, card.c_str(), -1);
+      return display;
+    }
+
+    lv_display_t *createFbdevDisplay(const std::string &framebuffer)
+    {
+      auto *display = lv_linux_fbdev_create();
+      lv_linux_fbdev_set_file(display, framebuffer.c_str());
+      return display;
+    }
+
+    bool isDrmCard(const std::string &screenDevice)
+    {
+      return screenDevice.starts_with("/dev/dri/");
+    }
+
+    lv_display_t *createDisplay(const std::string &screenDevice)
+    {
+      return isDrmCard(screenDevice) ? createDrmDisplay(screenDevice) : createFbdevDisplay(screenDevice);
+    }
+
+    std::optional<Size> connectorSize(int fd, uint32_t connectorId)
+    {
+      std::optional<Size> result;
+
+      if(auto *connector = drmModeGetConnector(fd, connectorId))
+      {
+        if(connector->connection == DRM_MODE_CONNECTED && connector->count_modes > 0)
+          result = Size { static_cast<int>(connector->modes[0].hdisplay), static_cast<int>(connector->modes[0].vdisplay) };
+
+        drmModeFreeConnector(connector);
+      }
+
+      return result;
+    }
+
+    std::optional<Size> firstConnectedSize(int fd)
+    {
+      std::optional<Size> result;
+
+      if(auto *resources = drmModeGetResources(fd))
+      {
+        for(auto connectorId : std::span(resources->connectors, resources->count_connectors))
+          if(!result)
+            result = connectorSize(fd, connectorId);
+
+        drmModeFreeResources(resources);
+      }
+
+      return result;
+    }
+
+    std::optional<Size> drmScreenSize(const std::string &card)
+    {
+      std::optional<Size> result;
+      const int fd = open(card.c_str(), O_RDWR | O_CLOEXEC);
+
+      if(fd >= 0)
+      {
+        result = firstConnectedSize(fd);
+        close(fd);
+      }
+
+      return result;
+    }
+
+    std::optional<Size> fbdevScreenSize(const std::string &framebuffer)
+    {
+      std::optional<Size> result;
+      const int fd = open(framebuffer.c_str(), O_RDONLY);
+
+      if(fd >= 0)
+      {
+        fb_var_screeninfo info {};
+
+        if(ioctl(fd, FBIOGET_VSCREENINFO, &info) == 0)
+          result = Size { static_cast<int>(info.xres), static_cast<int>(info.yres) };
+
+        close(fd);
+      }
+
+      return result;
+    }
   }
 
   std::optional<Size> framebufferSize(const std::string &device)
   {
-    std::optional<Size> result;
-    const int fd = open(device.c_str(), O_RDONLY);
-
-    if(fd >= 0)
-    {
-      fb_var_screeninfo info {};
-
-      if(ioctl(fd, FBIOGET_VSCREENINFO, &info) == 0)
-        result = Size { static_cast<int>(info.xres), static_cast<int>(info.yres) };
-
-      close(fd);
-    }
-
-    return result;
+    return isDrmCard(device) ? drmScreenSize(device) : fbdevScreenSize(device);
   }
 
   Window::Window(Rect position, Rotation rotation, std::string screenDevice)
   {
-    lv_disp_t *disp = lv_linux_fbdev_create();
-    lv_linux_fbdev_set_file(disp, screenDevice.c_str());
+    lv_disp_t *disp = createDisplay(screenDevice);
 
     lv_display_set_offset(disp, position.pos.x, position.pos.y);
     lv_display_set_resolution(disp, position.size.w, position.size.h);
