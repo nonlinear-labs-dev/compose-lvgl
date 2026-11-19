@@ -69,13 +69,38 @@ namespace Compose
         throw std::runtime_error(what + ": " + std::strerror(errno));
     }
 
+    const drmModeModeInfo &preferredMode(const drmModeConnector &screen)
+    {
+      const auto modes = std::span(screen.modes, screen.count_modes);
+      const auto preferred = std::ranges::find_if(modes, [](const drmModeModeInfo &mode)
+                                                  { return (mode.type & DRM_MODE_TYPE_PREFERRED) != 0; });
+      return preferred != modes.end() ? *preferred : modes.front();
+    }
+
+    uint32_t encoderIdOf(const drmModeConnector &screen)
+    {
+      if(screen.encoder_id == 0 && screen.count_encoders == 0)
+        throw std::runtime_error("no encoder for the connected screen");
+
+      return screen.encoder_id ? screen.encoder_id : screen.encoders[0];
+    }
+
+    uint32_t firstPossibleCrtc(const drmModeEncoder &chosen, const drmModeRes &res)
+    {
+      const auto index = std::countr_zero(chosen.possible_crtcs);
+      if(index >= res.count_crtcs)
+        throw std::runtime_error("no CRTC for the connected screen");
+
+      return res.crtcs[index];
+    }
+
     uint32_t crtcOf(const int fd, const drmModeConnector &screen, const drmModeRes &res)
     {
-      const auto chosen = encoder(fd, screen.encoder_id ? screen.encoder_id : screen.encoders[0]);
+      const auto chosen = encoder(fd, encoderIdOf(screen));
       if(!chosen)
         throw std::runtime_error("no encoder for the connected screen");
 
-      return chosen->crtc_id ? chosen->crtc_id : res.crtcs[std::countr_zero(chosen->possible_crtcs)];
+      return chosen->crtc_id ? chosen->crtc_id : firstPossibleCrtc(*chosen, res);
     }
 
     struct Output
@@ -98,7 +123,7 @@ namespace Compose
 
       return { .connector = screen->connector_id,
                .crtc = crtcOf(fd, *screen, *res),
-               .mode = screen->modes[0],
+               .mode = preferredMode(*screen),
                .widthMm = screen->mmWidth };
     }
 
@@ -213,7 +238,7 @@ namespace Compose
           : m_card(path)
           , m_output(findOutput(m_card.fd()))
           , m_scanouts { Scanout { m_card.fd(), m_output.mode }, Scanout { m_card.fd(), m_output.mode } }
-          , m_frame(static_cast<size_t>(width()) * height() * c_bytesPerPixel)
+          , m_frame(static_cast<size_t>(rowBytes()) * height())
       {
         if(drmModeSetCrtc(m_card.fd(), m_output.crtc, m_scanouts[0].framebuffer(), 0, 0, &m_output.connector, 1,
                           &m_output.mode)
@@ -244,6 +269,11 @@ namespace Compose
         return m_output.widthMm;
       }
 
+      uint32_t rowBytes() const
+      {
+        return width() * c_bytesPerPixel;
+      }
+
       std::vector<uint8_t> &frame()
       {
         return m_frame;
@@ -252,7 +282,7 @@ namespace Compose
       void show()
       {
         waitForFlip();
-        m_scanouts[m_back].fill(m_frame, static_cast<size_t>(width()) * c_bytesPerPixel);
+        m_scanouts[m_back].fill(m_frame, rowBytes());
         flipTo(m_scanouts[m_back]);
         m_back = 1 - m_back;
       }
@@ -282,7 +312,7 @@ namespace Compose
           drmHandleEvent(m_card.fd(), &m_events);
       }
 
-      static void onFlipped(int, unsigned int, unsigned int, unsigned int, void *screen)
+      static void onFlipped(int, unsigned int, unsigned int, unsigned int, void *const screen)
       {
         static_cast<DrmScreen *>(screen)->m_flipPending = false;
       }
@@ -300,12 +330,12 @@ namespace Compose
                                  .sequence_handler = nullptr };
     };
 
-    DrmScreen &screenOf(lv_display_t *display)
+    DrmScreen &screenOf(lv_display_t *const display)
     {
       return *static_cast<DrmScreen *>(lv_display_get_driver_data(display));
     }
 
-    void flush(lv_display_t *display, const lv_area_t *, uint8_t *)
+    void flush(lv_display_t *const display, const lv_area_t *, uint8_t *)
     {
       if(lv_display_flush_is_last(display))
         screenOf(display).show();
@@ -313,7 +343,7 @@ namespace Compose
       lv_display_flush_ready(display);
     }
 
-    void deleteScreen(lv_event_t *event)
+    void deleteScreen(lv_event_t *const event)
     {
       delete &screenOf(static_cast<lv_display_t *>(lv_event_get_current_target(event)));
     }
@@ -329,8 +359,8 @@ namespace Compose
     auto screen = std::make_unique<DrmScreen>(card);
     auto *display = lv_display_create(screen->width(), screen->height());
 
-    lv_display_set_buffers(display, screen->frame().data(), nullptr, screen->frame().size(),
-                           LV_DISPLAY_RENDER_MODE_DIRECT);
+    lv_display_set_buffers_with_stride(display, screen->frame().data(), nullptr, screen->frame().size(),
+                                       screen->rowBytes(), LV_DISPLAY_RENDER_MODE_DIRECT);
     lv_display_set_flush_cb(display, flush);
 
     if(screen->widthMm())
@@ -349,8 +379,8 @@ namespace Compose
     {
       if(const auto res = resources(fd))
         if(const auto screen = firstConnected(fd, *res))
-          result = Size { .w = static_cast<int>(screen->modes[0].hdisplay),
-                          .h = static_cast<int>(screen->modes[0].vdisplay) };
+          result = Size { .w = static_cast<int>(preferredMode(*screen).hdisplay),
+                          .h = static_cast<int>(preferredMode(*screen).vdisplay) };
 
       close(fd);
     }
