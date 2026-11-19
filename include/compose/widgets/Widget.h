@@ -11,6 +11,7 @@
 #include "compose/modifiers/Scrollable.h"
 #include "compose/modifiers/ScrollChain.h"
 #include "compose/modifiers/StyleSheets.h"
+#include "compose/modifiers/TransformSize.h"
 
 #include <stdexcept>
 #include <type_traits>
@@ -431,6 +432,12 @@ namespace Compose
     void setModifier(RoundedCorner corner) const
     {
       lv_obj_set_style_radius(getHandle(), corner.radius, LV_PART_MAIN);
+    }
+
+    void setModifier(TransformSize size) const
+    {
+      lv_obj_set_style_transform_width(getHandle(), size.width, LV_PART_MAIN);
+      lv_obj_set_style_transform_height(getHandle(), size.height, LV_PART_MAIN);
     }
 
     void setModifier(Hidden h) const
