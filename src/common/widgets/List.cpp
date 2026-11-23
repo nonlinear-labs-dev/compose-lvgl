@@ -305,6 +305,19 @@ namespace Compose
 
   template <typename TId> void BasicList<TId>::State::bruteForceUpdate()
   {
+    updateRequested = true;
+
+    if(!std::exchange(updating, true))
+    {
+      while(std::exchange(updateRequested, false))
+        updatePane();
+
+      updating = false;
+    }
+  }
+
+  template <typename TId> void BasicList<TId>::State::updatePane()
+  {
     if(axis == Axis::Horizontal)
       pane.bruteForceUpdate(lv_obj_get_content_width(handle), lv_obj_get_scroll_left(handle), model, itemBuilder, emptyListPlaceholderBuilder);
     else
