@@ -246,7 +246,13 @@ namespace Compose
         bruteForceUpdate();
       }
 
+      // Building an item lays out the screen, which reports size and scroll changes of this
+      // list synchronously. Running those updates inside the current one would let it reorder
+      // the rows afterwards with its stale measurements.
       void bruteForceUpdate();
+      void updatePane();
+      bool updating = false;
+      bool updateRequested = false;
     };
 
     void makeState(Axis axis);
