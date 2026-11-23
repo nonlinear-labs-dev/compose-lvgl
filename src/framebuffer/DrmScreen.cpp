@@ -69,12 +69,9 @@ namespace Compose
         throw std::runtime_error(what + ": " + std::strerror(errno));
     }
 
-    const drmModeModeInfo &preferredMode(const drmModeConnector &screen)
+    const drmModeModeInfo &modeOf(const drmModeConnector &screen)
     {
-      const auto modes = std::span(screen.modes, screen.count_modes);
-      const auto preferred = std::ranges::find_if(modes, [](const drmModeModeInfo &mode)
-                                                  { return (mode.type & DRM_MODE_TYPE_PREFERRED) != 0; });
-      return preferred != modes.end() ? *preferred : modes.front();
+      return screen.modes[0];
     }
 
     uint32_t encoderIdOf(const drmModeConnector &screen)
@@ -123,7 +120,7 @@ namespace Compose
 
       return { .connector = screen->connector_id,
                .crtc = crtcOf(fd, *screen, *res),
-               .mode = preferredMode(*screen),
+               .mode = modeOf(*screen),
                .widthMm = screen->mmWidth };
     }
 
@@ -379,8 +376,8 @@ namespace Compose
     {
       if(const auto res = resources(fd))
         if(const auto screen = firstConnected(fd, *res))
-          result = Size { .w = static_cast<int>(preferredMode(*screen).hdisplay),
-                          .h = static_cast<int>(preferredMode(*screen).vdisplay) };
+          result = Size { .w = static_cast<int>(modeOf(*screen).hdisplay),
+                          .h = static_cast<int>(modeOf(*screen).vdisplay) };
 
       close(fd);
     }
