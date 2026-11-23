@@ -29,6 +29,13 @@ namespace Compose
       return lv_area_is_point_on(&coords, &point, 0);
     }
 
+    bool isPointInClickArea(lv_obj_t *widget, const lv_point_t &point)
+    {
+      lv_area_t clickArea;
+      lv_obj_get_click_area(widget, &clickArea);
+      return lv_area_is_point_on(&clickArea, &point, 0);
+    }
+
     bool canChildrenContainPoint(lv_obj_t *widget, const lv_point_t &point)
     {
       return lv_obj_has_flag(widget, LV_OBJ_FLAG_OVERFLOW_VISIBLE) || isPointInside(widget, point);
@@ -142,6 +149,12 @@ namespace Compose
 
       if(self->m_startDecision == StartDecision::AllowDrag && self->m_startAxis != DragDrop::DragDropForContent::Source::StartAxis::Any)
         suppressScrollableAncestors(self);
+    }
+
+    void allowDragInAnyDirection(SourceData *self)
+    {
+      self->m_startDecision = StartDecision::AllowDrag;
+      suppressScrollableAncestors(self);
     }
 
     void startDragWhenFarEnough(SourceData *self, lv_point_t point)
@@ -332,26 +345,38 @@ namespace Compose
           lv_obj_set_pos(source->m_dragWidget, rootX - source->m_dragWidgetOffset.first, rootY - source->m_dragWidgetOffset.second);
         }
 
-        auto *candidate = targetProspect;
-        lv_obj_t *currentTarget = nullptr;
-
-        while(candidate && !currentTarget)
-        {
-          for(const auto &target : m_targets)
-          {
-            if(target->m_widget == candidate && target->m_type == source->m_type)
-            {
-              currentTarget = candidate;
-              break;
-            }
-          }
-
-          candidate = lv_obj_get_parent(candidate);
-        }
-
-        setCurrentTarget(*source, currentTarget);
+        auto *target = findTargetAbove(*source, targetProspect);
+        setCurrentTarget(*source, target ? target : findTargetAround(*source, lv_point_t { rootX, rootY }));
       }
     }
+  }
+
+  lv_obj_t *DragDropContext::findTargetAbove(const Source &source, lv_obj_t *prospect) const
+  {
+    auto *candidate = prospect;
+    lv_obj_t *found = nullptr;
+
+    while(candidate && !found)
+    {
+      if(std::ranges::any_of(m_targets, [&](const auto &target) { return target->m_widget == candidate && target->m_type == source.m_type; }))
+        found = candidate;
+
+      candidate = lv_obj_get_parent(candidate);
+    }
+
+    return found;
+  }
+
+  lv_obj_t *DragDropContext::findTargetAround(const Source &source, const lv_point_t &point) const
+  {
+    const auto around = std::ranges::find_if(m_targets,
+                                             [&](const auto &target)
+                                             {
+                                               return target->m_type == source.m_type && lv_obj_is_visible(target->m_widget)
+                                                   && isPointInClickArea(target->m_widget, point);
+                                             });
+
+    return around != m_targets.end() ? (*around)->m_widget : nullptr;
   }
 
   bool DragDropContext::isCurrentTarget(lv_obj_t *widget) const
@@ -642,6 +667,17 @@ namespace Compose
         },
         LV_EVENT_PRESSING, this);
 
+    m_longPressHandler = lv_obj_add_event_cb(
+        m_handle,
+        [](lv_event_t *e)
+        {
+          Reactive::Deferrer deferrer;
+          if(auto *self = static_cast<Data *>(lv_event_get_user_data(e)))
+            if(lv_event_get_indev(e) == self->m_draggingIndev)
+              allowDragInAnyDirection(self);
+        },
+        LV_EVENT_LONG_PRESSED, this);
+
     auto endDrag = [](lv_event_t *e)
     {
       Reactive::Deferrer deferrer;
@@ -673,6 +709,7 @@ namespace Compose
     {
       lv_obj_remove_event_dsc(m_handle, m_pressHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressingHandler);
+      lv_obj_remove_event_dsc(m_handle, m_longPressHandler);
       lv_obj_remove_event_dsc(m_handle, m_releaseHandler);
       lv_obj_remove_event_dsc(m_handle, m_pressLostHandler);
       lv_obj_remove_event_dsc(m_handle, m_indevResetHandler);

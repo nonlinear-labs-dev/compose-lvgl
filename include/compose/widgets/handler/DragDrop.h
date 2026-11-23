@@ -62,6 +62,8 @@ namespace Compose
     };
 
     void setCurrentTarget(Source &source, lv_obj_t *target);
+    [[nodiscard]] lv_obj_t *findTargetAbove(const Source &source, lv_obj_t *prospect) const;
+    [[nodiscard]] lv_obj_t *findTargetAround(const Source &source, const lv_point_t &point) const;
     void notifyDragOver(lv_obj_t *widget, const std::string &type, const std::optional<nlohmann::json> &content);
 
     // Only the query methods subscribe to this (get()). The mutating paths peek(),
@@ -201,6 +203,7 @@ namespace Compose
           std::vector<lv_obj_t *> m_suppressedScrollables;
           lv_event_dsc_t *m_pressHandler = nullptr;
           lv_event_dsc_t *m_pressingHandler = nullptr;
+          lv_event_dsc_t *m_longPressHandler = nullptr;
           lv_event_dsc_t *m_releaseHandler = nullptr;
           lv_event_dsc_t *m_pressLostHandler = nullptr;
           lv_event_dsc_t *m_indevResetHandler = nullptr;
