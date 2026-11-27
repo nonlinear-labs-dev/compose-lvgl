@@ -13,6 +13,30 @@ namespace
 
     return err == 0;
   }
+
+  constexpr std::array c_tabularDigitGlyphNames = { "zero.tf", "one.tf", "two.tf",   "three.tf", "four.tf",
+                                                    "five.tf", "six.tf", "seven.tf", "eight.tf", "nine.tf" };
+
+  FT_UInt glyphIndexByName(const FT_Face face, const char *name)
+  {
+    const auto index = FT_Get_Name_Index(face, name);
+    if(index == 0)
+      g_error("FreeType font %s has no glyph named %s", face->family_name, name);
+    return index;
+  }
+
+  std::array<FT_UInt, c_tabularDigitGlyphNames.size()> findTabularDigitGlyphs(const FT_Face face)
+  {
+    std::array<FT_UInt, c_tabularDigitGlyphNames.size()> glyphs {};
+    std::ranges::transform(c_tabularDigitGlyphNames, glyphs.begin(),
+                           [face](const char *name) { return glyphIndexByName(face, name); });
+    return glyphs;
+  }
+
+  bool isAsciiDigit(const std::uint32_t codepoint)
+  {
+    return codepoint >= U'0' && codepoint <= U'9';
+  }
 }
 
 namespace Compose
@@ -22,7 +46,7 @@ namespace Compose
   {
   }
 
-  FreeTypeFont::FreeTypeFont(std::vector<std::string> fontPaths, int height)
+  FreeTypeFont::FreeTypeFont(std::vector<std::string> fontPaths, int height, const Font::Digits digits)
       : m_faces()
       , m_fontSize(height)
       , m_fontPaths(std::move(fontPaths))
@@ -37,6 +61,9 @@ namespace Compose
       check(FT_Set_Pixel_Sizes(face, 0, height), __LINE__, height);
       m_faces.push_back(face);
     }
+
+    if(digits == Font::Digits::Tabular)
+      m_tabularDigitGlyphs = findTabularDigitGlyphs(m_faces.front());
   }
 
   FreeTypeFont::~FreeTypeFont()
@@ -61,9 +88,25 @@ namespace Compose
   {
     if(const auto found = m_glyphCache.find(codepoint); found != m_glyphCache.end())
       return found->second;
-    const auto face = findFaceForChar(codepoint);
-    check(FT_Load_Char(face, codepoint, FT_LOAD_RENDER), __LINE__, codepoint);
+    const auto [face, index] = locateGlyph(codepoint);
+    check(FT_Load_Glyph(face, index, FT_LOAD_RENDER), __LINE__, codepoint);
     return m_glyphCache.emplace(codepoint, std::move(CachedGlyph(face->glyph))).first->second;
+  }
+
+  FreeTypeFont::GlyphLocation FreeTypeFont::locateGlyph(const std::uint32_t codepoint) const
+  {
+    return m_tabularDigitGlyphs && isAsciiDigit(codepoint) ? locateTabularDigit(codepoint) : locateCharacter(codepoint);
+  }
+
+  FreeTypeFont::GlyphLocation FreeTypeFont::locateTabularDigit(const std::uint32_t digit) const
+  {
+    return { .face = m_faces.front(), .index = (*m_tabularDigitGlyphs)[digit - U'0'] };
+  }
+
+  FreeTypeFont::GlyphLocation FreeTypeFont::locateCharacter(const std::uint32_t codepoint) const
+  {
+    const auto face = findFaceForChar(codepoint);
+    return { .face = face, .index = FT_Get_Char_Index(face, codepoint) };
   }
 
   int FreeTypeFont::getStringWidth(const Glib::ustring &text) const

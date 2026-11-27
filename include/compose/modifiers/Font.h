@@ -24,9 +24,22 @@ namespace Compose
     std::string baseName = COMPOSE_DEFAULT_FONT_BASE_NAME;
     std::vector<std::string> fallbackBaseNames COMPOSE_DEFAULT_FONT_FALLBACK_BASE_NAMES;
 
+    enum class Digits
+    {
+      Proportional,
+      Tabular,
+    } digits
+        = Digits::Proportional;
+
     bool operator==(const Font &o) const noexcept
     {
-      return size == o.size && baseName == o.baseName && weight == o.weight && fallbackBaseNames == o.fallbackBaseNames;
+      return size == o.size && baseName == o.baseName && weight == o.weight && fallbackBaseNames == o.fallbackBaseNames
+          && digits == o.digits;
+    }
+
+    static std::string getDigitsString(const Digits digits)
+    {
+      return digits == Digits::Tabular ? "Tabular" : "Proportional";
     }
 
     static std::string getWeightString(FontWeight weight)
@@ -67,6 +80,7 @@ namespace std
       hash ^= stringHasher(sz.baseName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
       for(const auto &fallbackName : sz.fallbackBaseNames)
         hash ^= stringHasher(fallbackName) + c_magicHashConstant + (hash << 6) + (hash >> 2);
+      hash ^= intHasher(static_cast<int>(sz.digits)) + c_magicHashConstant + (hash << 6) + (hash >> 2);
       return hash;
     }
   };
