@@ -31,6 +31,7 @@ namespace Compose
     };
 
     using tSetPixelCB = std::function<void(int, int, unsigned char)>;
+    using tTabularDigitGlyphs = std::array<FT_UInt, 10>;
 
     [[nodiscard]] int getStringWidth(const Glib::ustring &str) const;
     [[nodiscard]] int getFontHeight() const;
@@ -60,8 +61,6 @@ namespace Compose
       FT_Face face;
       FT_UInt index;
     };
-
-    using tTabularDigitGlyphs = std::array<FT_UInt, 10>;
 
     std::vector<FT_Face> m_faces;
     int m_fontSize;

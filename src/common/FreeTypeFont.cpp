@@ -14,10 +14,10 @@ namespace
     return err == 0;
   }
 
-  constexpr std::array c_tabularDigitGlyphNames = { "zero.tf", "one.tf", "two.tf",   "three.tf", "four.tf",
-                                                    "five.tf", "six.tf", "seven.tf", "eight.tf", "nine.tf" };
+  using tTabularDigitGlyphs = Compose::FreeTypeFont::tTabularDigitGlyphs;
 
-  using tTabularDigitGlyphs = std::array<FT_UInt, c_tabularDigitGlyphNames.size()>;
+  constexpr std::array<const char *, std::tuple_size_v<tTabularDigitGlyphs>> c_tabularDigitGlyphNames
+      = { "zero.tf", "one.tf", "two.tf", "three.tf", "four.tf", "five.tf", "six.tf", "seven.tf", "eight.tf", "nine.tf" };
 
   tTabularDigitGlyphs glyphIndicesByName(const FT_Face face)
   {
