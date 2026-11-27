@@ -10,9 +10,19 @@ namespace
 {
   constexpr auto c_fontSize = 40;
 
-  std::string testFontPath()
+  std::string testFontPath(const std::string &fileName = "Nonlegible-Rubik-Regular.ttf")
   {
-    return std::filesystem::path(__FILE__).parent_path() / "manual" / "Nonlegible-Rubik-Regular.ttf";
+    return std::filesystem::path(__FILE__).parent_path() / "manual" / fileName;
+  }
+
+  std::string fontWithoutTabularDigitsPath()
+  {
+    return testFontPath("Emphase-8-Regular.ttf");
+  }
+
+  int digitsWidth(const Compose::FreeTypeFont &font)
+  {
+    return font.getStringWidth("0123456789");
   }
 
   std::set<int> digitWidths(const Compose::Font::Digits digits)
@@ -40,6 +50,14 @@ TEST_CASE("tabular digits do not change other characters")
   const Compose::FreeTypeFont proportional({ testFontPath() }, c_fontSize, Compose::Font::Digits::Proportional);
   const Compose::FreeTypeFont tabular({ testFontPath() }, c_fontSize, Compose::Font::Digits::Tabular);
   REQUIRE(tabular.getStringWidth("Hz -.") == proportional.getStringWidth("Hz -."));
+}
+
+TEST_CASE("tabular digits fall back to proportional digits when the font has none")
+{
+  const Compose::FreeTypeFont proportional({ fontWithoutTabularDigitsPath() }, c_fontSize,
+                                           Compose::Font::Digits::Proportional);
+  const Compose::FreeTypeFont tabular({ fontWithoutTabularDigitsPath() }, c_fontSize, Compose::Font::Digits::Tabular);
+  REQUIRE(digitsWidth(tabular) == digitsWidth(proportional));
 }
 
 TEST_CASE("fonts differing only in digits are distinct")

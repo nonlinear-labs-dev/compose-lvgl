@@ -17,20 +17,29 @@ namespace
   constexpr std::array c_tabularDigitGlyphNames = { "zero.tf", "one.tf", "two.tf",   "three.tf", "four.tf",
                                                     "five.tf", "six.tf", "seven.tf", "eight.tf", "nine.tf" };
 
-  FT_UInt glyphIndexByName(const FT_Face face, const char *name)
+  using tTabularDigitGlyphs = std::array<FT_UInt, c_tabularDigitGlyphNames.size()>;
+
+  tTabularDigitGlyphs glyphIndicesByName(const FT_Face face)
   {
-    const auto index = FT_Get_Name_Index(face, name);
-    if(index == 0)
-      g_error("FreeType font %s has no glyph named %s", face->family_name, name);
-    return index;
+    tTabularDigitGlyphs glyphs {};
+    std::ranges::transform(c_tabularDigitGlyphNames, glyphs.begin(),
+                           [face](const char *name) { return FT_Get_Name_Index(face, name); });
+    return glyphs;
   }
 
-  std::array<FT_UInt, c_tabularDigitGlyphNames.size()> findTabularDigitGlyphs(const FT_Face face)
+  bool isComplete(const tTabularDigitGlyphs &glyphs)
   {
-    std::array<FT_UInt, c_tabularDigitGlyphNames.size()> glyphs {};
-    std::ranges::transform(c_tabularDigitGlyphNames, glyphs.begin(),
-                           [face](const char *name) { return glyphIndexByName(face, name); });
-    return glyphs;
+    return std::ranges::none_of(glyphs, [](const FT_UInt index) { return index == 0; });
+  }
+
+  std::optional<tTabularDigitGlyphs> findTabularDigitGlyphs(const FT_Face face)
+  {
+    std::optional<tTabularDigitGlyphs> found;
+    if(const auto glyphs = glyphIndicesByName(face); isComplete(glyphs))
+      found = glyphs;
+    else
+      g_warning("FreeType font %s has no tabular digits, using proportional digits", face->family_name);
+    return found;
   }
 
   bool isAsciiDigit(const std::uint32_t codepoint)
