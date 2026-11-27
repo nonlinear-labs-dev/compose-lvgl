@@ -1,13 +1,16 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <glibmm/ustring.h>
 #include <ft2build.h>
 #include <freetype/freetype.h>
+#include <compose/modifiers/Font.h>
 
 namespace Compose
 {
@@ -15,7 +18,7 @@ namespace Compose
   {
    public:
     FreeTypeFont(const std::string &fontPath, int height);
-    FreeTypeFont(std::vector<std::string> fontPaths, int height);
+    FreeTypeFont(std::vector<std::string> fontPaths, int height, Font::Digits digits = Font::Digits::Proportional);
     virtual ~FreeTypeFont();
 
     typedef int32_t tCoordinate;
@@ -28,6 +31,7 @@ namespace Compose
     };
 
     using tSetPixelCB = std::function<void(int, int, unsigned char)>;
+    using tTabularDigitGlyphs = std::array<FT_UInt, 10>;
 
     [[nodiscard]] int getStringWidth(const Glib::ustring &str) const;
     [[nodiscard]] int getFontHeight() const;
@@ -52,12 +56,22 @@ namespace Compose
       std::vector<uint8_t> pixels {};
     };
 
+    struct GlyphLocation
+    {
+      FT_Face face;
+      FT_UInt index;
+    };
+
     std::vector<FT_Face> m_faces;
     int m_fontSize;
     std::vector<std::string> m_fontPaths;
+    std::optional<tTabularDigitGlyphs> m_tabularDigitGlyphs;
     mutable std::unordered_map<std::uint32_t, CachedGlyph> m_glyphCache;
 
     const CachedGlyph &glyphFor(std::uint32_t codepoint) const;
+    [[nodiscard]] GlyphLocation locateGlyph(std::uint32_t codepoint) const;
+    [[nodiscard]] GlyphLocation locateTabularDigit(std::uint32_t digit) const;
+    [[nodiscard]] GlyphLocation locateCharacter(std::uint32_t codepoint) const;
     tCoordinate drawLetterFromCache(const CachedGlyph &g, tCoordinate x, tCoordinate y, const tSetPixelCB &cb) const;
     [[nodiscard]] FT_Face findFaceForChar(char32_t c) const;
   };

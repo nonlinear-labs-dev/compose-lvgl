@@ -46,7 +46,7 @@ namespace Compose
       auto it = fonts.find(font);
       if(it == fonts.end())
       {
-        it = fonts.emplace(font, std::make_unique<FreeTypeFont>(buildPath(font), font.size)).first;
+        it = fonts.emplace(font, std::make_unique<FreeTypeFont>(buildPath(font), font.size, font.digits)).first;
       }
       return *it->second;
     }

@@ -58,6 +58,11 @@ namespace Compose
       return Font::FontWeight::Regular;
     }
 
+    inline Font::Digits parseDigits(const std::string& digits)
+    {
+      return digits == "Tabular" ? Font::Digits::Tabular : Font::Digits::Proportional;
+    }
+
     inline TextAlign parseTextAlign(const std::string& value)
     {
       if(value == "CENTER")
@@ -372,7 +377,7 @@ namespace Compose
 
   template <typename tJson> void to_json(tJson& j, const Font& in)
   {
-    j = tJson { { "size", in.size }, { "weight", Font::getWeightString(in.weight) }, { "baseName", in.baseName }, { "fallbackBaseNames", in.fallbackBaseNames } };
+    j = tJson { { "size", in.size }, { "weight", Font::getWeightString(in.weight) }, { "baseName", in.baseName }, { "fallbackBaseNames", in.fallbackBaseNames }, { "digits", Font::getDigitsString(in.digits) } };
   }
 
   template <typename tJson> void from_json(const tJson& j, Font& out)
@@ -389,6 +394,9 @@ namespace Compose
 
     if(j.contains("fallbackBaseNames"))
       out.fallbackBaseNames = j.at("fallbackBaseNames").template get<std::vector<std::string>>();
+
+    if(j.contains("digits"))
+      out.digits = Detail::parseDigits(j.at("digits").template get<std::string>());
   }
 
   template <typename tJson> void to_json(tJson& j, const TextAlign& in)
